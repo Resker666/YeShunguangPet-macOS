@@ -49,11 +49,11 @@ App 不显示 Dock 图标；关闭 DMG 不会退出已安装的 App。
 更新与卸载
 更新前先从菜单栏退出，再用新版 App 替换“应用程序”中的旧版。
 卸载前先退出，再把 App 移到废纸篓。
-位置、大小与置顶偏好保留在：
+位置、大小、置顶、注视和自动动作偏好保留在：
 ~/Library/Application Support/YeShunguangPet-macOS/settings.json
 这允许重新安装后恢复位置与偏好；卸载 App 不会自动删除个人配置。
 导入素材保存在上述目录同级的Skins文件夹；卸载App也会保留。
-新版兼容schemaVersion 1–3配置，保存后升级到4；旧版App不能读取
+新版兼容schemaVersion 1–4配置，保存后升级到5；旧版App不能读取
 新版配置，会保留原文件并提示，避免静默覆盖。
 
 版本、来源与校验
