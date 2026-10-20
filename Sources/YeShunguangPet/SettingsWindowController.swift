@@ -13,9 +13,71 @@ import UniformTypeIdentifiers
     @Published private(set) var currentImage: CGImage?
     @Published private(set) var candidateImage: CGImage?
     @Published private(set) var skinWarning: String?
+    @Published private(set) var libraryEntries=[SkinLibraryEntry]()
+    @Published private(set) var libraryError: String?
+    @Published private(set) var isTerminating=false
+    private(set) var hasPendingMutation=false
+    private(set) var terminationCleanupError: String?
+    private let installPackage: @Sendable (SkinLibrary,SkinPackage) throws -> ImportedSkin
+    private var mutationWaiters=[CheckedContinuation<Void,Never>]()
+    func beginTermination() {
+        isTerminating=true; cancelSkinSelection()
+    }
+    func cancelTermination() { isTerminating=false }
+    func waitForPendingMutations() async {
+        guard hasPendingMutation else { return }
+        await withCheckedContinuation { mutationWaiters.append($0) }
+    }
+    private func finishMutation() {
+        guard hasPendingMutation else { return }
+        hasPendingMutation=false; isBusy=false; refresh()
+        let waiters=mutationWaiters; mutationWaiters.removeAll()
+        for waiter in waiters { waiter.resume() }
+    }
+    func reloadLibrary() async {
+        guard let session,!session.gate.exiting,!isTerminating,!isBusy else { return }
+        let generation=selectionGeneration,library=session.library
+        isBusy=true; libraryError=nil
+        defer { isBusy=false }
+        do {
+            let entries=try await Task.detached(priority:.userInitiated) { try library.entries() }.value
+            guard generation==selectionGeneration,!Task.isCancelled,!session.gate.exiting else { return }
+            libraryEntries=entries
+        } catch { if generation==selectionGeneration { libraryError=error.localizedDescription } }
+    }
+    func useSkin(id: String) async {
+        guard let session,!session.gate.exiting,!isTerminating,!isBusy else { return }
+        cancelSkinSelection()
+        let generation=selectionGeneration,library=session.library
+        isBusy=true; hasPendingMutation=true
+        defer { finishMutation() }
+        do {
+            let skin=try await Task.detached(priority:.userInitiated) { try library.load(id:id) }.value
+            if generation==selectionGeneration,!Task.isCancelled,!session.gate.exiting {
+                try session.useImportedSkin(ImportedSkin(id:id,skin:skin))
+            }
+        } catch { skinError=error.localizedDescription }
+        finishMutation(); await reloadLibrary()
+    }
+    // Called after the settings view's destructive-action confirmation.
+    func deleteSkin(id: String) async {
+        guard let session,!session.gate.exiting,!isTerminating,!isBusy else { return }
+        guard session.canDeleteImportedSkin(id:id) else { skinError="此皮肤正在使用、仍被配置记住，或原配置受保护；请先切换或重置配置。"; return }
+        cancelSkinSelection(); isBusy=true; hasPendingMutation=true
+        defer { finishMutation() }
+        let library=session.library
+        do { try await Task.detached(priority:.userInitiated) { try library.remove(id:id) }.value }
+        catch { skinError=error.localizedDescription; if isTerminating { terminationCleanupError=error.localizedDescription } }
+        finishMutation(); await reloadLibrary()
+    }
+    func isCurrentSkin(id: String) -> Bool {
+        guard let session,UUID(uuidString:id) != nil else { return false }
+        return session.skin.directory==session.library.directory.appendingPathComponent(id,isDirectory:true).resolvingSymlinksInPath()
+    }
+    func canDeleteSkin(id: String) -> Bool { !isBusy && !isTerminating && session?.canDeleteImportedSkin(id:id)==true }
     private var selectionGeneration=0
     func previewSkin(at url: URL) async {
-        guard let session,!session.gate.exiting,!isBusy else { return }
+        guard let session,!session.gate.exiting,!isTerminating,!isBusy else { return }
         session.cancelInput(); selectionGeneration += 1
         let generation=selectionGeneration
         candidate=nil; candidateImage=nil; skinError=nil; isBusy=true
@@ -34,14 +96,14 @@ import UniformTypeIdentifiers
         }
     }
     func confirmImport() async {
-        guard let session,let package=candidate,!isBusy,!session.gate.exiting else { return }
+        guard let session,let package=candidate,!isBusy,!isTerminating,!session.gate.exiting else { return }
         guard !session.protectedSettings else { skinError="原配置受保护，请先从菜单栏备份并重置，再导入。"; return }
-        let generation=selectionGeneration, library=session.library
+        let generation=selectionGeneration, library=session.library,installPackage=installPackage
         var installed: ImportedSkin?
-        isBusy=true; skinError=nil
-        defer { isBusy=false; refresh() }
+        isBusy=true; skinError=nil; hasPendingMutation=true
+        defer { finishMutation() }
         do {
-            let imported=try await Task.detached(priority:.userInitiated) { try library.install(package) }.value
+            let imported=try await Task.detached(priority:.userInitiated) { try installPackage(library,package) }.value
             installed=imported
             guard generation==selectionGeneration,!Task.isCancelled,!session.gate.exiting else {
                 try await Task.detached { try library.discardNewImport(id:imported.id) }.value
@@ -51,21 +113,27 @@ import UniformTypeIdentifiers
             installed=nil; candidate=nil; candidateImage=nil
         } catch {
             var message=error.localizedDescription
+            if error is SkinImportCleanupError { terminationCleanupError=message }
             if let imported=installed {
                 do { try await Task.detached { try library.discardNewImport(id:imported.id) }.value }
-                catch { message += "；未能清理这次未使用的副本：\(error.localizedDescription)" }
+                catch {
+                    message += "；未能清理这次未使用的副本：\(error.localizedDescription)"
+                    terminationCleanupError=error.localizedDescription
+                }
             }
             if generation==selectionGeneration,!Task.isCancelled { skinError=message }
         }
+        finishMutation(); await reloadLibrary()
     }
     func cancelSkinSelection() { selectionGeneration += 1; candidate=nil; candidateImage=nil; skinError=nil }
     func restoreDefaultSkin() {
-        guard let session,!isBusy else { return }
+        guard let session,!isTerminating,!isBusy else { return }
         do { try session.restoreDefaultSkin(); cancelSkinSelection(); refresh() }
         catch { skinError=error.localizedDescription; refresh() }
     }
     private weak var session: PetSession?
-    init(session: PetSession) {
+    init(session: PetSession,installPackage: @escaping @Sendable (SkinLibrary,SkinPackage) throws -> ImportedSkin = { try $0.install($1) }) {
+        self.installPackage=installPackage
         self.session=session; preferences=session.preferences; saveError=session.persistenceError; skinName=session.skin.manifest.name
         refresh()
     }
@@ -77,9 +145,11 @@ import UniformTypeIdentifiers
         currentImage=try? session.atlas.frame(at:.init(row:idle.row,column:idle.startColumn))
     }
     func setScale(_ scale: Double) {
+        guard !isTerminating else { return }
         var value=preferences; value.scale=scale; session?.setPreferences(value); refresh()
     }
     func setAlwaysOnTop(_ enabled: Bool) {
+        guard !isTerminating else { return }
         var value=preferences; value.alwaysOnTop=enabled; session?.setPreferences(value); refresh()
     }
 }
@@ -90,7 +160,7 @@ import UniformTypeIdentifiers
     private var filePanel: NSOpenPanel?
     init(session: PetSession) {
         self.session=session; model=SettingsModel(session:session)
-        let window=NSWindow(contentRect:CGRect(x:0,y:0,width:460,height:560),styleMask:[.titled,.closable,.miniaturizable],backing:.buffered,defer:false)
+        let window=NSWindow(contentRect:CGRect(x:0,y:0,width:520,height:640),styleMask:[.titled,.closable,.miniaturizable],backing:.buffered,defer:false)
         window.title="叶瞬光桌宠设置"; window.isReleasedWhenClosed=false
         super.init(window:window)
         window.contentViewController=NSHostingController(rootView:PetSettingsView(model:model,onChooseSkin:{ [weak self] in self?.chooseSkin() }))
@@ -101,9 +171,10 @@ import UniformTypeIdentifiers
         session?.cancelInput(); model.refresh()
         showWindow(nil); window?.deminiaturize(nil); window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps:true)
+        Task { [model] in await model.reloadLibrary() }
     }
     private func chooseSkin() {
-        guard let window,!model.isBusy,filePanel==nil else { return }
+        guard let window,!model.isTerminating,!model.isBusy,filePanel==nil else { return }
         let panel=NSOpenPanel()
         panel.title="选择皮肤"; panel.message="选择皮肤文件夹或其中的 pet.json；对应 PNG 需放在同一文件夹。"
         panel.prompt="预览"; panel.canChooseFiles=true; panel.canChooseDirectories=true
@@ -121,11 +192,13 @@ import UniformTypeIdentifiers
         }
     }
     func windowWillClose(_ notification: Notification) { filePanel?.cancel(nil); model.cancelSkinSelection() }
+    func beginTermination() { filePanel?.cancel(nil); model.beginTermination() }
 }
 
 private struct PetSettingsView: View {
     @ObservedObject var model: SettingsModel
     let onChooseSkin: () -> Void
+    @State private var skinToDelete: SkinLibraryEntry?
     private var version: String {
         let info=Bundle.main.infoDictionary ?? [:]
         return "\(info["CFBundleShortVersionString"] as? String ?? "开发版")（\(info["CFBundleVersion"] as? String ?? "—")）"
@@ -171,6 +244,31 @@ private struct PetSettingsView: View {
                 Text("导入会保存素材副本，原文件保持不变。预览为待机首帧。")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            Section("已导入皮肤") {
+                if model.libraryEntries.isEmpty { Text("导入后会显示在这里，可直接切换。").foregroundStyle(.secondary) }
+                ForEach(model.libraryEntries) { entry in
+                    HStack(spacing:12) {
+                        if let image=entry.thumbnail {
+                            Image(decorative:image,scale:1).resizable().scaledToFit().frame(width:52,height:56)
+                        } else {
+                            Image(systemName:"exclamationmark.triangle").frame(width:52,height:56).foregroundStyle(.secondary)
+                        }
+                        VStack(alignment:.leading,spacing:4) {
+                            Text(entry.name)
+                            if model.isCurrentSkin(id:entry.id) { Text("使用中").font(.caption).foregroundStyle(.secondary) }
+                            if let error=entry.loadError { Text(error).font(.caption).foregroundStyle(.red).lineLimit(2).help(error) }
+                        }
+                        Spacer(minLength:4)
+                        Button("使用") { Task { await model.useSkin(id:entry.id) } }
+                            .disabled(model.isBusy || entry.loadError != nil || model.isCurrentSkin(id:entry.id))
+                        Button { skinToDelete=entry } label: { Image(systemName:"trash") }
+                            .accessibilityLabel("删除\(entry.name)")
+                            .disabled(!model.canDeleteSkin(id:entry.id))
+                    }
+                }
+                if let error=model.libraryError { Text(error).font(.caption).foregroundStyle(.red).textSelection(.enabled) }
+                Button("刷新皮肤列表") { Task { await model.reloadLibrary() } }.disabled(model.isBusy)
+            }
             Section {
                 LabeledContent("角色大小",value:"\(Int((model.preferences.scale*100).rounded()))%")
                 Slider(value:Binding(get:{model.preferences.scale},set:{model.setScale($0)}),in:0.5...2,step:0.05) {
@@ -196,6 +294,12 @@ private struct PetSettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width:460,height:560)
+        .disabled(model.isTerminating)
+        .frame(width:520,height:640)
+        .alert(item:$skinToDelete) { entry in
+            Alert(title:Text("删除皮肤？"),message:Text("将删除“\(entry.name)”的已导入副本，原始文件不受影响。"),primaryButton:.destructive(Text("删除")) {
+                Task { await model.deleteSkin(id:entry.id) }
+            },secondaryButton:.cancel(Text("取消")))
+        }
     }
 }

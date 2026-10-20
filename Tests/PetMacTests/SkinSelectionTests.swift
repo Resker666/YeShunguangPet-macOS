@@ -215,4 +215,162 @@ import PetCore
         XCTAssertEqual(saved.selectedSkinID,changed.id)
         XCTAssertEqual(session.scheduler.pendingCount,1)
     }
+    func testLibraryListsPriorImportsAndSwitchesWithoutCreatingAnotherCopy() async throws {
+        let session=makeSession(); defer { session.prepareToExit() }
+        session.start(); let model=SettingsModel(session:session)
+        try FileManager.default.removeItem(at:directory.appendingPathComponent("source"))
+        await model.reloadLibrary()
+        XCTAssertEqual(model.libraryEntries.map(\.id),[imported.id])
+        XCTAssertEqual(model.libraryEntries.first?.name,"另一个角色")
+        let before=try FileManager.default.contentsOfDirectory(atPath:session.library.directory.path)
+        await model.useSkin(id:imported.id)
+        XCTAssertNil(model.skinError)
+        XCTAssertEqual(session.skin.manifest.id,"alternate")
+        XCTAssertTrue(model.isCurrentSkin(id:imported.id))
+        XCTAssertFalse(model.canDeleteSkin(id:imported.id))
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:session.library.directory.path),before)
+        XCTAssertTrue(session.requestExit()); session.prepareToExit()
+        let reopened=makeSession(); defer { reopened.prepareToExit() }; reopened.start()
+        XCTAssertEqual(reopened.skin.manifest.id,"alternate")
+    }
+    func testDeletingInactiveCopyKeepsCurrentAndOriginalAssets() async throws {
+        let session=makeSession(); defer { session.prepareToExit() }; session.start()
+        let model=SettingsModel(session:session)
+        await model.useSkin(id:imported.id)
+        await model.deleteSkin(id:imported.id)
+        XCTAssertNotNil(model.skinError)
+        XCTAssertTrue(FileManager.default.fileExists(atPath:imported.skin.directory.path))
+        model.restoreDefaultSkin()
+        await model.deleteSkin(id:imported.id)
+        XCTAssertNil(model.skinError)
+        XCTAssertFalse(FileManager.default.fileExists(atPath:imported.skin.directory.path))
+        XCTAssertTrue(model.libraryEntries.isEmpty)
+        XCTAssertEqual(session.skin.manifest.id,"my-pet")
+        XCTAssertTrue(FileManager.default.fileExists(atPath:directory.appendingPathComponent("source/pet.json").path))
+    }
+    func testBrokenEntryCanBeRemovedWhileFailedSwitchKeepsCurrentConfig() async throws {
+        let session=makeSession(); defer { session.prepareToExit() }; session.start(); XCTAssertTrue(session.requestExit())
+        let original=try Data(contentsOf:settingsURL)
+        try Data("broken".utf8).write(to:imported.skin.directory.appendingPathComponent("pet.json"))
+        let model=SettingsModel(session:session); await model.reloadLibrary()
+        XCTAssertNotNil(model.libraryEntries.first?.loadError)
+        await model.useSkin(id:imported.id)
+        XCTAssertNotNil(model.skinError)
+        XCTAssertEqual(session.skin.manifest.id,"my-pet")
+        XCTAssertEqual(try Data(contentsOf:settingsURL),original)
+        await model.deleteSkin(id:imported.id)
+        XCTAssertNil(model.skinError); XCTAssertTrue(model.libraryEntries.isEmpty)
+    }
+    func testSaveFailureDuringLibrarySwitchKeepsExistingCopyAndSelection() async throws {
+        var fail=false
+        let store=SettingsStore(url:settingsURL,write:{ data,url in
+            if fail { throw NSError(domain:"disk",code:1) }; try data.write(to:url,options:.atomic)
+        })
+        let session=makeSession(settings:store); defer { session.prepareToExit() }; session.start(); XCTAssertTrue(session.requestExit())
+        let original=try Data(contentsOf:settingsURL),model=SettingsModel(session:session)
+        fail=true; await model.useSkin(id:imported.id)
+        XCTAssertNotNil(model.skinError)
+        XCTAssertEqual(session.skin.manifest.id,"my-pet")
+        XCTAssertEqual(try Data(contentsOf:settingsURL),original)
+        XCTAssertTrue(FileManager.default.fileExists(atPath:imported.skin.directory.path))
+    }
+    func testProtectedConfigAndRememberedCLISkinCannotBeDeleted() async throws {
+        try SettingsStore(url:settingsURL).save(PetSettings(placement:nil,selectedSkinID:imported.id.lowercased()))
+        let session=makeSession(); defer { session.prepareToExit() }; session.start(restoringSkin:false)
+        let model=SettingsModel(session:session)
+        XCTAssertFalse(model.isCurrentSkin(id:imported.id))
+        XCTAssertFalse(model.canDeleteSkin(id:imported.id))
+        await model.deleteSkin(id:imported.id)
+        XCTAssertNotNil(model.skinError)
+        XCTAssertTrue(FileManager.default.fileExists(atPath:imported.skin.directory.path))
+        session.prepareToExit()
+        try Data("broken".utf8).write(to:settingsURL)
+        let protected=makeSession(); defer { protected.prepareToExit() }; protected.start()
+        let protectedModel=SettingsModel(session:protected)
+        await protectedModel.deleteSkin(id:imported.id)
+        XCTAssertNotNil(protectedModel.skinError)
+        XCTAssertTrue(FileManager.default.fileExists(atPath:imported.skin.directory.path))
+    }
+    func testQuitWaitsForImportAndRemovesOnlyItsUncommittedCopy() async throws {
+        for afterPublish in [false,true] {
+            let session=makeSession(); defer { session.prepareToExit() }; session.start()
+            let started=expectation(description:"import paused"),release=DispatchSemaphore(value:0)
+            defer { release.signal() }
+            let model=SettingsModel(session:session,installPackage:{ library,package in
+                if afterPublish {
+                    let installed=try library.install(package)
+                    started.fulfill(); release.wait(); return installed
+                }
+                return try library.install(package,writeFile:{ data,url in
+                    if url.pathExtension=="png" { started.fulfill(); release.wait() }
+                    try data.write(to:url,options:.withoutOverwriting)
+                })
+            })
+            await model.previewSkin(at:directory.appendingPathComponent("source"))
+            let confirmation=Task { await model.confirmImport() }
+            let startedResult=await XCTWaiter.fulfillment(of:[started],timeout:5)
+            XCTAssertEqual(startedResult,.completed)
+            XCTAssertTrue(model.hasPendingMutation)
+            model.beginTermination()
+            let waiter=Task {
+                await model.waitForPendingMutations()
+                return try FileManager.default.contentsOfDirectory(atPath:session.library.directory.path)
+            }
+            await Task.yield()
+            XCTAssertTrue(model.hasPendingMutation)
+            release.signal(); await confirmation.value
+            let remaining=try await waiter.value
+            XCTAssertEqual(remaining,[imported.id])
+            XCTAssertFalse(model.hasPendingMutation)
+            XCTAssertNil(model.terminationCleanupError)
+            XCTAssertEqual(session.skin.manifest.id,"my-pet")
+            XCTAssertNil(session.selectedSkinID)
+        }
+    }
+    func testCancellingQuitAllowsNewOperationsWithoutKeepingOldPreview() async throws {
+        let session=makeSession(); defer { session.prepareToExit() }; session.start()
+        let model=SettingsModel(session:session)
+        await model.previewSkin(at:directory.appendingPathComponent("source"))
+        model.beginTermination(); await model.waitForPendingMutations()
+        XCTAssertNil(model.candidate)
+        await model.useSkin(id:imported.id); await model.deleteSkin(id:imported.id)
+        XCTAssertEqual(session.skin.manifest.id,"my-pet")
+        XCTAssertTrue(FileManager.default.fileExists(atPath:imported.skin.directory.path))
+        model.cancelTermination()
+        await model.previewSkin(at:directory.appendingPathComponent("source"))
+        await model.confirmImport()
+        XCTAssertEqual(session.skin.manifest.id,"alternate")
+    }
+    func testInstallCleanupFailureSurvivesQuitWaitAndCancelledQuit() async throws {
+        let session=makeSession(); defer { session.prepareToExit() }; session.start()
+        let started=expectation(description:"copy paused"),release=DispatchSemaphore(value:0)
+        defer {
+            release.signal()
+            for child in (try? FileManager.default.contentsOfDirectory(at:session.library.directory,includingPropertiesForKeys:nil)) ?? [] where child.lastPathComponent.hasPrefix(".import-") {
+                try? FileManager.default.setAttributes([.posixPermissions:0o700],ofItemAtPath:child.path)
+            }
+        }
+        let model=SettingsModel(session:session,installPackage:{ library,package in
+            try library.install(package,writeFile:{ data,url in
+                if url.pathExtension=="png" {
+                    started.fulfill(); release.wait()
+                    try FileManager.default.setAttributes([.posixPermissions:0o500],ofItemAtPath:url.deletingLastPathComponent().path)
+                    throw SkinError("磁盘写入失败")
+                }
+                try data.write(to:url,options:.withoutOverwriting)
+            })
+        })
+        await model.previewSkin(at:directory.appendingPathComponent("source"))
+        let task=Task { await model.confirmImport() }
+        let result=await XCTWaiter.fulfillment(of:[started],timeout:5)
+        XCTAssertEqual(result,.completed)
+        model.beginTermination(); release.signal()
+        await model.waitForPendingMutations(); await task.value
+        XCTAssertNotNil(model.terminationCleanupError)
+        XCTAssertEqual(session.skin.manifest.id,"my-pet")
+        XCTAssertTrue(FileManager.default.fileExists(atPath:imported.skin.directory.path))
+        XCTAssertTrue(try FileManager.default.contentsOfDirectory(atPath:session.library.directory.path).contains{$0.hasPrefix(".import-")})
+        model.cancelTermination(); model.beginTermination()
+        XCTAssertNotNil(model.terminationCleanupError)
+    }
 }

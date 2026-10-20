@@ -6,6 +6,7 @@ import Darwin
     var session: PetSession?
     var status: StatusBarController?
     private var terminationSignal: DispatchSourceSignal?
+    private var terminationPending=false
     private func trace(_ message: String) {
         if ProcessInfo.processInfo.environment["YSGPET_METRICS_PATH"] != nil { NSLog("YSGPET: %@",message) }
     }
@@ -28,10 +29,35 @@ import Darwin
         } catch { status=StatusBarController(session:nil,error:error.localizedDescription,onQuit:{NSApp.terminate(nil)}) }
     }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        guard let session,!session.requestExit() else { return .terminateNow }
+        if terminationPending { return .terminateLater }
+        let controller=status?.settingsController
+        controller?.beginTermination()
+        let model=controller?.model
+        if let model,model.hasPendingMutation {
+            terminationPending=true
+            Task {
+                await model.waitForPendingMutations()
+                let proceed=confirmTermination(model:model)
+                if !proceed { model.cancelTermination() }
+                terminationPending=false
+                sender.reply(toApplicationShouldTerminate:proceed)
+            }
+            return .terminateLater
+        }
+        let proceed=confirmTermination(model:model)
+        if !proceed { model?.cancelTermination() }
+        return proceed ? .terminateNow : .terminateCancel
+    }
+    private func confirmTermination(model: SettingsModel?) -> Bool {
+        if let error=model?.terminationCleanupError {
+            let alert=NSAlert(); alert.messageText="皮肤副本未能清理"; alert.informativeText=error
+            alert.addButton(withTitle:"继续退出"); alert.addButton(withTitle:"取消")
+            if alert.runModal() != .alertFirstButtonReturn { return false }
+        }
+        guard let session,!session.requestExit() else { return true }
         let alert=NSAlert(); alert.messageText="设置未能保存"; alert.informativeText=session.persistenceError ?? "原配置保持不变。"
         alert.addButton(withTitle:"继续退出"); alert.addButton(withTitle:"取消")
-        return alert.runModal() == .alertFirstButtonReturn ? .terminateNow : .terminateCancel
+        return alert.runModal() == .alertFirstButtonReturn
     }
     func applicationWillTerminate(_ notification: Notification) {
         if let path=ProcessInfo.processInfo.environment["YSGPET_METRICS_PATH"],path.hasPrefix("/") {

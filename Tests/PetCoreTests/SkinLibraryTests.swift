@@ -85,4 +85,50 @@ final class SkinLibraryTests: XCTestCase {
         let imported=try library.install(SkinLoader.readPackage(manifestURL:manifest))
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:imported.skin.directory.path).sorted(),["custom.png","pet.json"])
     }
+    func testLibraryDiscoversOldCopiesAndKeepsDamagedEntriesSeparate() throws {
+        let manifest=try SkinFixtures.writePackage(in:directory.appendingPathComponent("source"))
+        let library=SkinLibrary(directory:directory.appendingPathComponent("Skins"))
+        let first=try library.install(SkinLoader.readPackage(manifestURL:manifest))
+        try SkinFixtures.manifest(["name":"第二个角色"]).write(to:manifest)
+        let second=try library.install(SkinLoader.readPackage(manifestURL:manifest))
+        try FileManager.default.removeItem(at:directory.appendingPathComponent("source"))
+        let damagedID=UUID().uuidString, damaged=library.directory.appendingPathComponent(damagedID)
+        try FileManager.default.createDirectory(at:damaged,withIntermediateDirectories:false)
+        try Data("broken".utf8).write(to:damaged.appendingPathComponent("pet.json"))
+        try FileManager.default.createDirectory(at:library.directory.appendingPathComponent(".import-\(UUID().uuidString)"),withIntermediateDirectories:false)
+        try FileManager.default.createSymbolicLink(at:library.directory.appendingPathComponent(UUID().uuidString),withDestinationURL:first.skin.directory)
+        let entries=try library.entries()
+        XCTAssertEqual(Set(entries.map(\.id)),Set([first.id,second.id,damagedID]))
+        let old=try XCTUnwrap(entries.first{$0.id==first.id})
+        XCTAssertEqual(old.name,"我的角色")
+        XCTAssertEqual(old.thumbnail?.width,32); XCTAssertEqual(old.thumbnail?.height,32)
+        XCTAssertNil(old.loadError)
+        XCTAssertEqual(entries.first{$0.id==second.id}?.name,"第二个角色")
+        XCTAssertNotNil(entries.first{$0.id==damagedID}?.loadError)
+        XCTAssertNil(entries.first{$0.id==damagedID}?.thumbnail)
+    }
+    func testMissingLibraryIsEmptyAndLinkedRootIsRejected() throws {
+        let library=SkinLibrary(directory:directory.appendingPathComponent("Skins"))
+        XCTAssertTrue(try library.entries().isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath:library.directory.path))
+        try FileManager.default.createSymbolicLink(at:library.directory,withDestinationURL:directory)
+        XCTAssertThrowsError(try library.entries())
+    }
+    func testRemoveOnlyDeletesRequestedCopyAndRejectsLinksAndPathIDs() throws {
+        let manifest=try SkinFixtures.writePackage(in:directory.appendingPathComponent("source"))
+        let library=SkinLibrary(directory:directory.appendingPathComponent("Skins"))
+        let package=try SkinLoader.readPackage(manifestURL:manifest)
+        let first=try library.install(package), second=try library.install(package)
+        try library.remove(id:first.id)
+        XCTAssertFalse(FileManager.default.fileExists(atPath:first.skin.directory.path))
+        XCTAssertEqual(try library.load(id:second.id).manifest.id,"my-pet")
+        XCTAssertTrue(FileManager.default.fileExists(atPath:manifest.path))
+        let linkID=UUID().uuidString
+        try FileManager.default.createSymbolicLink(at:library.directory.appendingPathComponent(linkID),withDestinationURL:manifest.deletingLastPathComponent())
+        for id in ["../source",linkID] { XCTAssertThrowsError(try library.remove(id:id)) }
+        XCTAssertTrue(FileManager.default.fileExists(atPath:manifest.path))
+        let linked=directory.appendingPathComponent("LinkedSkins")
+        try FileManager.default.createSymbolicLink(at:linked,withDestinationURL:library.directory)
+        XCTAssertThrowsError(try SkinLibrary(directory:linked).remove(id:second.id))
+    }
 }

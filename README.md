@@ -1,14 +1,14 @@
 # YeShunguangPet macOS
 
-为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前为免费分发体验版 0.1.4。
+为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前为免费分发体验版 0.1.5。
 
-延后验证事项与后续候选路线见 [项目待办](TODO.md)。日用设置见 [设置验证记录](docs/settings-validation.md)；皮肤导入与切换见 [皮肤导入记录](docs/skin-import-validation.md)。
+延后验证事项与后续候选路线见 [项目待办](TODO.md)。日用设置见 [设置验证记录](docs/settings-validation.md)；皮肤导入与切换见 [皮肤导入记录](docs/skin-import-validation.md)，已有副本管理见 [皮肤库验证记录](docs/skin-library-validation.md)。
 
 ## 安装体验版
 
 使用者不需要安装 Xcode、Swift 或其他依赖。日用包请选择 M 系列 Mac（arm64）；另提供x86_64实验包用于Intel／黑苹果验证。两种包分开，文件名标明架构。部署目标仍为15.0，仅 M4 / macOS 27.0 实测，真实Intel／黑苹果及其他系统尚待验证。
 
-1. M 系列打开 `YeShunguangPet-0.1.4-macOS-arm64.dmg`；Intel测试机选择文件名以`x86_64.dmg`结尾的实验包。将 App 拖到旁边的 Applications。
+1. M 系列打开 `YeShunguangPet-0.1.5-macOS-arm64.dmg`；Intel测试机选择文件名以`x86_64.dmg`结尾的实验包。将 App 拖到旁边的 Applications。
 2. 弹出 DMG，从“应用程序”打开 App；菜单栏爪印提供操作和退出入口。
 3. 免费体验版使用 ad-hoc 签名，未公证。网上下载后若系统拦截，请先核实来源，在尝试打开后按 [Apple 官方说明](https://support.apple.com/zh-cn/102445) 前往“隐私与安全性 → 仍要打开”。DMG 不会消除系统提示。
 
@@ -34,7 +34,9 @@ App 不显示 Dock 图标；请从菜单栏退出。首次启动会在主屏右�
 
 在设置的“皮肤”区域点“选择皮肤…”，选择解压后的皮肤文件夹或`pet.json`，查看名称与待机首帧预览，再点“导入并使用”。清单与对应PNG会按原字节复制到`~/Library/Application Support/YeShunguangPet-macOS/Skins/`，不依赖下载目录中的原文件；再次启动恢复所选皮肤。校验、复制或保存失败时继续使用当前角色，显示具体原因。“恢复默认皮肤”切回随附叶瞬光。取消预览不会导入；关闭设置窗口会取消尚未确认的操作。
 
-本版保留已导入素材，不提供历史列表或删除管理；重复导入会保存独立副本。暂不支持直接选择ZIP，请先解压。也可以从终端指定一个仅用于本次启动的本地皮肤：
+设置中的“已导入皮肤”自动识别之前保存的副本，显示名称、待机缩略图与使用状态；点“使用”即可切换，不必重新选择原文件，也不增加副本。可以确认删除未使用的副本，原始文件保持不变；当前使用、配置仍记住的皮肤或原配置受保护时不可删除。损坏的副本单独显示错误，可以删除，不影响其他皮肤。“刷新皮肤列表”重新读取受管理目录。
+
+重复导入仍会保存独立副本；只想换回旧角色时请使用列表。正常退出会等待当前导入完成，再清理本次未使用的副本；强制结束或断电没有此保证，也不会自动清空历史副本。暂不支持直接选择ZIP，请先解压。也可以从终端指定一个仅用于本次启动的本地皮肤：
 
 ```bash
 dist/YeShunguangPet.app/Contents/MacOS/YeShunguangPet --skin /绝对路径/pet.json
@@ -68,7 +70,7 @@ python3 scripts/smoke-app.py --app /绝对路径/YeShunguangPet.app --check-rest
 
 构建需要 Xcode；使用 App 不需要。默认ARM App在`dist/YeShunguangPet.app`，Intel App在`dist/x86_64/YeShunguangPet.app`。两者主程序和嵌入框架架构必须一致；打包时会核对所选架构，拒绝错误标签或混合框架。
 
-打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.4-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名、公证或公开发布，`Contents/Resources/build-info.json`记录构建提交和架构。
+打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.5-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名、公证或公开发布，`Contents/Resources/build-info.json`记录构建提交和架构。
 
 App 图标由原仓库 ICO 转换，原图256×256；大尺寸仅作缩放，不新增绘制细节。需要重新生成时运行 `bash tools/make-icon.sh`，使用系统 sips/iconutil，无外部图像工具依赖。
 

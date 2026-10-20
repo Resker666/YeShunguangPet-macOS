@@ -62,6 +62,11 @@ import PetCore
         setVisible(true)
     }
     func useImportedSkin(_ imported: ImportedSkin) throws { try switchSkin(imported.skin,id:imported.id) }
+    func canDeleteImportedSkin(id: String) -> Bool {
+        guard !gate.exiting,!protectedSettings,let uuid=UUID(uuidString:id) else { return false }
+        if selectedSkinID.flatMap(UUID.init(uuidString:))==uuid { return false }
+        return skin.directory != library.directory.appendingPathComponent(id,isDirectory:true).resolvingSymlinksInPath()
+    }
     func restoreDefaultSkin() throws { try switchSkin(defaultSkin,id:nil) }
     private func switchSkin(_ next: LoadedSkin, id: String?) throws {
         guard !gate.exiting else { throw SkinError("桌宠正在退出，未切换皮肤") }
