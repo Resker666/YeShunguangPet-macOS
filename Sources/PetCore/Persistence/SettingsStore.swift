@@ -1,9 +1,22 @@
 import Foundation
 import Darwin
 
-public enum SettingsLoadResult { case missing, loaded(PlacementSnapshot), protectedFile(message: String) }
+public struct PetPreferences: Codable, Equatable {
+    public var scale: Double
+    public var alwaysOnTop: Bool
+    public init(scale: Double = 1, alwaysOnTop: Bool = true) { self.scale=scale; self.alwaysOnTop=alwaysOnTop }
+    public var isValid: Bool { scale.isFinite && (0.5...2).contains(scale) }
+}
+public struct PetSettings: Equatable {
+    public let placement: PlacementSnapshot?
+    public let preferences: PetPreferences
+    public init(placement: PlacementSnapshot?, preferences: PetPreferences = .init()) { self.placement=placement; self.preferences=preferences }
+    public var isValid: Bool { (placement?.isValid ?? true) && preferences.isValid }
+}
+public enum SettingsLoadResult { case missing, loaded(PetSettings), protectedFile(message: String) }
 public final class SettingsStore {
-    private struct Configuration: Codable { let schemaVersion: Int; let placement: PlacementSnapshot }
+    private struct LegacyConfiguration: Decodable { let placement: PlacementSnapshot }
+    private struct Configuration: Codable { let schemaVersion: Int; let placement: PlacementSnapshot?; let preferences: PetPreferences }
     public let url: URL
     private var checked=false, blocked=false
     private let write: (Data,URL) throws -> Void
@@ -15,17 +28,26 @@ public final class SettingsStore {
         if lstat(url.path,&info) != 0 && errno==ENOENT { blocked=false; return .missing }
         do {
             let data=try SkinLoader.readFile(at:url,maximumBytes:65536)
-            guard case .object(let values)=try StrictJSON.parse(data),case .number("1")=values["schemaVersion"] else { throw SkinError("配置版本无效或尚不支持") }
-            let config=try JSONDecoder().decode(Configuration.self,from:data)
-            guard config.schemaVersion==1,config.placement.isValid else { throw SkinError("配置中的位置无效") }
-            blocked=false; return .loaded(config.placement)
+            guard case .object(let values)=try StrictJSON.parse(data) else { throw SkinError("配置格式无效") }
+            let saved: PetSettings
+            switch values["schemaVersion"] {
+            case .number("1"):
+                let legacy=try JSONDecoder().decode(LegacyConfiguration.self,from:data)
+                saved=PetSettings(placement:legacy.placement)
+            case .number("2"):
+                let config=try JSONDecoder().decode(Configuration.self,from:data)
+                saved=PetSettings(placement:config.placement,preferences:config.preferences)
+            default: throw SkinError("配置版本无效或尚不支持")
+            }
+            guard saved.isValid else { throw SkinError("配置中的位置或偏好无效") }
+            blocked=false; return .loaded(saved)
         } catch { blocked=true; return .protectedFile(message:"配置无法读取，原文件已保留：\(error.localizedDescription)") }
     }
-    public func save(_ placement: PlacementSnapshot) throws {
+    public func save(_ settings: PetSettings) throws {
         if !checked { _=load() }
         guard !blocked else { throw SkinError("原配置受保护，请先备份并重置") }
-        guard placement.isValid else { throw SkinError("位置无效，未保存") }
-        let data=try JSONEncoder().encode(Configuration(schemaVersion:1,placement:placement))
+        guard settings.isValid else { throw SkinError("位置或偏好无效，未保存") }
+        let data=try JSONEncoder().encode(Configuration(schemaVersion:2,placement:settings.placement,preferences:settings.preferences))
         guard data.count<=65536 else { throw SkinError("配置超过 64 KiB") }
         try FileManager.default.createDirectory(at:url.deletingLastPathComponent(),withIntermediateDirectories:true)
         try write(data,url)

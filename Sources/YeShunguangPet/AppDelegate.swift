@@ -28,7 +28,7 @@ import Darwin
     }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard let session,!session.requestExit() else { return .terminateNow }
-        let alert=NSAlert(); alert.messageText="位置未能保存"; alert.informativeText=session.persistenceError ?? "原配置保持不变。"
+        let alert=NSAlert(); alert.messageText="设置未能保存"; alert.informativeText=session.persistenceError ?? "原配置保持不变。"
         alert.addButton(withTitle:"继续退出"); alert.addButton(withTitle:"取消")
         return alert.runModal() == .alertFirstButtonReturn ? .terminateNow : .terminateCancel
     }

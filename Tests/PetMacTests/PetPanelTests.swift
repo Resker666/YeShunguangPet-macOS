@@ -19,5 +19,11 @@ import PetCore
         let bottom=try XCTUnwrap(bitmap.colorAt(x:1,y:30)?.usingColorSpace(.deviceRGB))
         XCTAssertGreaterThan(top.redComponent,0.9); XCTAssertGreaterThan(bottom.blueComponent,0.9)
         XCTAssertEqual(bitmap.colorAt(x:0,y:0)?.alphaComponent,0)
+        // Resize the existing frame without receiving a new animation image.
+        panel.setContentSize(CGSize(width:64,height:64)); view.setFrameSize(CGSize(width:64,height:64))
+        let resized=try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in:view.bounds))
+        view.cacheDisplay(in:view.bounds,to:resized)
+        XCTAssertGreaterThan(try XCTUnwrap(resized.colorAt(x:4,y:4)?.usingColorSpace(.deviceRGB)).redComponent,0.9)
+        XCTAssertGreaterThan(try XCTUnwrap(resized.colorAt(x:4,y:60)?.usingColorSpace(.deviceRGB)).blueComponent,0.9)
     }
 }

@@ -6,6 +6,7 @@ import PetCore
     let settings: SettingsStore
     let screens: () -> [ScreenArea]
     private var placement: PlacementSnapshot?
+    private(set) var preferences=PetPreferences()
     private var wantsVisible=true
     private(set) var persistenceError: String?
     private(set) var protectedSettings=false
@@ -41,12 +42,26 @@ import PetCore
     }
     func start() {
         switch settings.load() {
-        case .loaded(let saved): placement=saved
+        case .loaded(let saved): placement=saved.placement; preferences=saved.preferences
         case .missing: break
         case .protectedFile(let message): persistenceError=message; protectedSettings=true
         }
+        applyWindowPreferences()
         applyPlacement(WindowPlacement.restore(placement,size:panel.frame.size,screens:screens()))
         setVisible(true)
+    }
+    func setPreferences(_ value: PetPreferences) {
+        guard !gate.exiting,value.isValid,value != preferences else { return }
+        cancelInput()
+        preferences=value; applyWindowPreferences()
+        applyPlacement(WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()))
+        _=savePosition()
+    }
+    private func applyWindowPreferences() {
+        let size=CGSize(width:Double(skin.manifest.cellWidth)*preferences.scale,height:Double(skin.manifest.cellHeight)*preferences.scale)
+        panel.setFrame(CGRect(origin:panel.frame.origin,size:size),display:true)
+        view.setFrameSize(size); view.needsDisplay=true
+        panel.level=preferences.alwaysOnTop ? .floating : .normal
     }
     private func applyPlacement(_ value: PlacementSnapshot?) {
         guard let value else { return }
@@ -66,9 +81,8 @@ import PetCore
         else if wantsVisible && !gate.visible { setVisible(true) }
     }
     @discardableResult private func savePosition() -> Bool {
-        guard let current=WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()) else { return true }
-        placement=current
-        do { try settings.save(current); persistenceError=nil; onStatusChange?(); return true }
+        if let current=WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()) { placement=current }
+        do { try settings.save(PetSettings(placement:placement,preferences:preferences)); persistenceError=nil; onStatusChange?(); return true }
         catch { persistenceError=error.localizedDescription; onStatusChange?(); return false }
     }
     func retrySave() { _=savePosition() }

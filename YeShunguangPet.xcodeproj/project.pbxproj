@@ -992,6 +992,7 @@
 				<string>0498FF3C45A8A771845E4FE9</string>
 				<string>DC008FB9534995D2F77F7E22</string>
 				<string>A9C3FBAE9AFE8547CF97D249</string>
+				<string>5C60D23B19848E378F377E34</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1369,6 +1370,7 @@
 				<string>3C983DB38BCCEB97AE55AC14</string>
 				<string>2167DCB4EBA5A2BEF235669E</string>
 				<string>CC4327EA4545215F806DA596</string>
+				<string>9CC59D5634C4A79C9646C962</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1620,6 +1622,7 @@
 				<string>961AE2A2F42547CBAF60B238</string>
 				<string>FBDC4F23F93125BBEEAE800C</string>
 				<string>DC019946BD42A3CE78CC5501</string>
+				<string>3590A526F4554D0EC668B722</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -1711,6 +1714,31 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>DC019946BD42A3CE78CC5501</string>
+		</dict>
+		<key>3590A526F4554D0EC668B722</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/SettingsWindowController.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>5C60D23B19848E378F377E34</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>3590A526F4554D0EC668B722</string>
+		</dict>
+		<key>9CC59D5634C4A79C9646C962</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>3590A526F4554D0EC668B722</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

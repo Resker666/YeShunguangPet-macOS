@@ -1,0 +1,44 @@
+"""Exercise migration and scaled settings with the standalone ARM App."""
+from pathlib import Path
+import importlib.util
+import json
+import tempfile
+import unittest
+
+ROOT = Path(__file__).resolve().parents[2]
+SPEC = importlib.util.spec_from_file_location("pet_smoke", ROOT / "scripts/smoke-app.py")
+SMOKE = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(SMOKE)
+
+
+class StandaloneSettingsTests(unittest.TestCase):
+    def test_legacy_position_and_new_preferences_survive_real_restarts(self):
+        binary = ROOT / "dist/YeShunguangPet.app/Contents/MacOS/YeShunguangPet"
+        with tempfile.TemporaryDirectory(prefix="ysg settings ") as temporary:
+            work = Path(temporary)
+            settings = work / "settings.json"
+            # First run discovers the actual screen in this isolated config.
+            first = SMOKE.run_once(binary, work, 1)
+            config = json.loads(settings.read_text())
+            position = config["placement"]
+            position["x"] = position["visibleX"] + 24
+            position["y"] = position["visibleY"] + 24
+            settings.write_text(json.dumps({"schemaVersion": 1, "placement": position}))
+            SMOKE.run_once(binary, work, 2)
+            migrated = json.loads(settings.read_text())
+            self.assertEqual(migrated["schemaVersion"], 2)
+            self.assertEqual(migrated["preferences"], {"scale": 1, "alwaysOnTop": True})
+            self.assertEqual(migrated["placement"], position)
+            migrated["preferences"] = {"scale": 1.5, "alwaysOnTop": False}
+            settings.write_text(json.dumps(migrated))
+            for sequence in [3, 4]:
+                actual = SMOKE.run_once(binary, work, sequence)
+                self.assertEqual(actual["window"], {"width": 288, "height": 312})
+                saved = json.loads(settings.read_text())
+                self.assertEqual(saved["preferences"], {"scale": 1.5, "alwaysOnTop": False})
+                self.assertEqual(saved["placement"], position)
+            self.assertEqual(first["window"], {"width": 192, "height": 208})
+
+
+if __name__ == "__main__":
+    unittest.main()
