@@ -25,9 +25,24 @@ import PetCore
     private var dragOrigin=CGPoint.zero
     var onStatusChange: (() -> Void)?
     var isVisible: Bool { gate.visible }
+    private var gaze=MouseGaze()
+    private var nextGazeSample: Duration?
+    private var gazeSamples=0
+    private var menuOpen=false,settingsOpen=false
+    private let pointerPosition: () -> CGPoint
+    var gazeDirection: Int? { gaze.direction }
+    var supportsGaze: Bool { skin.manifest.lookDirections.count==16 }
+    private var canSampleGaze: Bool { gate.shouldRunFrames && preferences.lookAtMouse && supportsGaze && action == .idle && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
+    func setMenuOpen(_ open: Bool) {
+        guard !gate.exiting,menuOpen != open else { return }; menuOpen=open; cancelInput()
+    }
+    func setSettingsOpen(_ open: Bool) {
+        guard !gate.exiting,settingsOpen != open else { return }; settingsOpen=open; cancelInput()
+    }
     lazy var scheduler=FrameScheduler(now:now) { [weak self] in self?.tick() }
-    init(skin: LoadedSkin, defaultSkin: LoadedSkin? = nil, now: @escaping () -> Duration, settings: SettingsStore, screens: @escaping () -> [ScreenArea]) {
+    init(skin: LoadedSkin, defaultSkin: LoadedSkin? = nil, now: @escaping () -> Duration, settings: SettingsStore, screens: @escaping () -> [ScreenArea], pointerPosition: @escaping () -> CGPoint = { NSEvent.mouseLocation }) {
         self.settings=settings; self.screens=screens; self.startedAt=now()
+        self.pointerPosition=pointerPosition
         self.defaultSkin=defaultSkin ?? skin; library=SkinLibrary(directory:settings.url.deletingLastPathComponent().appendingPathComponent("Skins",isDirectory:true))
         self.skin=skin; self.now=now; atlas=SpriteAtlas(skin:skin)
         let size=CGSize(width:skin.manifest.cellWidth,height:skin.manifest.cellHeight)
@@ -88,6 +103,7 @@ import PetCore
         cancelInput()
         preferences=value; applyWindowPreferences()
         applyPlacement(WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()))
+        synchronize()
         _=savePosition()
     }
     private func applyWindowPreferences() {
@@ -126,6 +142,7 @@ import PetCore
     func requestExit() -> Bool { savePosition() }
     func play(_ requested: PetAction) {
         guard !gate.exiting else { return }
+        gaze.reset(); nextGazeSample=nil
         let next=skin.manifest.resolve(requested)
         action=next; playback.start(skin.manifest.animations[next]!); render(); reschedule()
     }
@@ -139,6 +156,9 @@ import PetCore
     @objc private func willSleep(_ notification: Notification) { setSleeping(true) }
     @objc private func didWake(_ notification: Notification) { setSleeping(false) }
     func cancelInput() {
+        let wasLooking=gaze.direction != nil
+        gaze.reset(); nextGazeSample=nil
+        if wasLooking && gate.shouldRunFrames { playback.resume(); render() }
         if interaction.cancel() { finishDrag(); play(.idle) }
         reschedule()
     }
@@ -169,31 +189,54 @@ import PetCore
         var sample=playback.sample()
         if sample.completed { action = .idle; playback.start(skin.manifest.animations[.idle]!); sample=playback.sample() }
         let animation=skin.manifest.animations[action]!
-        let location=FrameLocation(row:animation.row,column:animation.startColumn+sample.index)
+        let location=gaze.direction.map { skin.manifest.lookDirections[$0] } ?? FrameLocation(row:animation.row,column:animation.startColumn+sample.index)
         if location != frame {
             do { view.image=try atlas.frame(at:location); frame=location; frameUpdates += 1 }
             catch { setVisible(false) }
         }
     }
-    private func tick() {
+    func tick() {
         guard gate.shouldRunFrames else { return }
-        apply(interaction.expireClick()); render(); reschedule()
+        apply(interaction.expireClick()); render()
+        if updateGaze(allowSample:true) { render() }
+        reschedule()
+    }
+    @discardableResult private func updateGaze(allowSample: Bool) -> Bool {
+        let previous=gaze.direction
+        if !canSampleGaze {
+            gaze.reset(); nextGazeSample=nil
+            if previous != nil && gate.shouldRunFrames { playback.resume() }
+        } else {
+            let current=now()
+            if nextGazeSample==nil { nextGazeSample=current + .milliseconds(100) }
+            if allowSample,let deadline=nextGazeSample,current>=deadline {
+                gazeSamples += 1
+                _=gaze.sample(pointer:pointerPosition(),bounds:panel.frame,at:current)
+                nextGazeSample=current + .milliseconds(100)
+                if gaze.direction != nil { playback.pause() }
+                else if previous != nil { playback.resume() }
+            }
+        }
+        return previous != gaze.direction
     }
     func reschedule() {
-        guard gate.shouldRunFrames else { scheduler.cancel(); return }
-        var delay=playback.sample().untilNextFrame
+        guard gate.shouldRunFrames else { gaze.reset(); nextGazeSample=nil; scheduler.cancel(); return }
+        if updateGaze(allowSample:false) { render() }
+        var delay=gaze.direction==nil ? playback.sample().untilNextFrame : nil
         if let deadline=interaction.nextClickDeadline { let click=max(.zero,deadline-now()); delay=delay.map{min($0,click)} ?? click }
+        if let deadline=nextGazeSample { let look=max(.zero,deadline-now()); delay=delay.map{min($0,look)} ?? look }
         scheduler.schedule(after:delay)
     }
     func exportMetrics(to url: URL) throws {
         let duration=now()-startedAt
         let seconds=Double(duration.components.seconds)+Double(duration.components.attoseconds)/1e18
-        let data: [String:Any] = ["schemaVersion":1,"durationSeconds":seconds,"schedulerWakes":scheduler.wakeCount,"frameUpdates":frameUpdates,"visible":gate.visible,"action":action.rawValue,"skinID":skin.manifest.id,"window":["width":panel.frame.width,"height":panel.frame.height],"displays":screens().map { ["width":$0.visibleFrame.width,"height":$0.visibleFrame.height] },"backingScale":panel.backingScaleFactor]
+        var data: [String:Any] = ["schemaVersion":1,"durationSeconds":seconds,"schedulerWakes":scheduler.wakeCount,"frameUpdates":frameUpdates,"visible":gate.visible,"action":action.rawValue,"skinID":skin.manifest.id,"window":["width":panel.frame.width,"height":panel.frame.height],"displays":screens().map { ["width":$0.visibleFrame.width,"height":$0.visibleFrame.height] },"backingScale":panel.backingScaleFactor,"lookAtMouseEnabled":preferences.lookAtMouse,"gazeSamples":gazeSamples]
+        if let direction=gaze.direction { data["gazeDirection"]=direction }
         try JSONSerialization.data(withJSONObject:data,options:[.prettyPrinted,.sortedKeys]).write(to:url,options:.atomic)
     }
     func prepareToExit() {
         guard !gate.exiting else { return }
-        gate.exiting=true; interaction.cancel(); playback.pause(); scheduler.cancel()
+        gate.exiting=true; gaze.reset(); nextGazeSample=nil; interaction.cancel(); playback.pause(); scheduler.cancel()
         NSWorkspace.shared.notificationCenter.removeObserver(self)
         NotificationCenter.default.removeObserver(self)
         view.onDown=nil; view.onMove=nil; view.onUp=nil

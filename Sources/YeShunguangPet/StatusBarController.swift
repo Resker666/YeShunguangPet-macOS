@@ -41,7 +41,8 @@ import AppKit
     }
     @objc private func retry() { session?.retrySave(); refresh() }
     @objc private func reset() { session?.resetProtectedSettings(); refresh() }
-    func menuWillOpen(_ menu: NSMenu) { session?.cancelInput(); refresh() }
+    func menuWillOpen(_ menu: NSMenu) { session?.setMenuOpen(true); refresh() }
+    func menuDidClose(_ menu: NSMenu) { session?.setMenuOpen(false) }
     @objc private func toggle() { if let session { session.setVisible(!session.isVisible) }; refresh() }
     @objc private func recall() { session?.recall(); refresh() }
     @objc private func openSettings() {
@@ -50,5 +51,5 @@ import AppKit
         settingsController?.present()
     }
     @objc private func quit() { onQuit() }
-    func dispose() { settingsController?.close(); settingsController=nil; item.menu=nil; menu.delegate=nil; NSStatusBar.system.removeStatusItem(item) }
+    func dispose() { settingsController?.close(); settingsController=nil; session?.setMenuOpen(false); item.menu=nil; menu.delegate=nil; NSStatusBar.system.removeStatusItem(item) }
 }

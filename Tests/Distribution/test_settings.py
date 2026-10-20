@@ -54,18 +54,22 @@ class StandaloneSettingsTests(unittest.TestCase):
             position["x"] = position["visibleX"] + 24
             position["y"] = position["visibleY"] + 24
             settings.write_text(json.dumps({"schemaVersion": 1, "placement": position}))
-            SMOKE.run_once(binary, work, 2)
+            migrated_metrics = SMOKE.run_once(binary, work, 2)
             migrated = json.loads(settings.read_text())
-            self.assertEqual(migrated["schemaVersion"], 3)
-            self.assertEqual(migrated["preferences"], {"scale": 1, "alwaysOnTop": True})
+            self.assertEqual(migrated["schemaVersion"], 4)
+            self.assertEqual(migrated["preferences"], {"scale": 1, "alwaysOnTop": True, "lookAtMouse": True})
+            self.assertTrue(migrated_metrics["lookAtMouseEnabled"])
+            self.assertGreater(migrated_metrics["gazeSamples"], 0)
             self.assertEqual(migrated["placement"], position)
-            migrated["preferences"] = {"scale": 1.5, "alwaysOnTop": False}
+            migrated["preferences"] = {"scale": 1.5, "alwaysOnTop": False, "lookAtMouse": False}
             settings.write_text(json.dumps(migrated))
             for sequence in [3, 4]:
                 actual = SMOKE.run_once(binary, work, sequence)
                 self.assertEqual(actual["window"], {"width": 288, "height": 312})
                 saved = json.loads(settings.read_text())
-                self.assertEqual(saved["preferences"], {"scale": 1.5, "alwaysOnTop": False})
+                self.assertEqual(saved["preferences"], {"scale": 1.5, "alwaysOnTop": False, "lookAtMouse": False})
+                self.assertFalse(actual["lookAtMouseEnabled"])
+                self.assertEqual(actual["gazeSamples"], 0)
                 self.assertEqual(saved["placement"], position)
             self.assertEqual(first["window"], {"width": 192, "height": 208})
 

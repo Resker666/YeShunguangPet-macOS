@@ -253,6 +253,7 @@
 				<string>B372095EBC957E4F74A92018</string>
 				<string>C9DCCC1D19B5148E117E24EF</string>
 				<string>182AE2584AE10E6F3906F8EC</string>
+				<string>1C6DB998C403210D69D368C8</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -592,6 +593,7 @@
 				<string>B878315F95594E714A8B18A4</string>
 				<string>CBA457A47868CD4989C26A1E</string>
 				<string>3A27C78C79351C542ABA4AA5</string>
+				<string>F866D30E0F142C793404349F</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1374,6 +1376,7 @@
 				<string>CC4327EA4545215F806DA596</string>
 				<string>9CC59D5634C4A79C9646C962</string>
 				<string>B833555927DCABD10C40008C</string>
+				<string>F8B7D43C0DF8D595E8FBAC2D</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1629,6 +1632,9 @@
 				<string>D34D79817B784CBAE8D5D41A</string>
 				<string>2946EE8314DCC0C7E4C4A2E3</string>
 				<string>C45EDD08D53E260B7F9AECF7</string>
+				<string>33F13C4F698D2D71D055CB5F</string>
+				<string>F88DF69F85BC6BAAA61736EA</string>
+				<string>798304FD51032EE0946D1964</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -1799,6 +1805,60 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>C45EDD08D53E260B7F9AECF7</string>
+		</dict>
+		<key>33F13C4F698D2D71D055CB5F</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/PetCore/Runtime/MouseGaze.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>1C6DB998C403210D69D368C8</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>33F13C4F698D2D71D055CB5F</string>
+		</dict>
+		<key>F88DF69F85BC6BAAA61736EA</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetCoreTests/MouseGazeTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>F866D30E0F142C793404349F</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>F88DF69F85BC6BAAA61736EA</string>
+		</dict>
+		<key>798304FD51032EE0946D1964</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/MouseGazeSessionTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>F8B7D43C0DF8D595E8FBAC2D</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>798304FD51032EE0946D1964</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

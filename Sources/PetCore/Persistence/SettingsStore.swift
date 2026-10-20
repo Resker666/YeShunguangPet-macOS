@@ -4,7 +4,8 @@ import Darwin
 public struct PetPreferences: Codable, Equatable {
     public var scale: Double
     public var alwaysOnTop: Bool
-    public init(scale: Double = 1, alwaysOnTop: Bool = true) { self.scale=scale; self.alwaysOnTop=alwaysOnTop }
+    public var lookAtMouse: Bool
+    public init(scale: Double = 1, alwaysOnTop: Bool = true, lookAtMouse: Bool = true) { self.scale=scale; self.alwaysOnTop=alwaysOnTop; self.lookAtMouse=lookAtMouse }
     public var isValid: Bool { scale.isFinite && (0.5...2).contains(scale) }
 }
 public struct PetSettings: Equatable {
@@ -17,6 +18,8 @@ public struct PetSettings: Equatable {
 public enum SettingsLoadResult { case missing, loaded(PetSettings), protectedFile(message: String) }
 public final class SettingsStore {
     private struct LegacyConfiguration: Decodable { let placement: PlacementSnapshot }
+    private struct OldPreferences: Decodable { let scale: Double; let alwaysOnTop: Bool }
+    private struct OldConfiguration: Decodable { let schemaVersion: Int; let placement: PlacementSnapshot?; let preferences: OldPreferences; let selectedSkinID: String? }
     private struct Configuration: Codable { let schemaVersion: Int; let placement: PlacementSnapshot?; let preferences: PetPreferences; let selectedSkinID: String? }
     public let url: URL
     private var checked=false, blocked=false
@@ -35,10 +38,10 @@ public final class SettingsStore {
             case .number("1"):
                 let legacy=try JSONDecoder().decode(LegacyConfiguration.self,from:data)
                 saved=PetSettings(placement:legacy.placement)
-            case .number("2"):
-                let config=try JSONDecoder().decode(Configuration.self,from:data)
-                saved=PetSettings(placement:config.placement,preferences:config.preferences)
-            case .number("3"):
+            case .number("2"),.number("3"):
+                let config=try JSONDecoder().decode(OldConfiguration.self,from:data)
+                saved=PetSettings(placement:config.placement,preferences:.init(scale:config.preferences.scale,alwaysOnTop:config.preferences.alwaysOnTop),selectedSkinID:config.schemaVersion==3 ? config.selectedSkinID : nil)
+            case .number("4"):
                 let config=try JSONDecoder().decode(Configuration.self,from:data)
                 saved=PetSettings(placement:config.placement,preferences:config.preferences,selectedSkinID:config.selectedSkinID)
             default: throw SkinError("配置版本无效或尚不支持")
@@ -51,7 +54,7 @@ public final class SettingsStore {
         if !checked { _=load() }
         guard !blocked else { throw SkinError("原配置受保护，请先备份并重置") }
         guard settings.isValid else { throw SkinError("位置或偏好无效，未保存") }
-        let data=try JSONEncoder().encode(Configuration(schemaVersion:3,placement:settings.placement,preferences:settings.preferences,selectedSkinID:settings.selectedSkinID))
+        let data=try JSONEncoder().encode(Configuration(schemaVersion:4,placement:settings.placement,preferences:settings.preferences,selectedSkinID:settings.selectedSkinID))
         guard data.count<=65536 else { throw SkinError("配置超过 64 KiB") }
         try FileManager.default.createDirectory(at:url.deletingLastPathComponent(),withIntermediateDirectories:true)
         try write(data,url)

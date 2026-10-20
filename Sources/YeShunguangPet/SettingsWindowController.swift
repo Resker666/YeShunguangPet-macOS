@@ -16,6 +16,7 @@ import UniformTypeIdentifiers
     @Published private(set) var libraryEntries=[SkinLibraryEntry]()
     @Published private(set) var libraryError: String?
     @Published private(set) var isTerminating=false
+    @Published private(set) var gazeAvailable=false
     private(set) var hasPendingMutation=false
     private(set) var terminationCleanupError: String?
     private let installPackage: @Sendable (SkinLibrary,SkinPackage) throws -> ImportedSkin
@@ -141,6 +142,7 @@ import UniformTypeIdentifiers
         guard let session else { return }
         preferences=session.preferences; saveError=session.persistenceError
         skinName=session.skin.manifest.name; skinWarning=session.skinWarning
+        gazeAvailable=session.supportsGaze
         let idle=session.skin.manifest.animations[.idle]!
         currentImage=try? session.atlas.frame(at:.init(row:idle.row,column:idle.startColumn))
     }
@@ -151,6 +153,10 @@ import UniformTypeIdentifiers
     func setAlwaysOnTop(_ enabled: Bool) {
         guard !isTerminating else { return }
         var value=preferences; value.alwaysOnTop=enabled; session?.setPreferences(value); refresh()
+    }
+    func setLookAtMouse(_ enabled: Bool) {
+        guard !isTerminating else { return }
+        var value=preferences; value.lookAtMouse=enabled; session?.setPreferences(value); refresh()
     }
 }
 
@@ -168,7 +174,7 @@ import UniformTypeIdentifiers
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
     func present() {
-        session?.cancelInput(); model.refresh()
+        session?.cancelInput(); session?.setSettingsOpen(true); model.refresh()
         showWindow(nil); window?.deminiaturize(nil); window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps:true)
         Task { [model] in await model.reloadLibrary() }
@@ -191,7 +197,7 @@ import UniformTypeIdentifiers
             }
         }
     }
-    func windowWillClose(_ notification: Notification) { filePanel?.cancel(nil); model.cancelSkinSelection() }
+    func windowWillClose(_ notification: Notification) { filePanel?.cancel(nil); model.cancelSkinSelection(); session?.setSettingsOpen(false) }
     func beginTermination() { filePanel?.cancel(nil); model.beginTermination() }
 }
 
@@ -277,6 +283,10 @@ private struct PetSettingsView: View {
                 .accessibilityIdentifier("pet-scale")
                 Toggle("保持置顶",isOn:Binding(get:{model.preferences.alwaysOnTop},set:{model.setAlwaysOnTop($0)}))
                     .accessibilityIdentifier("pet-always-on-top")
+                Toggle("注视鼠标",isOn:Binding(get:{model.preferences.lookAtMouse},set:{model.setLookAtMouse($0)}))
+                    .accessibilityIdentifier("pet-look-at-mouse")
+                Text(model.gazeAvailable ? "关闭设置窗口后，鼠标靠近时会短暂注视。菜单、点击和拖动期间暂停。" : "此皮肤未提供注视帧；偏好会保留，切换到支持的皮肤后生效。")
+                    .font(.caption).foregroundStyle(.secondary)
                 Text("修改立即生效并自动保存。关闭置顶后，角色可能被其他窗口遮挡，可从菜单栏召回。")
                     .font(.caption).foregroundStyle(.secondary)
             }

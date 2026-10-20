@@ -7,6 +7,7 @@ public final class PetInteraction {
     private var origin: CGPoint?
     private var doublePress=false, dragging=false
     public private(set) var nextClickDeadline: Duration?
+    public var isPointerBusy: Bool { origin != nil || nextClickDeadline != nil }
     public init(doubleClickInterval: Duration, now: @escaping () -> Duration) { interval=doubleClickInterval; self.now=now }
     public func pointerDown(at point: CGPoint, clickCount: Int) { cancel(); origin=point; doublePress=clickCount>=2 }
     public func pointerMoved(to point: CGPoint) -> [InteractionEffect] {
