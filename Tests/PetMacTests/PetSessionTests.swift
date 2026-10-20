@@ -60,6 +60,37 @@ import PetCore
 }
 
 extension PetSessionTests {
+    func testInterruptedDragFinalizesPositionAndReturnsToIdle() throws {
+        for interruption in ["menu","hide","sleep","display"] {
+            let directory=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at:directory) }
+            let manifest=try SkinFixtures.writePackage(in:directory)
+            let animation: [String:Any] = ["row":0,"durationsMs":[300,200],"loop":true]
+            try SkinFixtures.manifest(["animations":["idle":animation,"runningRight":animation]]).write(to:manifest)
+            let url=directory.appendingPathComponent("settings.json")
+            var now=Duration.zero
+            let session=PetSession(skin:try SkinLoader.load(manifestURL:manifest),now:{now},settings:SettingsStore(url:url),screens:{[ScreenArea(id:"test",visibleFrame:CGRect(x:0,y:0,width:1000,height:700),isPrimary:true)]})
+            defer { session.prepareToExit() }
+            session.start()
+            session.view.onDown?(.zero,1)
+            session.view.onMove?(CGPoint(x:1000,y:0))
+            XCTAssertEqual(session.action,.runningRight)
+            switch interruption {
+            case "hide": session.setVisible(false); session.setVisible(true)
+            case "sleep": session.setSleeping(true); session.setSleeping(false)
+            case "display": session.screensChanged()
+            default: session.cancelInput()
+            }
+            session.view.onUp?(CGPoint(x:1000,y:0))
+            now = .seconds(1)
+            XCTAssertTrue(session.interaction.expireClick().isEmpty)
+            XCTAssertEqual(session.action,.idle,interruption)
+            XCTAssertEqual(session.panel.frame.maxX,1000,accuracy:0.001,interruption)
+            guard case .loaded(let saved)=SettingsStore(url:url).load() else { XCTFail("interrupted drag not saved: \(interruption)"); continue }
+            XCTAssertEqual(saved.origin,session.panel.frame.origin,interruption)
+            XCTAssertEqual(session.scheduler.pendingCount,1,interruption)
+        }
+    }
     func testMetricsExportAndFailureDoNotPreventExit() throws {
         let directory=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at:directory) }

@@ -91,7 +91,10 @@ import PetCore
     func setSleeping(_ sleeping: Bool) { guard !gate.exiting else { return }; cancelInput(); gate.sleeping=sleeping; if !sleeping { screensChanged() }; synchronize() }
     @objc private func willSleep(_ notification: Notification) { setSleeping(true) }
     @objc private func didWake(_ notification: Notification) { setSleeping(false) }
-    func cancelInput() { interaction.cancel(); reschedule() }
+    func cancelInput() {
+        if interaction.cancel() { finishDrag(); play(.idle) }
+        reschedule()
+    }
     private func synchronize() {
         if gate.shouldRunFrames { playback.resume(); render() } else { playback.pause() }
         reschedule()

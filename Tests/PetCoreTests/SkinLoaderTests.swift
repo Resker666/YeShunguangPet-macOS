@@ -38,4 +38,22 @@ final class SkinLoaderTests: XCTestCase {
         XCTAssertThrowsError(try SkinLoader.readLimited(maximumBytes:10) { _ in chunks.isEmpty ? Data() : chunks.removeFirst() })
         XCTAssertThrowsError(try SkinLoader.readFile(at:directory,maximumBytes:100))
     }
+    func testRejectsTruncationInsideLegacyImageDataAndMissingEndChunk() throws {
+        let originalURL=try XCTUnwrap(Bundle(for:Self.self).url(forResource:"pet",withExtension:"json",subdirectory:"Pets/YeShunguang"))
+        let original=try Data(contentsOf:originalURL.deletingLastPathComponent().appendingPathComponent("spritesheet.png"))
+        let manifest=directory.appendingPathComponent("pet.json")
+        try Data(contentsOf:originalURL).write(to:manifest)
+        for length in [original.count/8,original.count/4,original.count/2,original.count-12] {
+            try original.prefix(length).write(to:directory.appendingPathComponent("spritesheet.png"))
+            XCTAssertThrowsError(try SkinLoader.load(manifestURL:manifest),"accepted truncated PNG of \(length) bytes")
+        }
+    }
+    func testRejectsDamagedChunkChecksum() throws {
+        let manifest=try SkinFixtures.writePackage(in:directory)
+        let image=directory.appendingPathComponent("spritesheet.png")
+        var damaged=try Data(contentsOf:image)
+        damaged[damaged.count-1] ^= 1
+        try damaged.write(to:image)
+        XCTAssertThrowsError(try SkinLoader.load(manifestURL:manifest))
+    }
 }

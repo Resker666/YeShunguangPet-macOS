@@ -2,6 +2,7 @@ import Foundation
 import CoreGraphics
 import ImageIO
 import Darwin
+import zlib
 
 public struct LoadedSkin {
     public let manifest: PetManifest
@@ -43,6 +44,33 @@ public enum SkinLoader {
         let fd=try directoryHandle(url.deletingLastPathComponent()); defer { close(fd) }
         return try read(name:url.lastPathComponent,directoryFD:fd,maximumBytes:maximumBytes)
     }
+    private static func validatePNGChunks(_ data: Data) throws {
+        // ImageIO may return a partial image, even with a "complete" status.
+        // Check the bounded byte stream before asking it to decode pixels.
+        try data.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) in
+            func integer(_ offset: Int) -> UInt32 {
+                bytes[offset..<offset+4].reduce(UInt32(0)) { ($0<<8)|UInt32($1) }
+            }
+            var offset=8, sawImageData=false
+            while offset<data.count {
+                guard data.count-offset>=12 else { throw SkinError("PNG 数据块不完整") }
+                let length=Int(integer(offset)), type=integer(offset+4)
+                guard length<=data.count-offset-12 else { throw SkinError("PNG 数据块被截断") }
+                let end=offset+12+length
+                let pointer=bytes.bindMemory(to:Bytef.self).baseAddress!.advanced(by:offset+4)
+                let checksum=UInt32(crc32(0,pointer,uInt(length+4)))
+                guard checksum==integer(end-4) else { throw SkinError("PNG 数据块校验失败") }
+                if type==0x49484452 && offset != 8 { throw SkinError("PNG 图像头重复") } // IHDR
+                if type==0x49444154 { sawImageData=true } // IDAT
+                if type==0x49454E44 { // IEND
+                    guard length==0, sawImageData, end==data.count else { throw SkinError("PNG 结束块无效") }
+                    return
+                }
+                offset=end
+            }
+            throw SkinError("PNG 缺少结束块")
+        }
+    }
     public static func load(manifestURL: URL) throws -> LoadedSkin {
         guard manifestURL.isFileURL, manifestURL.lastPathComponent.lowercased()=="pet.json" else { throw SkinError("请选择本地皮肤目录中的 pet.json") }
         let directory=manifestURL.deletingLastPathComponent()
@@ -55,6 +83,7 @@ public enum SkinLoader {
         func integer(_ offset: Int) -> Int { bytes[offset..<offset+4].reduce(0) { ($0<<8)|Int($1) } }
         let w=manifest.cellWidth*manifest.columns, h=manifest.cellHeight*manifest.rows
         guard integer(16)==w,integer(20)==h else { throw SkinError("PNG 实际尺寸与皮肤清单不一致") }
+        try validatePNGChunks(png)
         guard let source=CGImageSourceCreateWithData(png as CFData,nil),
               let image=CGImageSourceCreateImageAtIndex(source,0,[kCGImageSourceShouldCacheImmediately:true] as CFDictionary), image.width==w,image.height==h else { throw SkinError("PNG 无法完整解码") }
         return LoadedSkin(manifest:manifest,spriteSheet:image,directory:directory.resolvingSymlinksInPath())

@@ -26,7 +26,11 @@ public final class PetInteraction {
         guard let deadline=nextClickDeadline, now()>=deadline else { return [] }
         nextClickDeadline=nil; return [.play(.waving)]
     }
-    public func cancel() { origin=nil; dragging=false; doublePress=false; nextClickDeadline=nil }
+    @discardableResult public func cancel() -> Bool {
+        let interruptedDrag=dragging
+        origin=nil; dragging=false; doublePress=false; nextClickDeadline=nil
+        return interruptedDrag
+    }
 }
 public extension PetManifest {
     func resolve(_ requested: PetAction) -> PetAction {
