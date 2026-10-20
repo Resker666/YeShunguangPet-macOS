@@ -164,7 +164,7 @@ func testLegacySkinDimensionsAndFirstCrop() throws {
 - 产生 `SpritePlayback.init(now: @escaping () -> Duration)`、`mutating start(_ animation: AnimationDefinition)`、`mutating pause()`、`mutating resume()`、`sample() -> PlaybackSample`。暂停或结束时 next=nil，不要求定时器继续轮询。
 - 时钟返回从固定起点流逝的 Duration，保留整数时间精度；生产使用 ContinuousClock，测试用局部变量推进。
 
-- [ ] **Step 1: 写不等长帧和暂停测试。**
+- [x] **Step 1: 写不等长帧和暂停测试。**
 
 ```swift
 func testUnequalFrameBoundaryAndLoop() {
@@ -182,13 +182,13 @@ func testUnequalFrameBoundaryAndLoop() {
 
 另测 pause 后推进一小时位置不变、next=nil，resume 后从剩余期限续播；不以真实 sleep 等待来测试时间。
 
-- [ ] **Step 2: 验证 RED。** `bash scripts/test.sh -only-testing:PetCoreTests/SpritePlaybackTests`，预期产品类型缺失或边界断言失败。
+- [x] **Step 2: 验证 RED。** `bash scripts/test.sh -only-testing:PetCoreTests/SpritePlaybackTests`，预期产品类型缺失或边界断言失败。
 
-- [ ] **Step 3: 实现累计期限。** 将各帧毫秒累计为 Duration；循环取模、单次结束停在最后一帧，精确命中某帧结束时进入下一帧。pause/resume 可重复调用，不重置已保存进度；长延迟直接定位，不逐帧推进。
+- [x] **Step 3: 实现累计期限。** 将各帧毫秒累计为 Duration；循环取模、单次结束停在最后一帧，精确命中某帧结束时进入下一帧。pause/resume 可重复调用，不重置已保存进度；长延迟直接定位，不逐帧推进。
 
-- [ ] **Step 4: 验证 GREEN。** 补齐空启动前快照、一次动作完成、同动作重新 start、重复 pause/resume、长延迟和负时间输入按零处理。运行 `bash scripts/test.sh`。
+- [x] **Step 4: 验证 GREEN。** 补齐空启动前快照、一次动作完成、同动作重新 start、重复 pause/resume、长延迟和负时间输入按零处理。运行 `bash scripts/test.sh`。
 
-- [ ] **Step 5: 本地提交。** 提交 `feat: schedule sprite playback from monotonic frame deadlines`。
+- [x] **Step 5: 本地提交。** 提交 `feat: schedule sprite playback from monotonic frame deadlines`。
 
 ### Task 4: 首个可运行透明桌宠、输入和生命周期
 
@@ -203,7 +203,7 @@ func testUnequalFrameBoundaryAndLoop() {
 - 产生 `PetSession.init(skin: LoadedSkin, now: @escaping () -> Duration)`、`start()`、`setVisible(_:)`、`play(_:)`、`prepareToExit()`。此阶段窗口暂放主屏右下角，位置持久化由任务 5 接入。
 - 产生 `LaunchOptions.parse(_ arguments: [String]) throws -> LaunchOptions`，只接受可选 `--skin /absolute/pet.json`，重复/缺值/相对路径/未知参数显示明确错误，不静默忽略。
 
-- [ ] **Step 1: 写输入和门控 RED 测试。**
+- [x] **Step 1: 写输入和门控 RED 测试。**
 
 ```swift
 func testSecondPressBecomesDragAndNeverClicks() {
@@ -223,15 +223,15 @@ func testSecondPressBecomesDragAndNeverClicks() {
 
 InteractionEffect 和 PlaybackSample 的测试所需值比较实现 Equatable。另测试恰好 4 点不拖动、超过 4 点才拖动、正常单/双击、cancel 后 expireClick 无效、缺失动作回退，以及 hidden→sleep→wake 的 shouldRunFrames 始终为 false。
 
-- [ ] **Step 2: 验证 RED。** 运行 `bash scripts/test.sh -only-testing:PetCoreTests/PetInteractionTests -only-testing:PetCoreTests/RuntimeGateTests`；预期新类型缺失。
+- [x] **Step 2: 验证 RED。** 运行 `bash scripts/test.sh -only-testing:PetCoreTests/PetInteractionTests -only-testing:PetCoreTests/RuntimeGateTests`；预期新类型缺失。
 
-- [ ] **Step 3: 实现纯输入状态和单一原生调度。** 完成上述接口。FrameScheduler 使用 NSRunLoop common modes 的单次 Timer，以单调时间复查剩余期限；安排、取消时递增代次，忽略旧回调。Session 的一次调度取帧更新与待判定单击的最早期限，不创建另一条固定频率循环。
+- [x] **Step 3: 实现纯输入状态和单一原生调度。** 完成上述接口。FrameScheduler 使用 NSRunLoop common modes 的单次 Timer，以单调时间复查剩余期限；安排、取消时递增代次，忽略旧回调。Session 的一次调度取帧更新与待判定单击的最早期限，不创建另一条固定频率循环。
 
-- [ ] **Step 4: 组合 AppKit 应用。** PetPanel 不成为 key/main；PetView 原生绘制并转发全局逻辑点鼠标坐标，拖动使用偏移。AppDelegate 进入 accessory 模式；StatusBarController 实现显示/隐藏、召回（本阶段回初始位置）、退出和加载错误。按设计配置窗口，菜单打开、隐藏、召回、睡眠、中断取消输入；系统睡眠及屏幕唤醒事件只更新 gate 后重新计算调度。窗口错误使用本地可读状态；不得无声退回有效默认皮肤。Info.plist 不含个人 Team ID、录屏/麦克风/辅助功能权限键。实现 build-app.sh：固定项目、scheme、Release 和 arm64，复制构建产品到 dist/，依次对 PetCore.framework 和 App 作 ad-hoc 签名，命令失败立即非零退出。
+- [x] **Step 4: 组合 AppKit 应用。** PetPanel 不成为 key/main；PetView 原生绘制并转发全局逻辑点鼠标坐标，拖动使用偏移。AppDelegate 进入 accessory 模式；StatusBarController 实现显示/隐藏、召回（本阶段回初始位置）、退出和加载错误。按设计配置窗口，菜单打开、隐藏、召回、睡眠、中断取消输入；系统睡眠及屏幕唤醒事件只更新 gate 后重新计算调度。窗口错误使用本地可读状态；不得无声退回有效默认皮肤。Info.plist 不含个人 Team ID、录屏/麦克风/辅助功能权限键。实现 build-app.sh：固定项目、scheme、Release 和 arm64，复制构建产品到 dist/，依次对 PetCore.framework 和 App 作 ad-hoc 签名，命令失败立即非零退出。
 
-- [ ] **Step 5: 验证 GREEN 与原生可运行链路。** PetMacTests 在主线程检查 panel 不能 key/main、透明和实际 cell 尺寸、夹具绘制上下方向、menu 文案及加载失败无 panel、重复 schedule/cancel 只有一个有效回调、隐藏后唤醒 pendingCount=0、显示后恢复不积压。`LaunchOptionsTests.testRejectsMissingRepeatedRelativeAndUnknownArguments` 分别断言参数错误，`testAcceptsAbsoluteSkinPath` 断言准确 URL。使用临时自建 view、运行循环及有超时的 XCTest expectation，不截取用户桌面，不以固定 sleep 猜测回调已执行。运行 `bash scripts/test.sh`、`bash scripts/build-app.sh` 后打开本地 App；用真实鼠标确认旧皮肤动画、拖动、单/双击、菜单隐藏/显示/退出。在其他应用输入时确认显示与拖动不抢键盘，分别记录 Spaces/全屏的已观察结果；未能执行的场景列为未测。
+- [ ] **Step 5: 验证 GREEN 与原生可运行链路。**（自动部分完成；真实桌面操作因 CUA 超时待用户体验。） PetMacTests 在主线程检查 panel 不能 key/main、透明和实际 cell 尺寸、夹具绘制上下方向、menu 文案及加载失败无 panel、重复 schedule/cancel 只有一个有效回调、隐藏后唤醒 pendingCount=0、显示后恢复不积压。`LaunchOptionsTests.testRejectsMissingRepeatedRelativeAndUnknownArguments` 分别断言参数错误，`testAcceptsAbsoluteSkinPath` 断言准确 URL。使用临时自建 view、运行循环及有超时的 XCTest expectation，不截取用户桌面，不以固定 sleep 猜测回调已执行。运行 `bash scripts/test.sh`、`bash scripts/build-app.sh` 后打开本地 App；用真实鼠标确认旧皮肤动画、拖动、单/双击、菜单隐藏/显示/退出。在其他应用输入时确认显示与拖动不抢键盘，分别记录 Spaces/全屏的已观察结果；未能执行的场景列为未测。
 
-- [ ] **Step 6: 本地提交。** 提交 `feat: run an interactive transparent AppKit pet with menu bar controls`，记录当时实际构建与体验结果，不把属性断言写作系统场景通过。
+- [x] **Step 6: 本地提交。** 提交 `feat: run an interactive transparent AppKit pet with menu bar controls`，记录当时实际构建与体验结果，不把属性断言写作系统场景通过。
 
 ### Task 5: 可靠位置保存、召回与坏配置保护
 
@@ -244,7 +244,7 @@ InteractionEffect 和 PlaybackSample 的测试所需值比较实现 Equatable。
 - Session 增加注入参数 `settings: SettingsStore`、`screens: () -> [ScreenArea]`，以及 `recall()`、`screensChanged()`、`retrySave()`、`resetProtectedSettings()`、`requestExit() -> Bool`（保存成功或无修改时可退出）；保存失败由菜单反馈，用户选继续退出才走 prepareToExit。
 - ScreenProvider 优先用显示器 UUID，无法取得时使用带前缀的显示 ID；以 NSScreen.screens 的首屏为 primary，返回 visibleFrame 的逻辑点坐标。
 
-- [ ] **Step 1: 写位置和坏配置 RED 测试。**
+- [x] **Step 1: 写位置和坏配置 RED 测试。**
 
 ```swift
 func testRecallUsesVisibleFrameAndTwentyFourPointMargin() {
@@ -264,15 +264,15 @@ func testCorruptSettingsRemainByteIdenticalUntilExplicitReset() throws {
 
 settingsURL 和 validPlacement 在 setUp 中由本测试临时目录和已定义 PlacementSnapshot 建立。另测未知版本同样受保护，不因新实例自动覆盖。
 
-- [ ] **Step 2: 验证 RED。** `bash scripts/test.sh -only-testing:PetCoreTests/WindowPlacementTests -only-testing:PetCoreTests/SettingsStoreTests`，预期新接口缺失。
+- [x] **Step 2: 验证 RED。** `bash scripts/test.sh -only-testing:PetCoreTests/WindowPlacementTests -only-testing:PetCoreTests/SettingsStoreTests`，预期新接口缺失。
 
-- [ ] **Step 3: 实现几何与原子存储。** 按设计恢复、限制、映射和主屏回退；空屏幕返回 nil，屏幕小于角色仍保留最大可见区。SettingsStore 拒绝 >64 KiB、未知版本、无效数字与区域，异常原文件不改写；同目录临时文件完整写入后原子替换，失败清理临时文件并保留旧数据。显式 reset 先以唯一文件名备份原字节，备份失败则不解除保护；注入内部写入闭包确定性模拟磁盘失败，不依赖 chmod 或当前用户权限。
+- [x] **Step 3: 实现几何与原子存储。** 按设计恢复、限制、映射和主屏回退；空屏幕返回 nil，屏幕小于角色仍保留最大可见区。SettingsStore 拒绝 >64 KiB、未知版本、无效数字与区域，异常原文件不改写；同目录临时文件完整写入后原子替换，失败清理临时文件并保留旧数据。显式 reset 先以唯一文件名备份原字节，备份失败则不解除保护；注入内部写入闭包确定性模拟磁盘失败，不依赖 chmod 或当前用户权限。
 
-- [ ] **Step 4: 接入实际位置与错误反馈。** 拖动结束、召回、屏幕变化修正、正常退出时保存；移动过程中不写盘。隐藏状态下屏幕变化只调整待恢复位置，不显示窗口。损坏配置显示可见恢复说明和“备份并重置”操作；保存失败显示“重试保存”，退出失败允许“继续退出/取消”，不循环弹窗。监听 NSApplication 屏幕参数变化与窗口切屏，避免位置修正引发重复保存递归。
+- [x] **Step 4: 接入实际位置与错误反馈。** 拖动结束、召回、屏幕变化修正、正常退出时保存；移动过程中不写盘。隐藏状态下屏幕变化只调整待恢复位置，不显示窗口。损坏配置显示可见恢复说明和“备份并重置”操作；保存失败显示“重试保存”，退出失败允许“继续退出/取消”，不循环弹窗。监听 NSApplication 屏幕参数变化与窗口切屏，避免位置修正引发重复保存递归。
 
-- [ ] **Step 5: 验证 GREEN。** 加入负坐标屏、Dock 改变、屏幕移除、屏幕重排、零可移动范围、oversize、无屏幕、文件重开、64 KiB/超一字节、写失败保旧字节/临时文件清理/重试、reset 备份失败保护保持等测试。PetSessionTests 验证 drag/recall/exit 不覆盖受保护文件，隐藏时 screensChanged 不显示，save 失败仍可明确退出。运行 `bash scripts/test.sh`；实际拖动后完全退出并重开检查恢复，再点召回检查可见位置。外屏拔插与真实分辨率切换仅在可执行时验证，否则列未测。
+- [x] **Step 5: 验证 GREEN。** 加入负坐标屏、Dock 改变、屏幕移除、屏幕重排、零可移动范围、oversize、无屏幕、文件重开、64 KiB/超一字节、写失败保旧字节/临时文件清理/重试、reset 备份失败保护保持等测试。PetSessionTests 验证 drag/recall/exit 不覆盖受保护文件，隐藏时 screensChanged 不显示，save 失败仍可明确退出。运行 `bash scripts/test.sh`；实际拖动后完全退出并重开检查恢复，再点召回检查可见位置。外屏拔插与真实分辨率切换仅在可执行时验证，否则列未测。
 
-- [ ] **Step 6: 本地提交。** 提交 `feat: persist pet placement and recover safely across display changes`。
+- [x] **Step 6: 本地提交。** 提交 `feat: persist pet placement and recover safely across display changes`。
 
 ### Task 6: arm64 本地交付与证据记录
 
@@ -302,6 +302,6 @@ settingsURL 和 validPlacement 在 setUp 中由本测试临时目录和已定义
 
 ## Plan Self-Review / 执行状态
 
-本计划只描述未来动作，所有任务均未执行。任务 1–2 对应设计皮肤合同和素材边界，任务 3–4 对应动画、窗口、输入与生命周期，任务 5 对应位置与错误恢复，任务 6 对应本机验证和交付；五项 Review Focus 分别有所属用例。
+用户已批准计划并选择本会话直接实施。任务 1–5 的实现与自动化检查已完成；真实桌面输入、焦点和系统场景待体验，具体限制见 validation.md。任务 6 正在进行本机采样和最终交付。任务 1–2 对应设计皮肤合同和素材边界，任务 3–4 对应动画、窗口、输入与生命周期，任务 5 对应位置与错误恢复，任务 6 对应本机验证和交付；五项 Review Focus 分别有所属用例。
 
 计划审阅通过后使用用户选择的执行方式。建议本会话直接实施：组件接口前后依赖明显，首版只有一个客户端；实施过程中保留逐任务验证与本地提交，最后进行独立评审。若用户选择分任务子代理，则按 subagent-driven-development 流程执行，并保留相同的系统实测门槛。上述选择均不授予推送或发布权限。

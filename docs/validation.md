@@ -1,0 +1,53 @@
+# 本地验证记录
+
+日期：2026-10-20，Asia/Shanghai。目标：首个本地开发预览版；用户尚未验收。Windows 版测试不计入 Mac 结果。
+
+## 环境与构建来源
+
+- Mac mini M4、16 GB、arm64；macOS 27.0（26A428）。
+- Xcode 27.0（27A266a）、Swift 6.4、macOS SDK 27.0。
+- macOS 部署目标 15.0；仅在实际 27.0 环境验证。
+- 源码提交与最终包来源分别记录在 Git 历史和 App 的 `Contents/Resources/build-info.json`。
+- `.build/` 保存本机日志与采样数据，未加入 Git；dist/ 保存本机产物，不公开上传。
+
+## 已执行
+
+| 检查 | 真实结果与范围 |
+| --- | --- |
+| XCTest | 27 个 core + 9 个 AppKit 测试，共 36 个，0 失败；TEST SUCCEEDED，退出0 |
+| Release 构建 | xcodebuild 显示 BUILD SUCCEEDED，退出 0 |
+| 真实叶瞬光加载与裁帧 | 原 JSON/PNG 哈希一致；1536×2288；裁帧192×208；方向夹具验证上下、列与 alpha |
+| 帧时钟 | 不等长帧、精确边界、循环、单次结束、长延迟、暂停恢复通过 |
+| 输入与生命周期 | 单/双击/拖动互斥、取消待判定点击、隐藏后睡眠/唤醒不恢复调度通过自动化 |
+| 位置与配置 | 重开恢复、负坐标、显示区域变化、屏幕移除、越界限制、损坏文件保护、写入失败通过隔离测试 |
+| 原生绘制与菜单 | 自建 NSPanel/View 实际绘制方向与透明；菜单文案、错误禁用状态、调度取消通过 |
+| 独立 App 启动与退出 | smoke-app.py 等待运行就绪（最多15秒），随后保持运行2秒；SIGTERM 走正常退出路径，退出0、配置与指标落到临时目录 |
+| 签名和资源 | 本地 ad-hoc codesign 验证通过；资源原哈希保持一致 |
+| 打包 | ditto ZIP；随包 SHA-256 校验通过；最终包继续复核 |
+
+## 明确未验证
+
+真实鼠标拖动与单/双击、菜单栏点击退出、其他应用持续输入时的焦点、Spaces、全屏应用、Stage Manager、物理外屏拔插、锁屏与真实睡眠唤醒均未由自动化桌面操作确认。界面工具 `cua.getApp` 在本次会话超时约20分钟，未返回界面证据；没有将调用成功、窗口属性或模拟通知写作这些场景通过。
+
+AppKit 测试通过与独立进程可运行支持交付本地体验，但不能替代用户实际体验。透明区域穿透、长时日用稳定、耗电和其他 macOS 版本未测。
+
+## 遇到并修复的失败
+
+1. Xcode 在受限沙箱内向系统发送测试进度通知时崩溃；本机 XCTest 运行可执行。未把该环境错误算作测试 RED。
+2. 首次独立 App 启动因 PetCore 使用 `/Library/Frameworks` 绝对 install name 而 dyld 早退 -6。XCTest 的框架搜索路径掩盖此问题；增加真实包启动回归，将 install name 改为 `@rpath/PetCore.framework/Versions/A/PetCore` 后验证启动正常。
+3. 初始 SIGTERM 直接终止 -15，不执行保存；以 DispatchSourceSignal 转到 NSApplication 正常终止。后续发现固定2秒的冷启动假设不可靠，改为等待运行就绪后再测；隔离配置与运行指标写入、退出0通过。
+4. 本机 ps comm 即使用 -ww 仍将可执行路径截为15字节，首次性能采样因此拒绝PID并未开始；改用 libproc.proc_pidpath 核验完整路径，600秒采样重新开始。
+5. Xcode 输出 AppIntents 无依赖的元数据跳过警告，AppKit 测试 runner 输出 StatusBar/系统连接诊断；用例和构建没有因此失败。坏 PNG 拒绝用例会产生 ImageIO 预期解码错误日志。
+
+## 命令
+
+```bash
+bash scripts/test.sh
+bash scripts/build-app.sh
+python3 scripts/smoke-app.py
+bash scripts/package-app.sh
+# 仅对本次自行启动的独立 App PID：
+python3 tools/sample_process.py --pid PID --duration 600 --interval 5 --output .build/performance-run/process.json
+```
+
+十分钟 CPU/RSS 样本仍在运行，完成后在下方记录实际数据；不使用2秒启动检查替代性能采样。

@@ -32,9 +32,18 @@ final class SettingsStoreTests: XCTestCase {
         try store.save(placement)
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:directory.path).sorted(),["settings.json"])
     }
+    func testBackupFailureLeavesOriginalAndProtectionIntact() throws {
+        let bad=Data("{broken".utf8); try bad.write(to:settingsURL)
+        let store=SettingsStore(url:settingsURL,backup:{_,_ in throw NSError(domain:"backup",code:1)})
+        _=store.load(); XCTAssertThrowsError(try store.backupAndReset())
+        XCTAssertThrowsError(try store.save(placement))
+        XCTAssertEqual(try Data(contentsOf:settingsURL),bad)
+    }
     func testInvalidGeometryAndSixtyFourKiBBoundary() throws {
         let store=SettingsStore(url:settingsURL)
         XCTAssertThrowsError(try store.save(.init(screenID:"x",origin:CGPoint(x:Double.infinity,y:0),visibleFrame:placement.visibleFrame)))
+        XCTAssertThrowsError(try store.save(.init(screenID:"",origin:.zero,visibleFrame:placement.visibleFrame)))
+        XCTAssertThrowsError(try store.save(.init(screenID:"x",origin:.zero,visibleFrame:.zero)))
         try store.save(placement); let data=try Data(contentsOf:settingsURL)
         try (data+Data(repeating:32,count:65536-data.count)).write(to:settingsURL)
         guard case .loaded=SettingsStore(url:settingsURL).load() else { return XCTFail("64KiB accepted") }
