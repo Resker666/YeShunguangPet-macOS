@@ -281,6 +281,8 @@
 				<string>YES</string>
 				<key>INSTALL_PATH</key>
 				<string>$(LOCAL_LIBRARY_DIR)/Frameworks</string>
+				<key>LD_DYLIB_INSTALL_NAME</key>
+				<string>@rpath/$(EXECUTABLE_PATH)</string>
 			</dict>
 			<key>name</key>
 			<string>Debug</string>
@@ -326,6 +328,8 @@
 				<string>YES</string>
 				<key>INSTALL_PATH</key>
 				<string>$(LOCAL_LIBRARY_DIR)/Frameworks</string>
+				<key>LD_DYLIB_INSTALL_NAME</key>
+				<string>@rpath/$(EXECUTABLE_PATH)</string>
 			</dict>
 			<key>name</key>
 			<string>Release</string>
