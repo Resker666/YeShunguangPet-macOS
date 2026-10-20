@@ -34,15 +34,6 @@ extension ManifestDecoderTests {
         XCTAssertThrowsError(try ManifestDecoder.decode(SkinFixtures.replacing("\"schemaVersion\": 1", with: "\"schemaVersion\": 1.0")))
         XCTAssertThrowsError(try ManifestDecoder.decode(SkinFixtures.replacing("\"schemaVersion\": 1", with: "\"schemaVersion\": 1e0")))
     }
-    func testEncodingDepthAndSizeBoundaries() throws {
-        _ = try ManifestDecoder.decode(Data([0xef,0xbb,0xbf]) + SkinFixtures.minimalManifest)
-        XCTAssertThrowsError(try StrictJSON.validate(Data([0xff])))
-        try StrictJSON.validate(Data((String(repeating:"[",count:64)+"0"+String(repeating:"]",count:64)).utf8))
-        XCTAssertThrowsError(try StrictJSON.validate(Data((String(repeating:"[",count:65)+"0"+String(repeating:"]",count:65)).utf8)))
-        let padding = Data(repeating:32,count:131072-SkinFixtures.minimalManifest.count)
-        _ = try ManifestDecoder.decode(SkinFixtures.minimalManifest+padding)
-        XCTAssertThrowsError(try ManifestDecoder.decode(SkinFixtures.minimalManifest+padding+Data([32])))
-    }
     func testAnimationAndImageLimits() throws {
         for ms in [20,10000] { _ = try ManifestDecoder.decode(SkinFixtures.manifest(["animations":["idle":["durationsMs":[ms],"loop":true]]])) }
         for ms in [19,10001] { XCTAssertThrowsError(try ManifestDecoder.decode(SkinFixtures.manifest(["animations":["idle":["durationsMs":[ms],"loop":true]]]))) }

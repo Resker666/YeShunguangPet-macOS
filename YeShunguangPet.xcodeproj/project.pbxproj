@@ -68,6 +68,42 @@
 			<key>fileRef</key>
 			<string>6E6CE7DAC404EA1F347637CD</string>
 		</dict>
+		<key>6B3C22EFCF7382E10A24C3BC</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/PetCore/Skin/SkinLoader.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>EB625465098ACF7CDC806F5E</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>6B3C22EFCF7382E10A24C3BC</string>
+		</dict>
+		<key>7BE56D215EBD25A1E9A654FF</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/PetCore/Skin/SpriteAtlas.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>B372095EBC957E4F74A92018</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>7BE56D215EBD25A1E9A654FF</string>
+		</dict>
 		<key>7962195490B18A52E6A58CB8</key>
 		<dict>
 			<key>isa</key>
@@ -96,6 +132,8 @@
 			<array>
 				<string>50B1F7BA328A7BB8F7CF6688</string>
 				<string>65FBE33574A200D463341577</string>
+				<string>EB625465098ACF7CDC806F5E</string>
+				<string>B372095EBC957E4F74A92018</string>
 				<string>C9DCCC1D19B5148E117E24EF</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
@@ -270,6 +308,60 @@
 			<key>fileRef</key>
 			<string>C0598DA87944A9BF065CD2F9</string>
 		</dict>
+		<key>0C92CA312735BAF8C075B011</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetCoreTests/SkinLoaderTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>793105ECEF310716687E53E2</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>0C92CA312735BAF8C075B011</string>
+		</dict>
+		<key>7BE14365801098BF46CC30B2</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetCoreTests/SpriteAtlasTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>BE7ABB8926D49B84F53F439E</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>7BE14365801098BF46CC30B2</string>
+		</dict>
+		<key>50B9989D83B1FFFDA7E31FCE</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetCoreTests/StrictJSONTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>F01E6F4B008985FC3BB35D39</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>50B9989D83B1FFFDA7E31FCE</string>
+		</dict>
 		<key>22155E339F65114069894E19</key>
 		<dict>
 			<key>isa</key>
@@ -297,6 +389,9 @@
 			<key>files</key>
 			<array>
 				<string>AC110877FBD68816BFBAD426</string>
+				<string>793105ECEF310716687E53E2</string>
+				<string>BE7ABB8926D49B84F53F439E</string>
+				<string>F01E6F4B008985FC3BB35D39</string>
 				<string>CBA457A47868CD4989C26A1E</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
@@ -362,6 +457,24 @@
 			<key>fileRef</key>
 			<string>D42A5070C6DF5AF68B66423E</string>
 		</dict>
+		<key>00353B9DC74328026CEE41B4</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Resources/Pets</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>folder</string>
+		</dict>
+		<key>1710241E25A8D1B2373DE30E</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>00353B9DC74328026CEE41B4</string>
+		</dict>
 		<key>678C728F6CE5E292BADF638B</key>
 		<dict>
 			<key>isa</key>
@@ -371,6 +484,7 @@
 			<key>files</key>
 			<array>
 				<string>4324D5CD0D8130CB13B09009</string>
+				<string>1710241E25A8D1B2373DE30E</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -524,10 +638,16 @@
 			<array>
 				<string>EC8A40631E1327DC14797A90</string>
 				<string>6E6CE7DAC404EA1F347637CD</string>
+				<string>6B3C22EFCF7382E10A24C3BC</string>
+				<string>7BE56D215EBD25A1E9A654FF</string>
 				<string>7962195490B18A52E6A58CB8</string>
 				<string>C0598DA87944A9BF065CD2F9</string>
+				<string>0C92CA312735BAF8C075B011</string>
+				<string>7BE14365801098BF46CC30B2</string>
+				<string>50B9989D83B1FFFDA7E31FCE</string>
 				<string>22155E339F65114069894E19</string>
 				<string>D42A5070C6DF5AF68B66423E</string>
+				<string>00353B9DC74328026CEE41B4</string>
 				<string>FBDC4F23F93125BBEEAE800C</string>
 			</array>
 			<key>sourceTree</key>
