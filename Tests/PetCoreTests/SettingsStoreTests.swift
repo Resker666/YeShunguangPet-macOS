@@ -24,13 +24,25 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(preferences["scale"] as? Double,1.5)
         XCTAssertEqual(preferences["alwaysOnTop"] as? Bool,false)
     }
+    func testImportedSelectionSurvivesLoadAndSaveWithPreferencesAndPosition() throws {
+        let object: [String:Any] = ["schemaVersion":3,"placement":["screenID":"main","x":100,"y":200,"visibleX":0,"visibleY":40,"visibleWidth":1000,"visibleHeight":700],"preferences":["scale":1.5,"alwaysOnTop":false],"selectedSkinID":"4AEFD8B7-6164-482F-997F-13ABFBB4275D"]
+        try JSONSerialization.data(withJSONObject:object).write(to:settingsURL)
+        let store=SettingsStore(url:settingsURL)
+        guard case .loaded(let saved)=store.load() else { return XCTFail("valid imported selection must load") }
+        try store.save(saved)
+        let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
+        XCTAssertEqual(encoded["schemaVersion"] as? Int,3)
+        XCTAssertEqual(encoded["selectedSkinID"] as? String,"4AEFD8B7-6164-482F-997F-13ABFBB4275D")
+        XCTAssertEqual(saved.placement,placement)
+        XCTAssertEqual(saved.preferences,PetPreferences(scale:1.5,alwaysOnTop:false))
+    }
     func testLegacyPositionMigratesWithDefaultPreferences() throws {
         try JSONSerialization.data(withJSONObject:["schemaVersion":1,"placement":JSONSerialization.jsonObject(with:JSONEncoder().encode(placement))]).write(to:settingsURL)
         let store=SettingsStore(url:settingsURL)
         guard case .loaded(let saved)=store.load() else { return XCTFail("legacy position must load") }
         try store.save(saved)
         let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
-        XCTAssertEqual(encoded["schemaVersion"] as? Int,2)
+        XCTAssertEqual(encoded["schemaVersion"] as? Int,3)
         let preferences=try XCTUnwrap(encoded["preferences"] as? [String:Any])
         XCTAssertEqual(preferences["scale"] as? Double,1)
         XCTAssertEqual(preferences["alwaysOnTop"] as? Bool,true)
@@ -103,5 +115,15 @@ final class SettingsStoreTests: XCTestCase {
         try store.save(PetSettings(placement:placement)); let data=try Data(contentsOf:settingsURL)
         try (data+Data(repeating:32,count:65536-data.count)).write(to:settingsURL)
         guard case .loaded=SettingsStore(url:settingsURL).load() else { return XCTFail("64KiB accepted") }
+    }
+    func testInvalidImportedIDsStayProtectedAndCannotBeSaved() throws {
+        for id in ["../escape","/tmp/skin","my-pet",""] {
+            let bad=try JSONSerialization.data(withJSONObject:["schemaVersion":3,"preferences":["scale":1,"alwaysOnTop":true],"selectedSkinID":id])
+            try bad.write(to:settingsURL)
+            let store=SettingsStore(url:settingsURL)
+            guard case .protectedFile=store.load() else { XCTFail("invalid imported reference accepted"); continue }
+            XCTAssertThrowsError(try store.save(PetSettings(placement:nil,selectedSkinID:id)))
+            XCTAssertEqual(try Data(contentsOf:settingsURL),bad)
+        }
     }
 }

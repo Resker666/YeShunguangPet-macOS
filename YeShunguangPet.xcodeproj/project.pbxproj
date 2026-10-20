@@ -252,6 +252,7 @@
 				<string>EB625465098ACF7CDC806F5E</string>
 				<string>B372095EBC957E4F74A92018</string>
 				<string>C9DCCC1D19B5148E117E24EF</string>
+				<string>182AE2584AE10E6F3906F8EC</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -590,6 +591,7 @@
 				<string>F01E6F4B008985FC3BB35D39</string>
 				<string>B878315F95594E714A8B18A4</string>
 				<string>CBA457A47868CD4989C26A1E</string>
+				<string>3A27C78C79351C542ABA4AA5</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1371,6 +1373,7 @@
 				<string>2167DCB4EBA5A2BEF235669E</string>
 				<string>CC4327EA4545215F806DA596</string>
 				<string>9CC59D5634C4A79C9646C962</string>
+				<string>B833555927DCABD10C40008C</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1623,6 +1626,9 @@
 				<string>FBDC4F23F93125BBEEAE800C</string>
 				<string>DC019946BD42A3CE78CC5501</string>
 				<string>3590A526F4554D0EC668B722</string>
+				<string>D34D79817B784CBAE8D5D41A</string>
+				<string>2946EE8314DCC0C7E4C4A2E3</string>
+				<string>C45EDD08D53E260B7F9AECF7</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -1739,6 +1745,60 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>3590A526F4554D0EC668B722</string>
+		</dict>
+		<key>D34D79817B784CBAE8D5D41A</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Tests/PetCoreTests/SkinLibraryTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>3A27C78C79351C542ABA4AA5</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>D34D79817B784CBAE8D5D41A</string>
+		</dict>
+		<key>2946EE8314DCC0C7E4C4A2E3</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/PetCore/Skin/SkinLibrary.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>182AE2584AE10E6F3906F8EC</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>2946EE8314DCC0C7E4C4A2E3</string>
+		</dict>
+		<key>C45EDD08D53E260B7F9AECF7</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/SkinSelectionTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>B833555927DCABD10C40008C</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>C45EDD08D53E260B7F9AECF7</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

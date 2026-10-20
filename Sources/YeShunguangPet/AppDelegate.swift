@@ -16,14 +16,15 @@ import Darwin
         termination.setEventHandler { NSApp.terminate(nil) }; termination.resume(); terminationSignal=termination; trace("termination signal registered")
         do {
             let options=try LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
-            guard let url=options.skinURL ?? Bundle.main.url(forResource:"pet",withExtension:"json",subdirectory:"Pets/YeShunguang") else { throw SkinError("缺少随附皮肤 pet.json") }
-            let skin=try SkinLoader.load(manifestURL:url)
+            guard let url=Bundle.main.url(forResource:"pet",withExtension:"json",subdirectory:"Pets/YeShunguang") else { throw SkinError("缺少随附皮肤 pet.json") }
+            let bundled=try SkinLoader.load(manifestURL:url)
+            let skin=try options.skinURL.map { try SkinLoader.load(manifestURL:$0) } ?? bundled
             let clock=ContinuousClock(), origin=ContinuousClock.now
             let settingsURL: URL
             if let path=ProcessInfo.processInfo.environment["YSGPET_SETTINGS_PATH"],path.hasPrefix("/") { settingsURL=URL(fileURLWithPath:path) }
             else { settingsURL=FileManager.default.urls(for:.applicationSupportDirectory,in:.userDomainMask)[0].appendingPathComponent("YeShunguangPet-macOS/settings.json") }
-            let session=PetSession(skin:skin,now:{origin.duration(to:clock.now)},settings:SettingsStore(url:settingsURL),screens:ScreenProvider.areas)
-            self.session=session; status=StatusBarController(session:session,onQuit:{ NSApp.terminate(nil) }); session.start(); trace("runtime ready")
+            let session=PetSession(skin:skin,defaultSkin:bundled,now:{origin.duration(to:clock.now)},settings:SettingsStore(url:settingsURL),screens:ScreenProvider.areas)
+            self.session=session; status=StatusBarController(session:session,onQuit:{ NSApp.terminate(nil) }); session.start(restoringSkin:options.skinURL==nil); trace("runtime ready")
         } catch { status=StatusBarController(session:nil,error:error.localizedDescription,onQuit:{NSApp.terminate(nil)}) }
     }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {

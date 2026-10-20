@@ -4,10 +4,14 @@ import ImageIO
 import Darwin
 import zlib
 
-public struct LoadedSkin {
+public struct LoadedSkin: Sendable {
     public let manifest: PetManifest
     public let spriteSheet: CGImage
     public let directory: URL
+}
+public struct SkinPackage: Sendable {
+    public let skin: LoadedSkin
+    let manifestData: Data, spriteSheetData: Data
 }
 
 public enum SkinLoader {
@@ -72,6 +76,9 @@ public enum SkinLoader {
         }
     }
     public static func load(manifestURL: URL) throws -> LoadedSkin {
+        try readPackage(manifestURL:manifestURL).skin
+    }
+    public static func readPackage(manifestURL: URL) throws -> SkinPackage {
         guard manifestURL.isFileURL, manifestURL.lastPathComponent.lowercased()=="pet.json" else { throw SkinError("请选择本地皮肤目录中的 pet.json") }
         let directory=manifestURL.deletingLastPathComponent()
         let fd=try directoryHandle(directory); defer { close(fd) }
@@ -86,6 +93,6 @@ public enum SkinLoader {
         try validatePNGChunks(png)
         guard let source=CGImageSourceCreateWithData(png as CFData,nil),
               let image=CGImageSourceCreateImageAtIndex(source,0,[kCGImageSourceShouldCacheImmediately:true] as CFDictionary), image.width==w,image.height==h else { throw SkinError("PNG 无法完整解码") }
-        return LoadedSkin(manifest:manifest,spriteSheet:image,directory:directory.resolvingSymlinksInPath())
+        return SkinPackage(skin:LoadedSkin(manifest:manifest,spriteSheet:image,directory:directory.resolvingSymlinksInPath()),manifestData:json,spriteSheetData:png)
     }
 }

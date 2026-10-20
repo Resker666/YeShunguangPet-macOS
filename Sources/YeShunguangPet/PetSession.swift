@@ -2,7 +2,11 @@ import AppKit
 import PetCore
 
 @MainActor final class PetSession: NSObject {
-    let skin: LoadedSkin, atlas: SpriteAtlas, panel: PetPanel, view: PetView
+    private(set) var skin: LoadedSkin, atlas: SpriteAtlas
+    let panel: PetPanel, view: PetView
+    let defaultSkin: LoadedSkin, library: SkinLibrary
+    private(set) var selectedSkinID: String?
+    private(set) var skinWarning: String?
     let settings: SettingsStore
     let screens: () -> [ScreenArea]
     private var placement: PlacementSnapshot?
@@ -22,8 +26,9 @@ import PetCore
     var onStatusChange: (() -> Void)?
     var isVisible: Bool { gate.visible }
     lazy var scheduler=FrameScheduler(now:now) { [weak self] in self?.tick() }
-    init(skin: LoadedSkin, now: @escaping () -> Duration, settings: SettingsStore, screens: @escaping () -> [ScreenArea]) {
+    init(skin: LoadedSkin, defaultSkin: LoadedSkin? = nil, now: @escaping () -> Duration, settings: SettingsStore, screens: @escaping () -> [ScreenArea]) {
         self.settings=settings; self.screens=screens; self.startedAt=now()
+        self.defaultSkin=defaultSkin ?? skin; library=SkinLibrary(directory:settings.url.deletingLastPathComponent().appendingPathComponent("Skins",isDirectory:true))
         self.skin=skin; self.now=now; atlas=SpriteAtlas(skin:skin)
         let size=CGSize(width:skin.manifest.cellWidth,height:skin.manifest.cellHeight)
         panel=PetPanel(size:size); view=PetView(frame:CGRect(origin:.zero,size:size))
@@ -40,15 +45,38 @@ import PetCore
         center.addObserver(self,selector:#selector(didWake),name:NSWorkspace.didWakeNotification,object:nil)
         center.addObserver(self,selector:#selector(didWake),name:NSWorkspace.screensDidWakeNotification,object:nil)
     }
-    func start() {
+    func start(restoringSkin: Bool = true) {
         switch settings.load() {
-        case .loaded(let saved): placement=saved.placement; preferences=saved.preferences
+        case .loaded(let saved): placement=saved.placement; preferences=saved.preferences; selectedSkinID=saved.selectedSkinID
         case .missing: break
         case .protectedFile(let message): persistenceError=message; protectedSettings=true
+        }
+        if restoringSkin,let id=selectedSkinID {
+            do {
+                skin=try library.load(id:id); atlas=SpriteAtlas(skin:skin)
+                playback.start(skin.manifest.animations[.idle]!)
+            } catch { selectedSkinID=nil; skinWarning="上次使用的皮肤无法读取，已恢复默认角色：\(error.localizedDescription)" }
         }
         applyWindowPreferences()
         applyPlacement(WindowPlacement.restore(placement,size:panel.frame.size,screens:screens()))
         setVisible(true)
+    }
+    func useImportedSkin(_ imported: ImportedSkin) throws { try switchSkin(imported.skin,id:imported.id) }
+    func restoreDefaultSkin() throws { try switchSkin(defaultSkin,id:nil) }
+    private func switchSkin(_ next: LoadedSkin, id: String?) throws {
+        guard !gate.exiting else { throw SkinError("桌宠正在退出，未切换皮肤") }
+        let nextAtlas=SpriteAtlas(skin:next), animation=next.manifest.animations[.idle]!
+        let first=FrameLocation(row:animation.row,column:animation.startColumn)
+        let image=try nextAtlas.frame(at:first)
+        cancelInput()
+        let size=CGSize(width:Double(next.manifest.cellWidth)*preferences.scale,height:Double(next.manifest.cellHeight)*preferences.scale)
+        let nextPlacement=WindowPlacement.capture(origin:panel.frame.origin,size:size,screens:screens()) ?? placement
+        do { try settings.save(PetSettings(placement:nextPlacement,preferences:preferences,selectedSkinID:id)) }
+        catch { persistenceError=error.localizedDescription; onStatusChange?(); throw error }
+        // Persistence is committed before touching the current image or playback.
+        scheduler.cancel(); skin=next; atlas=nextAtlas; selectedSkinID=id; skinWarning=nil; persistenceError=nil
+        action = .idle; playback.start(animation); frame=first; view.image=image; frameUpdates += 1
+        applyWindowPreferences(); applyPlacement(nextPlacement); synchronize(); onStatusChange?()
     }
     func setPreferences(_ value: PetPreferences) {
         guard !gate.exiting,value.isValid,value != preferences else { return }
@@ -82,7 +110,7 @@ import PetCore
     }
     @discardableResult private func savePosition() -> Bool {
         if let current=WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()) { placement=current }
-        do { try settings.save(PetSettings(placement:placement,preferences:preferences)); persistenceError=nil; onStatusChange?(); return true }
+        do { try settings.save(PetSettings(placement:placement,preferences:preferences,selectedSkinID:selectedSkinID)); persistenceError=nil; onStatusChange?(); return true }
         catch { persistenceError=error.localizedDescription; onStatusChange?(); return false }
     }
     func retrySave() { _=savePosition() }
@@ -155,7 +183,7 @@ import PetCore
     func exportMetrics(to url: URL) throws {
         let duration=now()-startedAt
         let seconds=Double(duration.components.seconds)+Double(duration.components.attoseconds)/1e18
-        let data: [String:Any] = ["schemaVersion":1,"durationSeconds":seconds,"schedulerWakes":scheduler.wakeCount,"frameUpdates":frameUpdates,"visible":gate.visible,"action":action.rawValue,"window":["width":panel.frame.width,"height":panel.frame.height],"displays":screens().map { ["width":$0.visibleFrame.width,"height":$0.visibleFrame.height] },"backingScale":panel.backingScaleFactor]
+        let data: [String:Any] = ["schemaVersion":1,"durationSeconds":seconds,"schedulerWakes":scheduler.wakeCount,"frameUpdates":frameUpdates,"visible":gate.visible,"action":action.rawValue,"skinID":skin.manifest.id,"window":["width":panel.frame.width,"height":panel.frame.height],"displays":screens().map { ["width":$0.visibleFrame.width,"height":$0.visibleFrame.height] },"backingScale":panel.backingScaleFactor]
         try JSONSerialization.data(withJSONObject:data,options:[.prettyPrinted,.sortedKeys]).write(to:url,options:.atomic)
     }
     func prepareToExit() {

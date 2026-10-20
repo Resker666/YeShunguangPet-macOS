@@ -2,8 +2,10 @@
 from pathlib import Path
 import importlib.util
 import json
+import shutil
 import tempfile
 import unittest
+import uuid
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location("pet_smoke", ROOT / "scripts/smoke-app.py")
@@ -12,6 +14,34 @@ SPEC.loader.exec_module(SMOKE)
 
 
 class StandaloneSettingsTests(unittest.TestCase):
+    def test_imported_copy_restores_and_missing_copy_falls_back(self):
+        app = ROOT / "dist/YeShunguangPet.app"
+        binary = app / "Contents/MacOS/YeShunguangPet"
+        with tempfile.TemporaryDirectory(prefix="ysg imported restart ") as temporary:
+            work = Path(temporary)
+            source = work / "original"
+            shutil.copytree(app / "Contents/Resources/Pets/YeShunguang", source)
+            manifest = json.loads((source / "pet.json").read_text())
+            manifest.update(id="imported-regression", name="Imported regression")
+            (source / "pet.json").write_text(json.dumps(manifest))
+            identifier = str(uuid.uuid4()).upper()
+            managed = work / "Skins" / identifier
+            # Prepare the same layout produced by SkinLibrary's native tests.
+            shutil.copytree(source, managed)
+            shutil.rmtree(source)
+            settings = work / "settings.json"
+            settings.write_text(json.dumps({"schemaVersion": 3, "preferences": {"scale": .5, "alwaysOnTop": False},
+                                           "selectedSkinID": identifier}))
+            for sequence in [1, 2]:
+                metrics = SMOKE.run_once(binary, work, sequence)
+                self.assertEqual(metrics["skinID"], "imported-regression")
+                self.assertEqual(metrics["window"], {"width": 96, "height": 104})
+                self.assertEqual(json.loads(settings.read_text())["selectedSkinID"], identifier)
+            shutil.rmtree(managed)
+            fallback = SMOKE.run_once(binary, work, 3)
+            self.assertEqual(fallback["skinID"], "ye-shunguang")
+            self.assertIsNone(json.loads(settings.read_text()).get("selectedSkinID"))
+
     def test_legacy_position_and_new_preferences_survive_real_restarts(self):
         binary = ROOT / "dist/YeShunguangPet.app/Contents/MacOS/YeShunguangPet"
         with tempfile.TemporaryDirectory(prefix="ysg settings ") as temporary:
@@ -26,7 +56,7 @@ class StandaloneSettingsTests(unittest.TestCase):
             settings.write_text(json.dumps({"schemaVersion": 1, "placement": position}))
             SMOKE.run_once(binary, work, 2)
             migrated = json.loads(settings.read_text())
-            self.assertEqual(migrated["schemaVersion"], 2)
+            self.assertEqual(migrated["schemaVersion"], 3)
             self.assertEqual(migrated["preferences"], {"scale": 1, "alwaysOnTop": True})
             self.assertEqual(migrated["placement"], position)
             migrated["preferences"] = {"scale": 1.5, "alwaysOnTop": False}
