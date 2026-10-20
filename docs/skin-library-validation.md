@@ -29,8 +29,14 @@
 
 真实叶瞬光、知更鸟与胡桃通过当前生产SettingsModel/SkinLibrary导入，JSON/PNG副本逐字节相同。删除临时源目录后，列表仍识别三项、缩略图均不超过80×80；5次反复切换没有新增副本；当前胡桃删除被拒绝，删除闲置叶瞬光副本后胡桃与知更鸟均保留。只读参考原始素材没有改写。探针使用独立配置，记录real-library-probe.json；设置原生视图渲染截图为settings-preview.png，属于生产组件探针，不是打包App的真实鼠标操作证据。
 
-最终App和包在本地提交后从干净树重建；构建提交、各包SHA-256、签名、DMG/ZIP与App文件一致性，以及最终ARM搬移启动和真实皮肤重开结果集中记录在.build/skin-library-validation/final-delivery.json。日志和产物分别位于忽略的.build/skin-library-validation与dist，不进入Git。
+最终App和包已从干净提交05606e7deced5529592b1a2eff162131d83615f9重建；双架构签名、各包SHA-256和DMG/ZIP与App文件一致性均通过。ARM复制到中文改名路径、弹出DMG后启动与位置恢复通过；删除临时源素材后，真实胡桃副本在最终App的两次独立进程中恢复正确，仍保留两套受管理副本。构建提交及结果集中记录在.build/skin-library-validation/final-delivery.json。日志和产物分别位于忽略的.build/skin-library-validation与dist，不进入Git；后续验收记录仅修改文档，不改变安装包构建来源。
+
+## 用户验收与推送授权
+
+用户在本会话试用0.1.5后反馈“验证通过，推送”，本机皮肤库整体体验验收完成，并明确授权按当前流程同步main和开发分支。此为整体体验反馈，不据此补记每项操作、系统退出故障或其他设备已实测。此次未要求打标签或创建Release。
+
+推送前重新执行原生80项（45 Core + 35 Mac）及完整分发10项检查，均退出0；分发检查58.071秒。日志分别为.build/push-0.1.5/native.log与distribution.log。此次提交只增加验收和复查记录，产品代码与已有安装包构建来源不变。
 
 参考仓库复查：Windows参考提交仍为242aab0，已跟踪文件无差异，观察到根目录与Pets下各有未跟踪的.DS_Store，保持原样；Minimal Sleep仍为cb950c3，只有原有工程文件与Info.plist两处修改。
 
-原生窗口/模型及受控竞态不等于真实鼠标点击删除确认、文件面板体验或系统退出流程的实机全覆盖。焦点、Spaces、全屏、锁屏/真实睡眠、外屏和长时间性能未增加实测；Intel只交叉构建，黑苹果与其他Mac仍待用户验证。包免费、未公证。没有推送、打标签或创建Release；Windows与Minimal Sleep仅作只读参考。
+原生窗口/模型及受控竞态不等于真实鼠标点击删除确认、文件面板体验或系统退出流程的实机全覆盖，用户反馈另按上述整体体验记录。焦点、Spaces、全屏、锁屏/真实睡眠、外屏和长时间性能未增加实测；Intel只交叉构建，黑苹果与其他Mac仍待用户验证。包免费、未公证。推送按上述用户授权执行，不打标签或创建Release；Windows与Minimal Sleep仅作只读参考。
