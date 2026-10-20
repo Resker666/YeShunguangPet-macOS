@@ -229,7 +229,7 @@ InteractionEffect 和 PlaybackSample 的测试所需值比较实现 Equatable。
 
 - [x] **Step 4: 组合 AppKit 应用。** PetPanel 不成为 key/main；PetView 原生绘制并转发全局逻辑点鼠标坐标，拖动使用偏移。AppDelegate 进入 accessory 模式；StatusBarController 实现显示/隐藏、召回（本阶段回初始位置）、退出和加载错误。按设计配置窗口，菜单打开、隐藏、召回、睡眠、中断取消输入；系统睡眠及屏幕唤醒事件只更新 gate 后重新计算调度。窗口错误使用本地可读状态；不得无声退回有效默认皮肤。Info.plist 不含个人 Team ID、录屏/麦克风/辅助功能权限键。实现 build-app.sh：固定项目、scheme、Release 和 arm64，复制构建产品到 dist/，依次对 PetCore.framework 和 App 作 ad-hoc 签名，命令失败立即非零退出。
 
-- [ ] **Step 5: 验证 GREEN 与原生可运行链路。**（自动部分完成；真实桌面操作因 CUA 超时待用户体验。） PetMacTests 在主线程检查 panel 不能 key/main、透明和实际 cell 尺寸、夹具绘制上下方向、menu 文案及加载失败无 panel、重复 schedule/cancel 只有一个有效回调、隐藏后唤醒 pendingCount=0、显示后恢复不积压。`LaunchOptionsTests.testRejectsMissingRepeatedRelativeAndUnknownArguments` 分别断言参数错误，`testAcceptsAbsoluteSkinPath` 断言准确 URL。使用临时自建 view、运行循环及有超时的 XCTest expectation，不截取用户桌面，不以固定 sleep 猜测回调已执行。运行 `bash scripts/test.sh`、`bash scripts/build-app.sh` 后打开本地 App；用真实鼠标确认旧皮肤动画、拖动、单/双击、菜单隐藏/显示/退出。在其他应用输入时确认显示与拖动不抢键盘，分别记录 Spaces/全屏的已观察结果；未能执行的场景列为未测。
+- [ ] **Step 5: 验证 GREEN 与原生可运行链路。**（自动部分完成；用户已确认拖动、单/双击、隐藏/显示和召回正常；菜单点击退出、焦点与系统场景未实测。） PetMacTests 在主线程检查 panel 不能 key/main、透明和实际 cell 尺寸、夹具绘制上下方向、menu 文案及加载失败无 panel、重复 schedule/cancel 只有一个有效回调、隐藏后唤醒 pendingCount=0、显示后恢复不积压。`LaunchOptionsTests.testRejectsMissingRepeatedRelativeAndUnknownArguments` 分别断言参数错误，`testAcceptsAbsoluteSkinPath` 断言准确 URL。使用临时自建 view、运行循环及有超时的 XCTest expectation，不截取用户桌面，不以固定 sleep 猜测回调已执行。运行 `bash scripts/test.sh`、`bash scripts/build-app.sh` 后打开本地 App；用真实鼠标确认旧皮肤动画、拖动、单/双击、菜单隐藏/显示/退出。在其他应用输入时确认显示与拖动不抢键盘，分别记录 Spaces/全屏的已观察结果；未能执行的场景列为未测。
 
 - [x] **Step 6: 本地提交。** 提交 `feat: run an interactive transparent AppKit pet with menu bar controls`，记录当时实际构建与体验结果，不把属性断言写作系统场景通过。
 
@@ -284,24 +284,24 @@ settingsURL 和 validPlacement 在 setUp 中由本测试临时目录和已定义
 - `python3 tools/sample_process.py --pid PID --duration 600 --interval 5 --output .build/performance.json`：验证 PID 属于本次启动的 App，只采集其进程 CPU 时间、RSS、单调采样时刻；进程退出时报告实际采样时长，不能记为完整 600 秒。
 - `PetSession.exportMetrics(to url: URL) throws` 写调度唤醒数、实际绘帧数、实际会话时长；AppDelegate 仅在 `YSGPET_METRICS_PATH` 已设置时于退出前调用，失败写本机错误而不阻止退出。
 
-- [ ] **Step 1: 实现本地打包脚本。** package-app.sh 先核对主程序、PetCore.framework、资源哈希、架构和签名，再用 `ditto -c -k --sequesterRsrc --keepParent` 打包，并在 dist/ 内写出及检查 `.zip.sha256`。缺失或无效 App 必须非零退出，不上传文件。
+- [x] **Step 1: 实现本地打包脚本。** package-app.sh 先核对主程序、PetCore.framework、资源哈希、架构和签名，再用 `ditto -c -k --sequesterRsrc --keepParent` 打包，并在 dist/ 内写出及检查 `.zip.sha256`。缺失或无效 App 必须非零退出，不上传文件。
 
-- [ ] **Step 2: 实现有界性能采样。** 在已有会话回调递增计数并实现 exportMetrics；用 XCTest 验证输出字段和写入失败不改变退出状态。Python 采样工具拒绝非本 App 的 PID、非正采样间隔和非正时长，使用单调时钟到期停止；目标进程提前结束时保留部分结果和实际时长，不自动附着到其他实例。普通 App 启动不启用指标输出。
+- [x] **Step 2: 实现有界性能采样。** 在已有会话回调递增计数并实现 exportMetrics；用 XCTest 验证输出字段和写入失败不改变退出状态。Python 采样工具拒绝非本 App 的 PID、非正采样间隔和非正时长，使用单调时钟到期停止；目标进程提前结束时保留部分结果和实际时长，不自动附着到其他实例。普通 App 启动不启用指标输出。
 
-- [ ] **Step 3: 运行最终相关测试和 Release 构建。** 先完成 verification-before-completion skill，从菜单退出上一测试实例后再替换 dist/ 中的 App；不终止其他进程。运行 `bash scripts/test.sh` 和 `bash scripts/build-app.sh`，要求 XCTest `TEST SUCCEEDED`、Release `BUILD SUCCEEDED` 且退出码 0。保存原始日志；发生失败先定位并只重跑有根据的检查。
+- [x] **Step 3: 运行最终相关测试和 Release 构建。** 先完成 verification-before-completion skill，从菜单退出上一测试实例后再替换 dist/ 中的 App；不终止其他进程。运行 `bash scripts/test.sh` 和 `bash scripts/build-app.sh`，要求 XCTest `TEST SUCCEEDED`、Release `BUILD SUCCEEDED` 且退出码 0。保存原始日志；发生失败先定位并只重跑有根据的检查。
 
 - [ ] **Step 4: 验证本机 App 包。** `lipo -archs dist/YeShunguangPet.app/Contents/MacOS/YeShunguangPet` 必须仅 arm64；核对应用标识、LSUIElement、最低系统和资源哈希；运行 `codesign --verify --strict --verbose=2 dist/YeShunguangPet.app`。从 Finder 或 `open` 启动，确认角色与菜单出现；从菜单退出，记录对应 PID 已结束。签名验证不代替实际启动，也不等于公证。
 
 - [ ] **Step 5: 执行有界日用检查。** 在实际显示器上检查透明与帧方向、拖动/单双击、菜单、重启恢复、其他应用输入、重复隐藏/显示、Spaces/全屏。锁屏/睡眠/Stage Manager 或外屏变更需要实际操作时先说明范围并等待用户配合，记录未执行项。禁止为了完成列表主动触发可能中断用户工作的锁屏、睡眠或系统设置改变。
 
-- [ ] **Step 6: 采集至少十分钟基线。** 实际可见单角色 idle 运行，记录显示器逻辑尺寸/backing scale、版本、采样时长、单核归一化 CPU（CPU 时间差/墙钟时间差×100）、RSS、调度唤醒次数和实际绘帧次数。开发环境变量 `YSGPET_METRICS_PATH` 指向 `.build/` 的本次汇总文件，不启动额外动画轮询，不记录其他应用或桌面内容。采样用独立进程在后台运行，工作中每分钟内给用户进展；不用长阻塞等待。运行不满 600 秒则报告实际结果并重新采完整样本；不可将短样本写作十分钟。
+- [x] **Step 6: 采集至少十分钟基线。** 实际可见单角色 idle 运行，记录显示器逻辑尺寸/backing scale、版本、采样时长、单核归一化 CPU（CPU 时间差/墙钟时间差×100）、RSS、调度唤醒次数和实际绘帧次数。开发环境变量 `YSGPET_METRICS_PATH` 指向 `.build/` 的本次汇总文件，不启动额外动画轮询，不记录其他应用或桌面内容。采样用独立进程在后台运行，工作中每分钟内给用户进展；不用长阻塞等待。运行不满 600 秒则报告实际结果并重新采完整样本；不可将短样本写作十分钟。
 
-- [ ] **Step 7: 完成文档与本地提交。** README 给出打开 App、如何菜单退出、配置路径、CLI 皮肤入口、矩形命中、系统场景限制和 ad-hoc 分发状态；skin-compatibility 区分读取与执行；validation 填命令、退出码、测试数量、实际系统行为、CPU/RSS、未测项和失败项。提交 `build: package arm64 app and record local validation`。随后以这个提交重新构建最终包并在本地证据记录其提交 ID，避免把先前构建冒充为该提交产物。
+- [x] **Step 7: 完成文档与本地提交。** README 给出打开 App、如何菜单退出、配置路径、CLI 皮肤入口、矩形命中、系统场景限制和 ad-hoc 分发状态；skin-compatibility 区分读取与执行；validation 填命令、退出码、测试数量、实际系统行为、CPU/RSS、未测项和失败项。提交 `build: package arm64 app and record local validation`。随后以这个提交重新构建最终包并在本地证据记录其提交 ID，避免把先前构建冒充为该提交产物。
 
 - [ ] **Step 8: 打包、复核与交付。** 运行 `bash scripts/package-app.sh`，在 dist/ 内执行 `shasum -a 256 -c YeShunguangPet-macOS-arm64.zip.sha256` 必须 OK；解到临时目录确认包结构、资源哈希和签名仍有效。按选定执行方式完成全分支独立评审，修复阻断问题并重跑受影响检查。报告 App 绝对路径、启动/退出方式、已测与未测；原仓库仍无修改，Minimal Sleep 仍只有原有两处修改。不要推送、打标签或创建 Release。
 
 ## Plan Self-Review / 执行状态
 
-用户已批准计划并选择本会话直接实施。任务 1–5 的实现与自动化检查已完成；真实桌面输入、焦点和系统场景待体验，具体限制见 validation.md。任务 6 正在进行本机采样和最终交付。任务 1–2 对应设计皮肤合同和素材边界，任务 3–4 对应动画、窗口、输入与生命周期，任务 5 对应位置与错误恢复，任务 6 对应本机验证和交付；五项 Review Focus 分别有所属用例。
+用户已批准计划并选择本会话直接实施。任务 1–6 的实现与自动化检查已完成，十分钟基线已采集。用户已确认基本桌面交互正常；焦点和系统场景未测，具体限制见 validation.md。正在进行最终独立评审及最终包复核。任务 1–2 对应设计皮肤合同和素材边界，任务 3–4 对应动画、窗口、输入与生命周期，任务 5 对应位置与错误恢复，任务 6 对应本机验证和交付；五项 Review Focus 分别有所属用例。
 
 计划审阅通过后使用用户选择的执行方式。建议本会话直接实施：组件接口前后依赖明显，首版只有一个客户端；实施过程中保留逐任务验证与本地提交，最后进行独立评审。若用户选择分任务子代理，则按 subagent-driven-development 流程执行，并保留相同的系统实测门槛。上述选择均不授予推送或发布权限。
