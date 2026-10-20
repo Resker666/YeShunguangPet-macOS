@@ -8,7 +8,7 @@
 
 配置统一保存位置及偏好，schemaVersion 2兼容读取旧版1；旧配置使用100%和置顶默认值，下次保存升级。无屏幕时仍可保存偏好；损坏、未知版本或非法偏好保持原文件，只有明确执行备份重置才解除保护。保存失败在菜单栏和设置窗口显示，支持重试。
 
-本轮作为已有菜单、窗口、配置流程的有界扩展，沿用用户已认可的会话设计与直接实施方式；未新增工作树，未改动Windows或Minimal Sleep，未推送、打标签或发布。
+本轮作为已有菜单、窗口、配置流程的有界扩展，沿用用户已认可的会话设计与直接实施方式；未新增工作树，未改动Windows或Minimal Sleep。完成本地交付后，用户反馈验证通过并明确授权推送当前版本、建立main主干；未授权打标签或发布。
 
 ## 自动验证
 
@@ -18,9 +18,9 @@
 - `bash scripts/build-app.sh`及`bash scripts/build-app.sh x86_64`：Release构建及ad-hoc签名验证通过。日志`build-arm64.log`、`build-x86_64.log`。Intel仅交叉构建，未执行。
 - `python3 scripts/smoke-app.py --check-restore`：打包ARM App在隔离配置、非工程工作目录、无开发工具环境中启动，实际动画绘帧、正常退出及二次位置恢复通过。日志`arm-smoke.log`、`arm-smoke.json`。
 
-- `python3 -m unittest discover -s Tests/Distribution -v`：9项通过，退出0，39.571秒。包含真实DMG/ZIP挂载/解包/签名与通知、ARM/Intel架构拒绝与隔离、中文搬移路径启动和位置恢复，以及独立ARM进程四次启动验证旧位置迁移、默认偏好、150%大小（288×312点）及非置顶偏好的保留。日志`distribution.log`。窗口层级本身由Mac测试检查，跨进程测试不冒充真实遮挡观察。
+- `python3 -m unittest discover -s Tests/Distribution -v`：9项通过，退出0，39.571秒。包含真实DMG/ZIP挂载/解包/签名与许可说明、ARM/Intel架构拒绝与隔离、中文搬移路径启动和位置恢复，以及独立ARM进程四次启动验证旧位置迁移、默认偏好、150%大小（288×312点）及非置顶偏好的保留。日志`distribution.log`。窗口层级本身由Mac测试检查，跨进程测试不冒充真实遮挡观察。
 
-最终产物将以本轮本地提交重新构建。构建提交、包内文件一致性、签名和最终独立启动结果保存在`.build/settings-validation/final-delivery.json`。原始日志保存在忽略的`.build/settings-validation/`，产物在忽略的`dist/`。
+最终产物已从干净提交913daa3重新构建。两个架构的DMG/ZIP内容与对应App一致，签名和SHA-256校验通过；ARM App弹出源映像后从中文搬移路径启动、恢复位置通过，最终App的独立设置恢复用例再次通过。构建提交及结果保存在`.build/settings-validation/final-delivery.json`。原始日志保存在忽略的`.build/settings-validation/`，产物在忽略的`dist/`。后续用户验收记录仅修改文档，不改变这批产物的构建来源。
 
 ## 独立代码评审
 
@@ -30,7 +30,7 @@
 
 - 界面工具可读取0.1.3实际角色画面，旧皮肤方向与透明背景正常。
 - 尝试使用界面工具读取系统菜单栏时返回`timeoutReached`（约143秒）；未取得设置窗口真实鼠标调节、键盘焦点或错误时表单布局的GUI证据。原生窗口测试的可见性、canBecomeKey和模型修改不算真实鼠标验收。
-- 用户此前确认的拖动、单/双击、隐藏/显示和召回属于原版本反馈；本轮未冒充用户已体验新设置。
+- 用户随后在本会话明确反馈0.1.3“验证通过”，确认本机设置体验。此前工具超时作为工具侧限制保留；用户反馈不扩展为真实键盘焦点、错误表单布局或其他系统场景逐项通过。
 - Spaces、全屏、Stage Manager、锁屏、真实睡眠、外屏插拔，以及新版长时间CPU/RSS未重新实测。旧版十分钟基线不代表缩放版性能结果。
 - Intel／黑苹果实际运行、另一台无Xcode的Mac及下载后的Gatekeeper首开未测。黑苹果验收继续保留在[项目待办](../TODO.md)。包仍为免费ad-hoc、未公证。
 
