@@ -6,10 +6,14 @@ import Darwin
     var session: PetSession?
     var status: StatusBarController?
     private var terminationSignal: DispatchSourceSignal?
+    private func trace(_ message: String) {
+        if ProcessInfo.processInfo.environment["YSGPET_METRICS_PATH"] != nil { NSLog("YSGPET: %@",message) }
+    }
     func applicationDidFinishLaunching(_ notification: Notification) {
+        trace("didFinishLaunching")
         signal(SIGTERM,SIG_IGN)
         let termination=DispatchSource.makeSignalSource(signal:SIGTERM,queue:.main)
-        termination.setEventHandler { NSApp.terminate(nil) }; termination.resume(); terminationSignal=termination
+        termination.setEventHandler { NSApp.terminate(nil) }; termination.resume(); terminationSignal=termination; trace("termination signal registered")
         do {
             let options=try LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
             guard let url=options.skinURL ?? Bundle.main.url(forResource:"pet",withExtension:"json",subdirectory:"Pets/YeShunguang") else { throw SkinError("缺少随附皮肤 pet.json") }
@@ -19,7 +23,7 @@ import Darwin
             if let path=ProcessInfo.processInfo.environment["YSGPET_SETTINGS_PATH"],path.hasPrefix("/") { settingsURL=URL(fileURLWithPath:path) }
             else { settingsURL=FileManager.default.urls(for:.applicationSupportDirectory,in:.userDomainMask)[0].appendingPathComponent("YeShunguangPet-macOS/settings.json") }
             let session=PetSession(skin:skin,now:{origin.duration(to:clock.now)},settings:SettingsStore(url:settingsURL),screens:ScreenProvider.areas)
-            self.session=session; status=StatusBarController(session:session,onQuit:{ NSApp.terminate(nil) }); session.start()
+            self.session=session; status=StatusBarController(session:session,onQuit:{ NSApp.terminate(nil) }); session.start(); trace("runtime ready")
         } catch { status=StatusBarController(session:nil,error:error.localizedDescription,onQuit:{NSApp.terminate(nil)}) }
     }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {

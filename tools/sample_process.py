@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 """Bounded CPU/RSS sampling for this repository's own macOS App only."""
 from pathlib import Path
-import argparse, json, math, os, subprocess, time
+import argparse, ctypes, json, math, os, subprocess, time
 ROOT=Path(__file__).resolve().parents[1]
 EXPECTED=(ROOT/'dist/YeShunguangPet.app/Contents/MacOS/YeShunguangPet').resolve()
 
 def snapshot(pid):
-    result=subprocess.run(['ps','-ww','-p',str(pid),'-o','comm=','-o','time=','-o','rss=','-o','lstart='],capture_output=True,text=True,env=dict(os.environ,LC_ALL='C'))
+    # ps comm is truncated to 15 bytes on this macOS build, even with -ww.
+    library=ctypes.CDLL('/usr/lib/libproc.dylib',use_errno=True)
+    library.proc_pidpath.argtypes=[ctypes.c_int,ctypes.c_void_p,ctypes.c_uint32]
+    library.proc_pidpath.restype=ctypes.c_int
+    buffer=ctypes.create_string_buffer(4096)
+    if library.proc_pidpath(pid,buffer,len(buffer))<=0: return None
+    if Path(os.fsdecode(buffer.value)).resolve()!=EXPECTED: raise ValueError('PID is not this packaged App')
+    result=subprocess.run(['ps','-p',str(pid),'-o','time=','-o','rss=','-o','lstart='],capture_output=True,text=True,env=dict(os.environ,LC_ALL='C'))
     if result.returncode or not result.stdout.strip(): return None
-    executable,cpu,rss,started=result.stdout.strip().split(maxsplit=3)
-    if Path(executable).resolve()!=EXPECTED: raise ValueError('PID is not this packaged App')
+    cpu,rss,started=result.stdout.strip().split(maxsplit=2)
     days=0
     if '-' in cpu:
         day,cpu=cpu.split('-',1);days=int(day)

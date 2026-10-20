@@ -10,11 +10,15 @@ with tempfile.TemporaryDirectory(prefix='pet-smoke-') as tmp:
     with log.open('wb') as stream:
         p=subprocess.Popen([str(app)],env=env,stdout=stream,stderr=subprocess.STDOUT,start_new_session=True)
         try:
+            startup_deadline=time.monotonic()+15
+            while p.poll() is None and 'YSGPET: runtime ready' not in log.read_text(errors='replace') and time.monotonic()<startup_deadline:
+                time.sleep(.05)
+            if p.poll() is not None or 'YSGPET: runtime ready' not in log.read_text(errors='replace'):
+                print(log.read_text(errors='replace'))
+                raise SystemExit(f'App did not become ready: {p.poll()}')
             deadline=time.monotonic()+2
             while p.poll() is None and time.monotonic()<deadline: time.sleep(.05)
-            if p.poll() is not None:
-                print(log.read_text(errors='replace'))
-                raise SystemExit(f'App exited early: {p.returncode}')
+            if p.poll() is not None: raise SystemExit(f'App exited early: {p.returncode}')
             print(f'Packaged app remained alive for 2 seconds (PID {p.pid}); pointer interaction not tested')
         finally:
             if p.poll() is None:
