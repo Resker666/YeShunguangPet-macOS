@@ -1,10 +1,15 @@
 import AppKit
 import PetCore
+import Darwin
 
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
     var session: PetSession?
     var status: StatusBarController?
+    private var terminationSignal: DispatchSourceSignal?
     func applicationDidFinishLaunching(_ notification: Notification) {
+        signal(SIGTERM,SIG_IGN)
+        let termination=DispatchSource.makeSignalSource(signal:SIGTERM,queue:.main)
+        termination.setEventHandler { NSApp.terminate(nil) }; termination.resume(); terminationSignal=termination
         do {
             let options=try LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
             guard let url=options.skinURL ?? Bundle.main.url(forResource:"pet",withExtension:"json",subdirectory:"Pets/YeShunguang") else { throw SkinError("缺少随附皮肤 pet.json") }
@@ -23,5 +28,11 @@ import PetCore
         alert.addButton(withTitle:"继续退出"); alert.addButton(withTitle:"取消")
         return alert.runModal() == .alertFirstButtonReturn ? .terminateNow : .terminateCancel
     }
-    func applicationWillTerminate(_ notification: Notification) { session?.prepareToExit(); status?.dispose() }
+    func applicationWillTerminate(_ notification: Notification) {
+        if let path=ProcessInfo.processInfo.environment["YSGPET_METRICS_PATH"],path.hasPrefix("/") {
+            do { try session?.exportMetrics(to:URL(fileURLWithPath:path)) }
+            catch { NSLog("运行指标未能写入：%@",error.localizedDescription) }
+        }
+        session?.prepareToExit(); status?.dispose(); terminationSignal?.cancel(); terminationSignal=nil
+    }
 }

@@ -58,3 +58,23 @@ import PetCore
         XCTAssertFalse(status.visibilityItem.isEnabled); XCTAssertFalse(status.recallItem.isEnabled)
     }
 }
+
+extension PetSessionTests {
+    func testMetricsExportAndFailureDoNotPreventExit() throws {
+        let directory=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:directory) }
+        let skin=try SkinLoader.load(manifestURL:SkinFixtures.writePackage(in:directory))
+        var now=Duration.zero
+        let session=PetSession(skin:skin,now:{now},settings:SettingsStore(url:directory.appendingPathComponent("settings.json")),screens:{[ScreenArea(id:"test",visibleFrame:CGRect(x:0,y:0,width:1000,height:700),isPrimary:true)]})
+        defer { session.prepareToExit() }
+        session.start(); now = .seconds(10)
+        let output=directory.appendingPathComponent("metrics.json")
+        try session.exportMetrics(to:output)
+        let data=try JSONSerialization.jsonObject(with:Data(contentsOf:output)) as! [String:Any]
+        XCTAssertEqual(data["durationSeconds"] as? Double,10)
+        XCTAssertEqual(data["frameUpdates"] as? Int,1)
+        XCTAssertEqual(data["schedulerWakes"] as? Int,0)
+        XCTAssertThrowsError(try session.exportMetrics(to:directory.appendingPathComponent("missing/metrics.json")))
+        XCTAssertTrue(session.requestExit())
+    }
+}

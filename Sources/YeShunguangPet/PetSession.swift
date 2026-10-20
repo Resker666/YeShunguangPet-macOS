@@ -15,12 +15,14 @@ import PetCore
     var gate=RuntimeGate()
     private(set) var action: PetAction = .idle
     private var frame: FrameLocation?
+    private var frameUpdates=0
+    private let startedAt: Duration
     private var dragOrigin=CGPoint.zero
     var onStatusChange: (() -> Void)?
     var isVisible: Bool { gate.visible }
     lazy var scheduler=FrameScheduler(now:now) { [weak self] in self?.tick() }
     init(skin: LoadedSkin, now: @escaping () -> Duration, settings: SettingsStore, screens: @escaping () -> [ScreenArea]) {
-        self.settings=settings; self.screens=screens
+        self.settings=settings; self.screens=screens; self.startedAt=now()
         self.skin=skin; self.now=now; atlas=SpriteAtlas(skin:skin)
         let size=CGSize(width:skin.manifest.cellWidth,height:skin.manifest.cellHeight)
         panel=PetPanel(size:size); view=PetView(frame:CGRect(origin:.zero,size:size))
@@ -119,7 +121,7 @@ import PetCore
         let animation=skin.manifest.animations[action]!
         let location=FrameLocation(row:animation.row,column:animation.startColumn+sample.index)
         if location != frame {
-            do { view.image=try atlas.frame(at:location); frame=location }
+            do { view.image=try atlas.frame(at:location); frame=location; frameUpdates += 1 }
             catch { setVisible(false) }
         }
     }
@@ -132,6 +134,12 @@ import PetCore
         var delay=playback.sample().untilNextFrame
         if let deadline=interaction.nextClickDeadline { let click=max(.zero,deadline-now()); delay=delay.map{min($0,click)} ?? click }
         scheduler.schedule(after:delay)
+    }
+    func exportMetrics(to url: URL) throws {
+        let duration=now()-startedAt
+        let seconds=Double(duration.components.seconds)+Double(duration.components.attoseconds)/1e18
+        let data: [String:Any] = ["schemaVersion":1,"durationSeconds":seconds,"schedulerWakes":scheduler.wakeCount,"frameUpdates":frameUpdates,"visible":gate.visible,"action":action.rawValue,"window":["width":panel.frame.width,"height":panel.frame.height],"displays":screens().map { ["width":$0.visibleFrame.width,"height":$0.visibleFrame.height] },"backingScale":panel.backingScaleFactor]
+        try JSONSerialization.data(withJSONObject:data,options:[.prettyPrinted,.sortedKeys]).write(to:url,options:.atomic)
     }
     func prepareToExit() {
         guard !gate.exiting else { return }
