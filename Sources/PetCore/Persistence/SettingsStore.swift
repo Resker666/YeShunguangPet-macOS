@@ -5,8 +5,13 @@ public struct PetPreferences: Codable, Equatable {
     public var scale: Double
     public var alwaysOnTop: Bool
     public var lookAtMouse: Bool
-    public init(scale: Double = 1, alwaysOnTop: Bool = true, lookAtMouse: Bool = true) { self.scale=scale; self.alwaysOnTop=alwaysOnTop; self.lookAtMouse=lookAtMouse }
-    public var isValid: Bool { scale.isFinite && (0.5...2).contains(scale) }
+    public var automaticActions: Bool
+    public var automaticActionIntervalSeconds: Int
+    public init(scale: Double = 1, alwaysOnTop: Bool = true, lookAtMouse: Bool = true, automaticActions: Bool = false, automaticActionIntervalSeconds: Int = 60) {
+        self.scale=scale; self.alwaysOnTop=alwaysOnTop; self.lookAtMouse=lookAtMouse
+        self.automaticActions=automaticActions; self.automaticActionIntervalSeconds=automaticActionIntervalSeconds
+    }
+    public var isValid: Bool { scale.isFinite && (0.5...2).contains(scale) && (15...120).contains(automaticActionIntervalSeconds) }
 }
 public struct PetSettings: Equatable {
     public let placement: PlacementSnapshot?
@@ -20,6 +25,8 @@ public final class SettingsStore {
     private struct LegacyConfiguration: Decodable { let placement: PlacementSnapshot }
     private struct OldPreferences: Decodable { let scale: Double; let alwaysOnTop: Bool }
     private struct OldConfiguration: Decodable { let schemaVersion: Int; let placement: PlacementSnapshot?; let preferences: OldPreferences; let selectedSkinID: String? }
+    private struct GazePreferences: Decodable { let scale: Double; let alwaysOnTop: Bool; let lookAtMouse: Bool }
+    private struct GazeConfiguration: Decodable { let placement: PlacementSnapshot?; let preferences: GazePreferences; let selectedSkinID: String? }
     private struct Configuration: Codable { let schemaVersion: Int; let placement: PlacementSnapshot?; let preferences: PetPreferences; let selectedSkinID: String? }
     public let url: URL
     private var checked=false, blocked=false
@@ -42,6 +49,9 @@ public final class SettingsStore {
                 let config=try JSONDecoder().decode(OldConfiguration.self,from:data)
                 saved=PetSettings(placement:config.placement,preferences:.init(scale:config.preferences.scale,alwaysOnTop:config.preferences.alwaysOnTop),selectedSkinID:config.schemaVersion==3 ? config.selectedSkinID : nil)
             case .number("4"):
+                let config=try JSONDecoder().decode(GazeConfiguration.self,from:data)
+                saved=PetSettings(placement:config.placement,preferences:.init(scale:config.preferences.scale,alwaysOnTop:config.preferences.alwaysOnTop,lookAtMouse:config.preferences.lookAtMouse),selectedSkinID:config.selectedSkinID)
+            case .number("5"):
                 let config=try JSONDecoder().decode(Configuration.self,from:data)
                 saved=PetSettings(placement:config.placement,preferences:config.preferences,selectedSkinID:config.selectedSkinID)
             default: throw SkinError("配置版本无效或尚不支持")
@@ -54,7 +64,7 @@ public final class SettingsStore {
         if !checked { _=load() }
         guard !blocked else { throw SkinError("原配置受保护，请先备份并重置") }
         guard settings.isValid else { throw SkinError("位置或偏好无效，未保存") }
-        let data=try JSONEncoder().encode(Configuration(schemaVersion:4,placement:settings.placement,preferences:settings.preferences,selectedSkinID:settings.selectedSkinID))
+        let data=try JSONEncoder().encode(Configuration(schemaVersion:5,placement:settings.placement,preferences:settings.preferences,selectedSkinID:settings.selectedSkinID))
         guard data.count<=65536 else { throw SkinError("配置超过 64 KiB") }
         try FileManager.default.createDirectory(at:url.deletingLastPathComponent(),withIntermediateDirectories:true)
         try write(data,url)

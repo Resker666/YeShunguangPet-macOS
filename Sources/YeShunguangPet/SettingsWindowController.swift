@@ -158,6 +158,14 @@ import UniformTypeIdentifiers
         guard !isTerminating else { return }
         var value=preferences; value.lookAtMouse=enabled; session?.setPreferences(value); refresh()
     }
+    func setAutomaticActions(_ enabled: Bool) {
+        guard !isTerminating else { return }
+        var value=preferences; value.automaticActions=enabled; session?.setPreferences(value); refresh()
+    }
+    func setAutomaticActionInterval(_ seconds: Int) {
+        guard !isTerminating else { return }
+        var value=preferences; value.automaticActionIntervalSeconds=seconds; session?.setPreferences(value); refresh()
+    }
 }
 
 @MainActor final class SettingsWindowController: NSWindowController, NSWindowDelegate {
@@ -288,6 +296,18 @@ private struct PetSettingsView: View {
                 Text(model.gazeAvailable ? "关闭设置窗口后，鼠标靠近时会短暂注视。菜单、点击和拖动期间暂停。" : "此皮肤未提供注视帧；偏好会保留，切换到支持的皮肤后生效。")
                     .font(.caption).foregroundStyle(.secondary)
                 Text("修改立即生效并自动保存。关闭置顶后，角色可能被其他窗口遮挡，可从菜单栏召回。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section("自动小动作") {
+                Toggle("空闲时自动做动作",isOn:Binding(get:{model.preferences.automaticActions},set:{model.setAutomaticActions($0)}))
+                    .accessibilityIdentifier("pet-automatic-actions")
+                LabeledContent("动作间隔",value:"约 \(model.preferences.automaticActionIntervalSeconds) 秒")
+                Slider(value:Binding(get:{Double(model.preferences.automaticActionIntervalSeconds)},set:{model.setAutomaticActionInterval(Int($0.rounded()))}),in:15...120,step:5) {
+                    Text("动作间隔")
+                } minimumValueLabel: { Text("15 秒") } maximumValueLabel: { Text("120 秒") }
+                .disabled(!model.preferences.automaticActions)
+                .accessibilityIdentifier("pet-automatic-action-interval")
+                Text("默认关闭。开启后按皮肤规则做动作，间隔有 ±25% 浮动；旧皮肤使用挥手或跳跃。点击、拖动、菜单和设置期间暂停，关闭此窗口后开始等待。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             if let error=model.saveError {

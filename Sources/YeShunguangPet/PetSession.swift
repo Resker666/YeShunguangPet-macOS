@@ -30,9 +30,13 @@ import PetCore
     private var gazeSamples=0
     private var menuOpen=false,settingsOpen=false
     private let pointerPosition: () -> CGPoint
+    private let automaticRandom: () -> Double
+    private var automatic: AutomaticActions
+    private var isAutomaticAction=false,automaticActionCount=0
     var gazeDirection: Int? { gaze.direction }
     var supportsGaze: Bool { skin.manifest.lookDirections.count==16 }
     private var canSampleGaze: Bool { gate.shouldRunFrames && preferences.lookAtMouse && supportsGaze && action == .idle && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
+    private var canRunAutomatic: Bool { gate.shouldRunFrames && action == .idle && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
     func setMenuOpen(_ open: Bool) {
         guard !gate.exiting,menuOpen != open else { return }; menuOpen=open; cancelInput()
     }
@@ -40,9 +44,10 @@ import PetCore
         guard !gate.exiting,settingsOpen != open else { return }; settingsOpen=open; cancelInput()
     }
     lazy var scheduler=FrameScheduler(now:now) { [weak self] in self?.tick() }
-    init(skin: LoadedSkin, defaultSkin: LoadedSkin? = nil, now: @escaping () -> Duration, settings: SettingsStore, screens: @escaping () -> [ScreenArea], pointerPosition: @escaping () -> CGPoint = { NSEvent.mouseLocation }) {
+    init(skin: LoadedSkin, defaultSkin: LoadedSkin? = nil, now: @escaping () -> Duration, settings: SettingsStore, screens: @escaping () -> [ScreenArea], pointerPosition: @escaping () -> CGPoint = { NSEvent.mouseLocation }, automaticRandom: @escaping () -> Double = { Double.random(in:0..<1) }) {
         self.settings=settings; self.screens=screens; self.startedAt=now()
         self.pointerPosition=pointerPosition
+        self.automaticRandom=automaticRandom; automatic=AutomaticActions(manifest:skin.manifest,random:automaticRandom)
         self.defaultSkin=defaultSkin ?? skin; library=SkinLibrary(directory:settings.url.deletingLastPathComponent().appendingPathComponent("Skins",isDirectory:true))
         self.skin=skin; self.now=now; atlas=SpriteAtlas(skin:skin)
         let size=CGSize(width:skin.manifest.cellWidth,height:skin.manifest.cellHeight)
@@ -50,7 +55,7 @@ import PetCore
         playback=SpritePlayback(now:now); interaction=PetInteraction(doubleClickInterval:.seconds(NSEvent.doubleClickInterval),now:now)
         super.init(); gate.loaded=true; panel.contentView=view
         playback.start(skin.manifest.animations[.idle]!)
-        view.onDown = { [weak self] point,count in guard let self,self.gate.shouldRunFrames else { return }; self.interaction.pointerDown(at:point,clickCount:count); self.reschedule() }
+        view.onDown = { [weak self] point,count in guard let self,self.gate.shouldRunFrames else { return }; self.cancelAutomaticAction(); self.interaction.pointerDown(at:point,clickCount:count); self.reschedule() }
         view.onMove = { [weak self] point in guard let self else { return }; self.apply(self.interaction.pointerMoved(to:point)); self.reschedule() }
         view.onUp = { [weak self] point in guard let self else { return }; self.apply(self.interaction.pointerUp(at:point)); self.reschedule() }
         NotificationCenter.default.addObserver(self,selector:#selector(screenNotification),name:NSApplication.didChangeScreenParametersNotification,object:nil)
@@ -72,6 +77,7 @@ import PetCore
                 playback.start(skin.manifest.animations[.idle]!)
             } catch { selectedSkinID=nil; skinWarning="上次使用的皮肤无法读取，已恢复默认角色：\(error.localizedDescription)" }
         }
+        automatic=AutomaticActions(manifest:skin.manifest,random:automaticRandom)
         applyWindowPreferences()
         applyPlacement(WindowPlacement.restore(placement,size:panel.frame.size,screens:screens()))
         setVisible(true)
@@ -94,6 +100,10 @@ import PetCore
         do { try settings.save(PetSettings(placement:nextPlacement,preferences:preferences,selectedSkinID:id)) }
         catch { persistenceError=error.localizedDescription; onStatusChange?(); throw error }
         // Persistence is committed before touching the current image or playback.
+        let nextAutomatic=AutomaticActions(manifest:next.manifest,random:automaticRandom)
+        if next.directory != skin.directory || !automatic.hasSameRules(as:nextAutomatic) {
+            automatic=nextAutomatic
+        }
         scheduler.cancel(); skin=next; atlas=nextAtlas; selectedSkinID=id; skinWarning=nil; persistenceError=nil
         action = .idle; playback.start(animation); frame=first; view.image=image; frameUpdates += 1
         applyWindowPreferences(); applyPlacement(nextPlacement); synchronize(); onStatusChange?()
@@ -140,8 +150,10 @@ import PetCore
         catch { persistenceError=error.localizedDescription; onStatusChange?() }
     }
     func requestExit() -> Bool { savePosition() }
-    func play(_ requested: PetAction) {
+    func play(_ requested: PetAction) { startAction(requested,automatic:false) }
+    private func startAction(_ requested: PetAction, automatic: Bool) {
         guard !gate.exiting else { return }
+        isAutomaticAction=automatic
         gaze.reset(); nextGazeSample=nil
         let next=skin.manifest.resolve(requested)
         action=next; playback.start(skin.manifest.animations[next]!); render(); reschedule()
@@ -156,11 +168,17 @@ import PetCore
     @objc private func willSleep(_ notification: Notification) { setSleeping(true) }
     @objc private func didWake(_ notification: Notification) { setSleeping(false) }
     func cancelInput() {
+        cancelAutomaticAction()
         let wasLooking=gaze.direction != nil
         gaze.reset(); nextGazeSample=nil
         if wasLooking && gate.shouldRunFrames { playback.resume(); render() }
         if interaction.cancel() { finishDrag(); play(.idle) }
         reschedule()
+    }
+    private func cancelAutomaticAction() {
+        guard isAutomaticAction else { return }
+        isAutomaticAction=false; action = .idle
+        playback.start(skin.manifest.animations[.idle]!); render()
     }
     private func synchronize() {
         if gate.shouldRunFrames { playback.resume(); render() } else { playback.pause() }
@@ -187,7 +205,7 @@ import PetCore
     }
     private func render() {
         var sample=playback.sample()
-        if sample.completed { action = .idle; playback.start(skin.manifest.animations[.idle]!); sample=playback.sample() }
+        if sample.completed { action = .idle; isAutomaticAction=false; playback.start(skin.manifest.animations[.idle]!); sample=playback.sample() }
         let animation=skin.manifest.animations[action]!
         let location=gaze.direction.map { skin.manifest.lookDirections[$0] } ?? FrameLocation(row:animation.row,column:animation.startColumn+sample.index)
         if location != frame {
@@ -198,6 +216,10 @@ import PetCore
     func tick() {
         guard gate.shouldRunFrames else { return }
         apply(interaction.expireClick()); render()
+        updateAutomatic()
+        if let next=automatic.takeAction(at:now(),cursorNear:{ AutomaticActions.isCursorNear(self.pointerPosition(),bounds:self.panel.frame) }) {
+            automaticActionCount += 1; startAction(next,automatic:true)
+        }
         if updateGaze(allowSample:true) { render() }
         reschedule()
     }
@@ -220,18 +242,26 @@ import PetCore
         return previous != gaze.direction
     }
     func reschedule() {
+        updateAutomatic()
         guard gate.shouldRunFrames else { gaze.reset(); nextGazeSample=nil; scheduler.cancel(); return }
         if updateGaze(allowSample:false) { render() }
         var delay=gaze.direction==nil ? playback.sample().untilNextFrame : nil
         if let deadline=interaction.nextClickDeadline { let click=max(.zero,deadline-now()); delay=delay.map{min($0,click)} ?? click }
         if let deadline=nextGazeSample { let look=max(.zero,deadline-now()); delay=delay.map{min($0,look)} ?? look }
+        if let deadline=automatic.nextDeadline { let wait=max(.zero,deadline-now()); delay=delay.map{min($0,wait)} ?? wait }
         scheduler.schedule(after:delay)
+    }
+    private func updateAutomatic() {
+        automatic.update(enabled:preferences.automaticActions,intervalSeconds:preferences.automaticActionIntervalSeconds,available:canRunAutomatic,at:now())
     }
     func exportMetrics(to url: URL) throws {
         let duration=now()-startedAt
         let seconds=Double(duration.components.seconds)+Double(duration.components.attoseconds)/1e18
         var data: [String:Any] = ["schemaVersion":1,"durationSeconds":seconds,"schedulerWakes":scheduler.wakeCount,"frameUpdates":frameUpdates,"visible":gate.visible,"action":action.rawValue,"skinID":skin.manifest.id,"window":["width":panel.frame.width,"height":panel.frame.height],"displays":screens().map { ["width":$0.visibleFrame.width,"height":$0.visibleFrame.height] },"backingScale":panel.backingScaleFactor,"lookAtMouseEnabled":preferences.lookAtMouse,"gazeSamples":gazeSamples]
         if let direction=gaze.direction { data["gazeDirection"]=direction }
+        data["automaticActionsEnabled"]=preferences.automaticActions
+        data["automaticActionIntervalSeconds"]=preferences.automaticActionIntervalSeconds
+        data["automaticActionCount"]=automaticActionCount
         try JSONSerialization.data(withJSONObject:data,options:[.prettyPrinted,.sortedKeys]).write(to:url,options:.atomic)
     }
     func prepareToExit() {

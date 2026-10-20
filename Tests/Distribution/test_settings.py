@@ -56,20 +56,26 @@ class StandaloneSettingsTests(unittest.TestCase):
             settings.write_text(json.dumps({"schemaVersion": 1, "placement": position}))
             migrated_metrics = SMOKE.run_once(binary, work, 2)
             migrated = json.loads(settings.read_text())
-            self.assertEqual(migrated["schemaVersion"], 4)
-            self.assertEqual(migrated["preferences"], {"scale": 1, "alwaysOnTop": True, "lookAtMouse": True})
+            self.assertEqual(migrated["schemaVersion"], 5)
+            self.assertEqual(migrated["preferences"], {"scale": 1, "alwaysOnTop": True, "lookAtMouse": True,
+                                                      "automaticActions": False, "automaticActionIntervalSeconds": 60})
             self.assertTrue(migrated_metrics["lookAtMouseEnabled"])
             self.assertGreater(migrated_metrics["gazeSamples"], 0)
             self.assertEqual(migrated["placement"], position)
-            migrated["preferences"] = {"scale": 1.5, "alwaysOnTop": False, "lookAtMouse": False}
+            preferences = {"scale": 1.5, "alwaysOnTop": False, "lookAtMouse": False,
+                           "automaticActions": True, "automaticActionIntervalSeconds": 15}
+            migrated["preferences"] = preferences
             settings.write_text(json.dumps(migrated))
             for sequence in [3, 4]:
                 actual = SMOKE.run_once(binary, work, sequence)
                 self.assertEqual(actual["window"], {"width": 288, "height": 312})
                 saved = json.loads(settings.read_text())
-                self.assertEqual(saved["preferences"], {"scale": 1.5, "alwaysOnTop": False, "lookAtMouse": False})
+                self.assertEqual(saved["preferences"], preferences)
                 self.assertFalse(actual["lookAtMouseEnabled"])
                 self.assertEqual(actual["gazeSamples"], 0)
+                self.assertTrue(actual["automaticActionsEnabled"])
+                self.assertEqual(actual["automaticActionIntervalSeconds"], 15)
+                self.assertEqual(actual["automaticActionCount"], 0)
                 self.assertEqual(saved["placement"], position)
             self.assertEqual(first["window"], {"width": 192, "height": 208})
 

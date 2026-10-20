@@ -31,7 +31,7 @@ final class SettingsStoreTests: XCTestCase {
         guard case .loaded(let saved)=store.load() else { return XCTFail("valid imported selection must load") }
         try store.save(saved)
         let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
-        XCTAssertEqual(encoded["schemaVersion"] as? Int,4)
+        XCTAssertEqual(encoded["schemaVersion"] as? Int,5)
         XCTAssertEqual(encoded["selectedSkinID"] as? String,"4AEFD8B7-6164-482F-997F-13ABFBB4275D")
         XCTAssertEqual(saved.placement,placement)
         XCTAssertEqual(saved.preferences,PetPreferences(scale:1.5,alwaysOnTop:false))
@@ -42,7 +42,7 @@ final class SettingsStoreTests: XCTestCase {
         guard case .loaded(let saved)=store.load() else { return XCTFail("legacy position must load") }
         try store.save(saved)
         let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
-        XCTAssertEqual(encoded["schemaVersion"] as? Int,4)
+        XCTAssertEqual(encoded["schemaVersion"] as? Int,5)
         let preferences=try XCTUnwrap(encoded["preferences"] as? [String:Any])
         XCTAssertEqual(preferences["scale"] as? Double,1)
         XCTAssertEqual(preferences["alwaysOnTop"] as? Bool,true)
@@ -126,7 +126,7 @@ final class SettingsStoreTests: XCTestCase {
             XCTAssertEqual(try Data(contentsOf:settingsURL),bad)
         }
     }
-    func testOldConfigurationsDefaultGazeOnAndSaveVersionFourWithoutLosingSelection() throws {
+    func testOldConfigurationsDefaultGazeOnAndSaveCurrentVersionWithoutLosingSelection() throws {
         for version in [1,2,3] {
             var value:[String:Any]=["schemaVersion":version,"placement":["screenID":"main","x":100,"y":200,"visibleX":0,"visibleY":40,"visibleWidth":1000,"visibleHeight":700]]
             if version>1 { value["preferences"]=["scale":1.5,"alwaysOnTop":false] }
@@ -137,7 +137,7 @@ final class SettingsStoreTests: XCTestCase {
             XCTAssertTrue(saved.preferences.lookAtMouse)
             try store.save(saved)
             let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
-            XCTAssertEqual(encoded["schemaVersion"] as? Int,4)
+            XCTAssertEqual(encoded["schemaVersion"] as? Int,5)
             XCTAssertEqual((encoded["preferences"] as? [String:Any])?["lookAtMouse"] as? Bool,true)
             if version==3 { XCTAssertEqual(encoded["selectedSkinID"] as? String,"4AEFD8B7-6164-482F-997F-13ABFBB4275D") }
         }
@@ -160,6 +160,32 @@ final class SettingsStoreTests: XCTestCase {
             guard case .protectedFile=store.load() else { return XCTFail("invalid gaze setting accepted") }
             XCTAssertThrowsError(try store.save(PetSettings(placement:nil)))
             XCTAssertEqual(try Data(contentsOf:settingsURL),config)
+        }
+    }
+    func testVersionFourMigratesAutomaticActionsOffAndPreservesGazeAndSelection() throws {
+        try Data(#"{"schemaVersion":4,"preferences":{"scale":1.5,"alwaysOnTop":false,"lookAtMouse":false},"selectedSkinID":"4AEFD8B7-6164-482F-997F-13ABFBB4275D"}"#.utf8).write(to:settingsURL)
+        let store=SettingsStore(url:settingsURL)
+        guard case .loaded(let saved)=store.load() else { return XCTFail("version four must migrate") }
+        XCTAssertFalse(saved.preferences.automaticActions)
+        XCTAssertEqual(saved.preferences.automaticActionIntervalSeconds,60)
+        XCTAssertFalse(saved.preferences.lookAtMouse)
+        try store.save(saved)
+        guard case .loaded(let reopened)=SettingsStore(url:settingsURL).load() else { return XCTFail("reopen") }
+        XCTAssertEqual(reopened,saved)
+        var preferences=saved.preferences; preferences.automaticActions=true; preferences.automaticActionIntervalSeconds=120
+        try store.save(.init(placement:placement,preferences:preferences,selectedSkinID:saved.selectedSkinID))
+        guard case .loaded(let enabled)=SettingsStore(url:settingsURL).load() else { return XCTFail("enabled restart") }
+        XCTAssertEqual(enabled.preferences,preferences)
+        XCTAssertEqual(enabled.selectedSkinID,"4AEFD8B7-6164-482F-997F-13ABFBB4275D")
+    }
+    func testInvalidAutomaticPreferencesProtectOriginalBytes() throws {
+        for fields in [#""automaticActions":1,"automaticActionIntervalSeconds":60"#,#""automaticActions":true,"automaticActionIntervalSeconds":14"#,#""automaticActions":false,"automaticActionIntervalSeconds":121"#,#""automaticActions":true,"automaticActionIntervalSeconds":60.5"#,#""automaticActions":true"#] {
+            let data=Data("{\"schemaVersion\":5,\"preferences\":{\"scale\":1,\"alwaysOnTop\":true,\"lookAtMouse\":false,\(fields)}}".utf8)
+            try data.write(to:settingsURL)
+            let store=SettingsStore(url:settingsURL)
+            guard case .protectedFile=store.load() else { XCTFail("invalid automatic preference accepted"); continue }
+            XCTAssertThrowsError(try store.save(.init(placement:nil)))
+            XCTAssertEqual(try Data(contentsOf:settingsURL),data)
         }
     }
 }

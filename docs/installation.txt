@@ -63,3 +63,6 @@ Finder“显示简介”可查看版本；App 内 Contents/Resources/build-info.
 源码：https://github.com/Resker666/YeShunguangPet-macOS
 MIT 源码许可与第三方角色素材声明在“开源与素材说明”目录，
 也随 App 保存在 Contents/Resources/Notices 中。
+
+自动小动作（0.1.7）
+默认关闭。在菜单栏 → 设置 → 自动小动作开启，间隔15–120秒，默认约60秒，带±25%浮动。关闭设置窗口后开始等待；点击、拖动、手动动作、菜单、设置、隐藏和睡眠期间暂停。关闭开关立即停止自动动作，偏好和间隔会保存。皮肤没有可用动作或显式空规则时不触发。
