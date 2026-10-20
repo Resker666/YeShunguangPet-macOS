@@ -290,18 +290,18 @@ settingsURL 和 validPlacement 在 setUp 中由本测试临时目录和已定义
 
 - [x] **Step 3: 运行最终相关测试和 Release 构建。** 先完成 verification-before-completion skill，从菜单退出上一测试实例后再替换 dist/ 中的 App；不终止其他进程。运行 `bash scripts/test.sh` 和 `bash scripts/build-app.sh`，要求 XCTest `TEST SUCCEEDED`、Release `BUILD SUCCEEDED` 且退出码 0。保存原始日志；发生失败先定位并只重跑有根据的检查。
 
-- [ ] **Step 4: 验证本机 App 包。** `lipo -archs dist/YeShunguangPet.app/Contents/MacOS/YeShunguangPet` 必须仅 arm64；核对应用标识、LSUIElement、最低系统和资源哈希；运行 `codesign --verify --strict --verbose=2 dist/YeShunguangPet.app`。从 Finder 或 `open` 启动，确认角色与菜单出现；从菜单退出，记录对应 PID 已结束。签名验证不代替实际启动，也不等于公证。
+- [ ] **Step 4: 验证本机 App 包。**（包、架构、签名、资源和独立启动/正常退出均通过；菜单栏真实点击退出未实测。） `lipo -archs dist/YeShunguangPet.app/Contents/MacOS/YeShunguangPet` 必须仅 arm64；核对应用标识、LSUIElement、最低系统和资源哈希；运行 `codesign --verify --strict --verbose=2 dist/YeShunguangPet.app`。从 Finder 或 `open` 启动，确认角色与菜单出现；从菜单退出，记录对应 PID 已结束。签名验证不代替实际启动，也不等于公证。
 
-- [ ] **Step 5: 执行有界日用检查。** 在实际显示器上检查透明与帧方向、拖动/单双击、菜单、重启恢复、其他应用输入、重复隐藏/显示、Spaces/全屏。锁屏/睡眠/Stage Manager 或外屏变更需要实际操作时先说明范围并等待用户配合，记录未执行项。禁止为了完成列表主动触发可能中断用户工作的锁屏、睡眠或系统设置改变。
+- [ ] **Step 5: 执行有界日用检查。**（用户已确认基本互动；焦点和其他系统场景未测，按计划记录为限制。） 在实际显示器上检查透明与帧方向、拖动/单双击、菜单、重启恢复、其他应用输入、重复隐藏/显示、Spaces/全屏。锁屏/睡眠/Stage Manager 或外屏变更需要实际操作时先说明范围并等待用户配合，记录未执行项。禁止为了完成列表主动触发可能中断用户工作的锁屏、睡眠或系统设置改变。
 
 - [x] **Step 6: 采集至少十分钟基线。** 实际可见单角色 idle 运行，记录显示器逻辑尺寸/backing scale、版本、采样时长、单核归一化 CPU（CPU 时间差/墙钟时间差×100）、RSS、调度唤醒次数和实际绘帧次数。开发环境变量 `YSGPET_METRICS_PATH` 指向 `.build/` 的本次汇总文件，不启动额外动画轮询，不记录其他应用或桌面内容。采样用独立进程在后台运行，工作中每分钟内给用户进展；不用长阻塞等待。运行不满 600 秒则报告实际结果并重新采完整样本；不可将短样本写作十分钟。
 
 - [x] **Step 7: 完成文档与本地提交。** README 给出打开 App、如何菜单退出、配置路径、CLI 皮肤入口、矩形命中、系统场景限制和 ad-hoc 分发状态；skin-compatibility 区分读取与执行；validation 填命令、退出码、测试数量、实际系统行为、CPU/RSS、未测项和失败项。提交 `build: package arm64 app and record local validation`。随后以这个提交重新构建最终包并在本地证据记录其提交 ID，避免把先前构建冒充为该提交产物。
 
-- [ ] **Step 8: 打包、复核与交付。** 运行 `bash scripts/package-app.sh`，在 dist/ 内执行 `shasum -a 256 -c YeShunguangPet-macOS-arm64.zip.sha256` 必须 OK；解到临时目录确认包结构、资源哈希和签名仍有效。按选定执行方式完成全分支独立评审，修复阻断问题并重跑受影响检查。报告 App 绝对路径、启动/退出方式、已测与未测；原仓库仍无修改，Minimal Sleep 仍只有原有两处修改。不要推送、打标签或创建 Release。
+- [x] **Step 8: 打包、复核与交付。** 运行 `bash scripts/package-app.sh`，在 dist/ 内执行 `shasum -a 256 -c YeShunguangPet-macOS-arm64.zip.sha256` 必须 OK；解到临时目录确认包结构、资源哈希和签名仍有效。按选定执行方式完成全分支独立评审，修复阻断问题并重跑受影响检查。报告 App 绝对路径、启动/退出方式、已测与未测；原仓库仍无修改，Minimal Sleep 仍只有原有两处修改。不要推送、打标签或创建 Release。
 
 ## Plan Self-Review / 执行状态
 
-用户已批准计划并选择本会话直接实施。任务 1–6 的实现与自动化检查已完成，十分钟基线已采集。用户已确认基本桌面交互正常；焦点和系统场景未测，具体限制见 validation.md。正在进行最终独立评审及最终包复核。任务 1–2 对应设计皮肤合同和素材边界，任务 3–4 对应动画、窗口、输入与生命周期，任务 5 对应位置与错误恢复，任务 6 对应本机验证和交付；五项 Review Focus 分别有所属用例。
+用户已批准计划并选择本会话直接实施。任务 1–6 的实现与自动化检查已完成，十分钟基线已采集。用户已确认基本桌面交互正常；焦点和系统场景未测，具体限制见 validation.md。独立评审两项Important已用失败回归修复，全套40测试通过；最终arm64包已构建、签名、启动/正常退出并解包复核。未测系统场景保留未勾选，不阻断本地体验版交付。任务 1–2 对应设计皮肤合同和素材边界，任务 3–4 对应动画、窗口、输入与生命周期，任务 5 对应位置与错误恢复，任务 6 对应本机验证和交付；五项 Review Focus 分别有所属用例。
 
 计划审阅通过后使用用户选择的执行方式。建议本会话直接实施：组件接口前后依赖明显，首版只有一个客户端；实施过程中保留逐任务验证与本地提交，最后进行独立评审。若用户选择分任务子代理，则按 subagent-driven-development 流程执行，并保留相同的系统实测门槛。上述选择均不授予推送或发布权限。
