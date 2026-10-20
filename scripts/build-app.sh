@@ -6,6 +6,9 @@ xcodebuild -project YeShunguangPet.xcodeproj -scheme YeShunguangPet -configurati
 app=dist/YeShunguangPet.app
 if [ -d "$app" ]; then rm -rf "$app"; fi
 /usr/bin/ditto .build/release/Build/Products/Release/YeShunguangPet.app "$app"
+mkdir -p "$app/Contents/Resources/Notices"
+cp LICENSE "$app/Contents/Resources/Notices/LICENSE.txt"
+cp ASSET_NOTICE.md docs/resource-provenance.md "$app/Contents/Resources/Notices/"
 python3 - "$app" <<'BUILDINFO'
 from pathlib import Path
 import json,subprocess,sys

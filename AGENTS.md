@@ -2,6 +2,7 @@
 适用于本仓库。先读 docs/superpowers/specs/2026-10-20-macos-first-playable-design.md 和对应 plans 文件，检查 git status。
 - Swift 6、AppKit、macOS 15+、arm64；使用现有 Xcode，不引入外部依赖。
 - 测试：bash scripts/test.sh；构建：bash scripts/build-app.sh；打包：bash scripts/package-app.sh。独立启动回归：python3 scripts/smoke-app.py。
+- 分发：0.1.1 / arm64、ad-hoc、未公证；DMG和ZIP带版本号，含安装说明与许可。先构建后运行 python3 -m unittest discover -s Tests/Distribution -v，检查真实挂载、搬移启动和位置恢复。不要把本机搬移测试写作外机或Gatekeeper首开验证通过。
 - 独立进程验证设置 YSGPET_SETTINGS_PATH 使用临时配置；不带该变量才使用个人 Application Support。
 - 用户已确认真实拖动、单击/双击、菜单隐藏/显示和召回正常。GUI 工具首次超时，后续可读取实际角色画面；焦点、Spaces、锁屏和真实睡眠仍未验证，不能以属性或模拟事件当作通过。
 - 真实皮肤 JSON/PNG 字节保持不变；源码 MIT 与第三方素材声明分开。

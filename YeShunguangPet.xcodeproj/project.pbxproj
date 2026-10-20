@@ -1054,6 +1054,7 @@
 			<key>files</key>
 			<array>
 				<string>5D8C3A28B5DF585868DDC472</string>
+				<string>DC019946BD42A3CE78CC5502</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1618,6 +1619,7 @@
 				<string>CBEF31693A7CD72FCA8161E8</string>
 				<string>961AE2A2F42547CBAF60B238</string>
 				<string>FBDC4F23F93125BBEEAE800C</string>
+				<string>DC019946BD42A3CE78CC5501</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -1691,6 +1693,24 @@
 				<string>094B5D4B04D183586C698992</string>
 				<string>C66A85E6A533B30A3B84FCCB</string>
 			</array>
+		</dict>
+		<key>DC019946BD42A3CE78CC5501</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>image.icns</string>
+			<key>path</key>
+			<string>Resources/AppIcon.icns</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>DC019946BD42A3CE78CC5502</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>DC019946BD42A3CE78CC5501</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

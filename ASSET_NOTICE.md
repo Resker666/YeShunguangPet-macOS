@@ -8,6 +8,7 @@
 - `Pets/robin/spritesheet.png`（知更鸟皮肤）
 - `Pets/hutao/spritesheet.png`（胡桃皮肤，来自 [社区皮肤库 v1.4.0](https://github.com/Resker666/YeShunguangPet-Skins/releases/tag/hutao-v1.4.0)，制作者 Resker666）
 - 由该精灵图制作的 `Assets/YeShunguangPet.ico`
+- 本 Mac 仓库保存的 `Resources/IconSource/YeShunguangPet.ico` 及由其转换的 `Resources/AppIcon.icns`
 - 由该精灵图组装的 `docs/idle-preview.png`
 - `docs/media/` 中包含第三方角色图像的封面、动画及演示视频；这些展示素材不因被放入源码仓库而获得 MIT 素材授权
 - “叶瞬光”“绝区零”等角色、作品名称和相关视觉设计

@@ -1,23 +1,26 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-app=dist/YeShunguangPet.app
-binary="$app/Contents/MacOS/YeShunguangPet"
-test -s "$binary"
-test "$(lipo -archs "$binary")" = arm64
-test -s "$app/Contents/Frameworks/PetCore.framework/Versions/A/PetCore"
-codesign --verify --strict --verbose=2 "$app"
-python3 - "$app" <<'PY'
-from pathlib import Path
-import hashlib,sys,plistlib
-app=Path(sys.argv[1])
-for file,sha in [('pet.json','70052fd6a39c3cbe3396369f9b19d5501c236b4abb18a56d3705642ed3e08811'),('spritesheet.png','42fbb6129741a7468526ad0cad27df82ee3939be140c768d3f431cc0c9a45c2d')]:
-    assert hashlib.sha256((app/'Contents/Resources/Pets/YeShunguang'/file).read_bytes()).hexdigest()==sha, file
-info=plistlib.loads((app/'Contents/Info.plist').read_bytes())
-assert info['CFBundleIdentifier']=='io.github.resker666.yeshunguangpet.macos'
-assert info['LSUIElement'] and info['LSMinimumSystemVersion']=='15.0'
-PY
+app="$PWD/dist/YeShunguangPet.app"
+metadata=$(python3 scripts/verify-app.py "$app")
+stem=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["artifactStem"])' <<< "$metadata")
+version=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])' <<< "$metadata")
+mkdir -p .build
+work=$(mktemp -d "$PWD/.build/package.XXXXXX")
+trap 'rm -rf "$work"' EXIT
+stage="$work/$stem"
+mkdir "$stage"
+ditto "$app" "$stage/YeShunguangPet.app"
+ln -s /Applications "$stage/Applications"
+cp docs/installation.txt "$stage/安装说明.txt"
+ditto "$app/Contents/Resources/Notices" "$stage/开源与素材说明"
+ditto -c -k --sequesterRsrc --keepParent "$stage" "$work/$stem.zip"
+hdiutil create -volname "叶瞬光桌宠 $version" -srcfolder "$stage" -format UDZO -ov "$work/$stem.dmg"
+hdiutil verify "$work/$stem.dmg"
+# Publish complete local artifacts after both formats succeeded.
+mv "$work/$stem.zip" "$work/$stem.dmg" dist/
 cd dist
-ditto -c -k --sequesterRsrc --keepParent YeShunguangPet.app YeShunguangPet-macOS-arm64.zip
-shasum -a 256 YeShunguangPet-macOS-arm64.zip > YeShunguangPet-macOS-arm64.zip.sha256
-shasum -a 256 -c YeShunguangPet-macOS-arm64.zip.sha256
+for suffix in dmg zip; do
+  shasum -a 256 "$stem.$suffix" > "$stem.$suffix.sha256"
+  shasum -a 256 -c "$stem.$suffix.sha256"
+done
