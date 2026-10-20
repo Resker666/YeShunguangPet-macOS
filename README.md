@@ -2,6 +2,8 @@
 
 为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前为免费分发体验版 0.1.2。
 
+延后验证事项与后续候选路线见 [项目待办](TODO.md)。
+
 ## 安装体验版
 
 使用者不需要安装 Xcode、Swift 或其他依赖。日用包请选择 M 系列 Mac（arm64）；另提供x86_64实验包用于Intel／黑苹果验证。两种包分开，文件名标明架构。部署目标仍为15.0，仅 M4 / macOS 27.0 实测，真实Intel／黑苹果及其他系统尚待验证。
