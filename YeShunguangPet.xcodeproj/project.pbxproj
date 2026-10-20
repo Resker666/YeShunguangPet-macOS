@@ -32,6 +32,24 @@
 			<key>sourceTree</key>
 			<string>BUILT_PRODUCTS_DIR</string>
 		</dict>
+		<key>ACE3D97DB6AF3797406F0FA2</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/PetCore/Runtime/SpritePlayback.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>90D4B40701F2CDA5AC8D3DDC</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>ACE3D97DB6AF3797406F0FA2</string>
+		</dict>
 		<key>EC8A40631E1327DC14797A90</key>
 		<dict>
 			<key>isa</key>
@@ -130,6 +148,7 @@
 			<integer>2147483647</integer>
 			<key>files</key>
 			<array>
+				<string>90D4B40701F2CDA5AC8D3DDC</string>
 				<string>50B1F7BA328A7BB8F7CF6688</string>
 				<string>65FBE33574A200D463341577</string>
 				<string>EB625465098ACF7CDC806F5E</string>
@@ -344,6 +363,24 @@
 			<key>fileRef</key>
 			<string>7BE14365801098BF46CC30B2</string>
 		</dict>
+		<key>714735CAFF84549D3BEC832A</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetCoreTests/SpritePlaybackTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>702F90A472E58E655B62CD81</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>714735CAFF84549D3BEC832A</string>
+		</dict>
 		<key>50B9989D83B1FFFDA7E31FCE</key>
 		<dict>
 			<key>isa</key>
@@ -391,6 +428,7 @@
 				<string>AC110877FBD68816BFBAD426</string>
 				<string>793105ECEF310716687E53E2</string>
 				<string>BE7ABB8926D49B84F53F439E</string>
+				<string>702F90A472E58E655B62CD81</string>
 				<string>F01E6F4B008985FC3BB35D39</string>
 				<string>CBA457A47868CD4989C26A1E</string>
 			</array>
@@ -636,6 +674,7 @@
 			<string>PBXGroup</string>
 			<key>children</key>
 			<array>
+				<string>ACE3D97DB6AF3797406F0FA2</string>
 				<string>EC8A40631E1327DC14797A90</string>
 				<string>6E6CE7DAC404EA1F347637CD</string>
 				<string>6B3C22EFCF7382E10A24C3BC</string>
@@ -644,6 +683,7 @@
 				<string>C0598DA87944A9BF065CD2F9</string>
 				<string>0C92CA312735BAF8C075B011</string>
 				<string>7BE14365801098BF46CC30B2</string>
+				<string>714735CAFF84549D3BEC832A</string>
 				<string>50B9989D83B1FFFDA7E31FCE</string>
 				<string>22155E339F65114069894E19</string>
 				<string>D42A5070C6DF5AF68B66423E</string>

@@ -93,7 +93,7 @@ bash scripts/package-app.sh
 - 产生 `ManifestDecoder.decode(_ data: Data) throws -> PetManifest`、`StrictJSON.validate(_ data: Data) throws`。错误以 `SkinError: Error, LocalizedError` 表达，带字段路径；所有皮肤阶段共用此错误边界。
 - 产生 `SkinFixtures.minimalManifest: Data`，其内容就是规范中 32×32、2 列、1 行、idle `[300,200]` 的有效清单；`SkinFixtures.replacing(_:with:in:)` 为明确字节替换的测试辅助。
 
-- [ ] **Step 1: 建立最小原生测试工程并写失败用例。** 仅建立任务需要的 target、scheme 和 test.sh；加入下面的 RED 测试，产品类型先不实现。`.gitignore` 忽略 `.build/`、`dist/`、DerivedData、xcuserdata、结果包和签名文件。AGENTS 写入实际计划入口、原仓库只读及发布规则。复制原 MIT LICENSE 和三个原版清单测试副本，测试通过 Bundle 读取副本。
+- [x] **Step 1: 建立最小原生测试工程并写失败用例。** 仅建立任务需要的 target、scheme 和 test.sh；加入下面的 RED 测试，产品类型先不实现。`.gitignore` 忽略 `.build/`、`dist/`、DerivedData、xcuserdata、结果包和签名文件。AGENTS 写入实际计划入口、原仓库只读及发布规则。复制原 MIT LICENSE 和三个原版清单测试副本，测试通过 Bundle 读取副本。
 
 ```swift
 func testMinimalManifestDefaultsAndIdle() throws {
@@ -112,13 +112,13 @@ func testEscapedDuplicateAndBooleanIntegerAreRejected() {
 }
 ```
 
-- [ ] **Step 2: 验证 RED。** 运行 `bash scripts/test.sh -only-testing:PetCoreTests/ManifestDecoderTests`；首次应因产品类型尚未定义而编译失败。工程本身必须能被 `xcodebuild -list -project YeShunguangPet.xcodeproj` 识别；否则先修工程配置，不能记作正确 RED。
+- [x] **Step 2: 验证 RED。** 运行 `bash scripts/test.sh -only-testing:PetCoreTests/ManifestDecoderTests`；首次应因产品类型尚未定义而编译失败。工程本身必须能被 `xcodebuild -list -project YeShunguangPet.xcodeproj` 识别；否则先修工程配置，不能记作正确 RED。
 
-- [ ] **Step 3: 实现结构检查和模型解码。** StrictJSON 做有界 token 遍历，解码字符串键后按原版不区分大小写拒绝重复，不用正则检查 JSON。随后按原版允许键、确切类型、默认值和 UTF-16 长度规则构造模型；整数不接受小数、指数形式或布尔别名。源文件为原版 `PetPackage.cs`、`PetBehaviorRules.cs`、`PetSpeech.cs`。
+- [x] **Step 3: 实现结构检查和模型解码。** StrictJSON 做有界 token 遍历，解码字符串键后按原版不区分大小写拒绝重复，不用正则检查 JSON。随后按原版允许键、确切类型、默认值和 UTF-16 长度规则构造模型；整数不接受小数、指数形式或布尔别名。源文件为原版 `PetPackage.cs`、`PetBehaviorRules.cs`、`PetSpeech.cs`。
 
-- [ ] **Step 4: 增加有值断言的边界用例并验证 GREEN。** 表驱动覆盖 schema 0/1/2，ID 和保留名，BOM/无效 UTF-8，128 KiB/超一字节，64/65 层，尾逗号/未知键/大小写别名/嵌套重复，合法可选字段及 null 区别，16/512 格、1/64 行列，20/10000 ms，非循环 idle、循环 waving、越行帧。`testOptionalFieldsPreserveDefaultsAndNullRules` 断言 speech/behavior 为 null 合法而 lookDirections 为 null 失败；`testBehaviorLimitsAndReferences` 断言 9/10 条、权重 1/100 与 0/101、冷却 5/3600 与 4/3601、动作总长 30000/30001 ms 的边界结果；`testSpeechUsesUTF16Length` 断言 40 个 emoji 的 80 个 UTF-16 单元可接受，41 个不可接受。读取三个旧清单副本均应成功，不更改参考源文件。运行 `bash scripts/test.sh`，要求所有当前 XCTest 通过。
+- [x] **Step 4: 增加有值断言的边界用例并验证 GREEN。** 表驱动覆盖 schema 0/1/2，ID 和保留名，BOM/无效 UTF-8，128 KiB/超一字节，64/65 层，尾逗号/未知键/大小写别名/嵌套重复，合法可选字段及 null 区别，16/512 格、1/64 行列，20/10000 ms，非循环 idle、循环 waving、越行帧。`testOptionalFieldsPreserveDefaultsAndNullRules` 断言 speech/behavior 为 null 合法而 lookDirections 为 null 失败；`testBehaviorLimitsAndReferences` 断言 9/10 条、权重 1/100 与 0/101、冷却 5/3600 与 4/3601、动作总长 30000/30001 ms 的边界结果；`testSpeechUsesUTF16Length` 断言 40 个 emoji 的 80 个 UTF-16 单元可接受，41 个不可接受。读取三个旧清单副本均应成功，不更改参考源文件。运行 `bash scripts/test.sh`，要求所有当前 XCTest 通过。
 
-- [ ] **Step 5: 本地提交。** `git add Sources/PetCore/Skin Tests scripts/test.sh YeShunguangPet.xcodeproj .gitignore AGENTS.md LICENSE`，提交 `feat: validate legacy pet manifests with strict JSON semantics`。
+- [x] **Step 5: 本地提交。** `git add Sources/PetCore/Skin Tests scripts/test.sh YeShunguangPet.xcodeproj .gitignore AGENTS.md LICENSE`，提交 `feat: validate legacy pet manifests with strict JSON semantics`。
 
 ### Task 2: 安全加载真实旧皮肤并验证裁帧
 
@@ -131,7 +131,7 @@ func testEscapedDuplicateAndBooleanIntegerAreRejected() {
 - 产生 `SpriteAtlas.init(skin: LoadedSkin)`、`frame(at location: FrameLocation) throws -> CGImage`；像素坐标以原图左上为原点。
 - 夹具产生 `SkinFixtures.writePackage(in: URL) throws -> URL`（返回 pet.json URL）与 `directionalPNG() throws -> Data`（64×32，上半红、下半蓝，左右帧不同且有透明角）。
 
-- [ ] **Step 1: 写真实资源和方向测试。** 先复制原版 JSON、PNG、MIT LICENSE 和素材声明，核对设计中的两份 SHA-256；测试使用复制品，不从参考库读写运行状态。
+- [x] **Step 1: 写真实资源和方向测试。** 先复制原版 JSON、PNG、MIT LICENSE 和素材声明，核对设计中的两份 SHA-256；测试使用复制品，不从参考库读写运行状态。
 
 ```swift
 func testLegacySkinDimensionsAndFirstCrop() throws {
@@ -146,13 +146,13 @@ func testLegacySkinDimensionsAndFirstCrop() throws {
 
 `legacyManifestURL` 在用例 setUp 中从 XCTest Bundle 的 `Pets/YeShunguang/pet.json` 解析。另用方向夹具逐点断言顶部红、底部蓝、透明角 alpha=0、第二列不同，不能只检查图像非空。
 
-- [ ] **Step 2: 验证 RED。** 运行 `bash scripts/test.sh -only-testing:PetCoreTests/SkinLoaderTests -only-testing:PetCoreTests/SpriteAtlasTests`；预期缺少加载和裁帧实现，或方向断言失败。
+- [x] **Step 2: 验证 RED。** 运行 `bash scripts/test.sh -only-testing:PetCoreTests/SkinLoaderTests -only-testing:PetCoreTests/SpriteAtlasTests`；预期缺少加载和裁帧实现，或方向断言失败。
 
-- [ ] **Step 3: 实现有限读取与 PNG 加载。** 限制读取字节数而非仅预先 stat；对目录和文件检查链接，对已经打开的普通文件再检查类型和大小。资源名只允许当前目录，拒绝 URL、分隔符、Windows 非法字符和链接；拒绝大小不符或损坏 PNG。ImageIO 实际解码前检查 PNG signature、IHDR 和模型尺寸；缓存裁剪 CGImage，保留 alpha 和原方向。
+- [x] **Step 3: 实现有限读取与 PNG 加载。** 限制读取字节数而非仅预先 stat；对目录和文件检查链接，对已经打开的普通文件再检查类型和大小。资源名只允许当前目录，拒绝 URL、分隔符、Windows 非法字符和链接；拒绝大小不符或损坏 PNG。ImageIO 实际解码前检查 PNG signature、IHDR 和模型尺寸；缓存裁剪 CGImage，保留 alpha 和原方向。
 
-- [ ] **Step 4: 验证拒绝用例与 GREEN。** 添加 root/PNG/manifest 为链接、`../`/反斜杠/URL、空文件、PNG 64 MiB 超一字节、合法头但损坏数据、尺寸不符、读取时文件增大仍受上限约束的测试；用可控流读取辅助测增长，不依赖不稳定并发时序。运行 `bash scripts/test.sh`，并再次核对复制资源哈希；写 provenance 的提交、路径和素材边界。
+- [x] **Step 4: 验证拒绝用例与 GREEN。** 添加 root/PNG/manifest 为链接、`../`/反斜杠/URL、空文件、PNG 64 MiB 超一字节、合法头但损坏数据、尺寸不符、读取时文件增大仍受上限约束的测试；用可控流读取辅助测增长，不依赖不稳定并发时序。运行 `bash scripts/test.sh`，并再次核对复制资源哈希；写 provenance 的提交、路径和素材边界。
 
-- [ ] **Step 5: 本地提交。** 暂存本任务文件，提交 `feat: load and crop unchanged legacy pet skin resources`。
+- [x] **Step 5: 本地提交。** 暂存本任务文件，提交 `feat: load and crop unchanged legacy pet skin resources`。
 
 ### Task 3: 确定性动画时钟
 
