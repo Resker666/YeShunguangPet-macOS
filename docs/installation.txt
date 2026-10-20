@@ -1,9 +1,12 @@
 叶瞬光桌宠 · 免费体验版
 
 适用范围
-本包仅含 Apple Silicon（M 系列）版本，不支持 Intel Mac。
+请先查看本说明顶部的安装包架构或下载文件名：
+arm64：Apple Silicon（M 系列）Mac。
+x86_64：Intel兼容测试版，真实Intel／黑苹果运行尚未验证。
+两种包不能在另一种处理器上原生运行；M系列用户请选择arm64包。
 部署目标为 macOS 15.0；目前只在 Mac mini M4 / macOS 27.0 实测。
-其他系统和未安装 Xcode 的另一台 Mac 尚待验证。
+其他系统、真实Intel／黑苹果及未安装 Xcode 的另一台 Mac 尚待验证。
 使用本软件不需要安装 Xcode、Swift、Python 或其他依赖。
 
 安装

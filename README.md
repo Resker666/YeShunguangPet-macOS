@@ -1,16 +1,16 @@
 # YeShunguangPet macOS
 
-为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前为免费分发体验版 0.1.1。
+为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前为免费分发体验版 0.1.2。
 
 ## 安装体验版
 
-使用者不需要安装 Xcode、Swift 或其他依赖。当前仅提供 M 系列 Mac（arm64）包；部署目标15.0，仅 macOS 27.0 实测，其他系统和未安装 Xcode 的另一台 Mac 尚待验证。
+使用者不需要安装 Xcode、Swift 或其他依赖。日用包请选择 M 系列 Mac（arm64）；另提供x86_64实验包用于Intel／黑苹果验证。两种包分开，文件名标明架构。部署目标仍为15.0，仅 M4 / macOS 27.0 实测，真实Intel／黑苹果及其他系统尚待验证。
 
-1. 打开 `YeShunguangPet-0.1.1-macOS-arm64.dmg`，将 App 拖到旁边的 Applications。
+1. M 系列打开 `YeShunguangPet-0.1.2-macOS-arm64.dmg`；Intel测试机选择文件名以`x86_64.dmg`结尾的实验包。将 App 拖到旁边的 Applications。
 2. 弹出 DMG，从“应用程序”打开 App；菜单栏爪印提供操作和退出入口。
 3. 免费体验版使用 ad-hoc 签名，未公证。网上下载后若系统拦截，请先核实来源，在尝试打开后按 [Apple 官方说明](https://support.apple.com/zh-cn/102445) 前往“隐私与安全性 → 仍要打开”。DMG 不会消除系统提示。
 
-备用ZIP含同一App和安装说明；安装、更新、卸载及配置保留说明见 [安装说明](docs/installation.txt)。本次分发验证范围见 [分发记录](docs/distribution-validation.md)。
+备用ZIP含对应架构的App和安装说明；安装、更新、卸载及配置保留说明见 [安装说明](docs/installation.txt)。0.1.1分发记录见 [分发记录](docs/distribution-validation.md)；双架构构建证据和限制见 [Intel测试包记录](docs/intel-validation.md)。
 
 ## 打开与退出
 
@@ -49,7 +49,10 @@ bash scripts/test.sh
 bash scripts/build-app.sh
 python3 scripts/smoke-app.py
 bash scripts/package-app.sh
-# 构建 App 后，执行真实打包、挂载、搬移和回归检查：
+# 额外构建并打包Intel实验版（不会替换上述ARM App）：
+bash scripts/build-app.sh x86_64
+bash scripts/package-app.sh x86_64
+# 两个架构的App均构建后，在M系列开发机执行完整分发检查：
 python3 -m unittest discover -s Tests/Distribution -v
 # 指定已搬离工程目录的 App，并验证二次启动恢复位置：
 python3 scripts/smoke-app.py --app /绝对路径/YeShunguangPet.app --check-restore
@@ -57,7 +60,9 @@ python3 scripts/smoke-app.py --app /绝对路径/YeShunguangPet.app --check-rest
 
 也可在 Xcode 打开 `YeShunguangPet.xcodeproj`，选择共享 scheme `YeShunguangPet`。测试使用临时目录，不修改个人配置。`.build/` 和 `dist/` 不进入 Git。
 
-构建需要 Xcode；使用 App 不需要。打包输出带版本号的 DMG、ZIP 及各自 SHA-256 文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.1-macOS-arm64.dmg.sha256`。SHA-256 用于文件完整性校验，不等同于开发者认证。包仍未做 Developer ID 签名、公证或公开发布，`Contents/Resources/build-info.json` 记录构建提交。
+构建需要 Xcode；使用 App 不需要。默认ARM App在`dist/YeShunguangPet.app`，Intel App在`dist/x86_64/YeShunguangPet.app`。两者主程序和嵌入框架架构必须一致；打包时会核对所选架构，拒绝错误标签或混合框架。
+
+打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.2-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名、公证或公开发布，`Contents/Resources/build-info.json`记录构建提交和架构。
 
 App 图标由原仓库 ICO 转换，原图256×256；大尺寸仅作缩放，不新增绘制细节。需要重新生成时运行 `bash tools/make-icon.sh`，使用系统 sips/iconutil，无外部图像工具依赖。
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate this arm64 distribution bundle without a runtime checkout dependency."""
+"""Validate a single-architecture distribution bundle and its embedded framework."""
 from pathlib import Path
 import argparse
 import hashlib
@@ -9,7 +9,7 @@ import re
 import subprocess
 
 
-def verify(app):
+def verify(app, expected_architecture=None):
     app = app.resolve()
     info = plistlib.loads((app / "Contents/Info.plist").read_bytes())
     if info.get("CFBundleIdentifier") != "io.github.resker666.yeshunguangpet.macos":
@@ -33,10 +33,16 @@ def verify(app):
     for name in ["LICENSE.txt", "ASSET_NOTICE.md", "resource-provenance.md"]:
         if (resources / "Notices" / name).stat().st_size == 0:
             raise ValueError("empty notice: " + name)
+    architecture = None
     for relative in ["Contents/MacOS/YeShunguangPet", "Contents/Frameworks/PetCore.framework/Versions/A/PetCore"]:
         binary = app / relative
-        if subprocess.check_output(["lipo", "-archs", str(binary)], text=True).strip() != "arm64":
-            raise ValueError("unexpected architecture: " + relative)
+        slices = subprocess.check_output(["lipo", "-archs", str(binary)], text=True).split()
+        if len(slices) != 1 or slices[0] not in ["arm64", "x86_64"]:
+            raise ValueError("unsupported architecture: " + relative)
+        if architecture is None:
+            architecture = slices[0]
+        if slices[0] != architecture or (expected_architecture and slices[0] != expected_architecture):
+            raise ValueError("architecture mismatch: " + relative)
         for line in subprocess.check_output(["otool", "-L", str(binary)], text=True).splitlines()[1:]:
             dependency = line.strip().split(" (", 1)[0]
             if dependency.startswith(("/System/Library/", "/usr/lib/")):
@@ -45,15 +51,16 @@ def verify(app):
                 raise ValueError("nonportable dependency: " + dependency)
     subprocess.run(["codesign", "--verify", "--strict", str(app / "Contents/Frameworks/PetCore.framework")], check=True)
     subprocess.run(["codesign", "--verify", "--strict", str(app)], check=True)
-    return {"version": version, "build": info["CFBundleVersion"], "architecture": "arm64",
-            "minimumSystemVersion": "15.0", "artifactStem": "YeShunguangPet-" + version + "-macOS-arm64"}
+    return {"version": version, "build": info["CFBundleVersion"], "architecture": architecture,
+            "minimumSystemVersion": "15.0", "artifactStem": "YeShunguangPet-" + version + "-macOS-" + architecture}
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("app", type=Path)
+    parser.add_argument("--expect-architecture", choices=["arm64", "x86_64"])
     args = parser.parse_args()
     try:
-        print(json.dumps(verify(args.app)))
+        print(json.dumps(verify(args.app, args.expect_architecture)))
     except (OSError, KeyError, ValueError, subprocess.CalledProcessError) as error:
         parser.exit(1, "App verification failed: " + str(error) + "\n")
