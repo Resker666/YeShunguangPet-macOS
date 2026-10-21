@@ -27,7 +27,7 @@
 
 ## 交付状态与边界
 
-产品实现及上述回归已完成。独立只读评审覆盖fa64742..5b22437，Critical/Important/Minor均为0，可进入本地交付；最终干净来源包与个人App升级随后单独核验，评审本身不证明产物或迁移已通过。
+本地交付已完成。独立只读评审覆盖fa64742..5b22437，Critical/Important/Minor均为0；包与个人App升级在评审之后实际核验，证据如下。
 
 真实跨应用全局按键、输入焦点、Finder物理拖放、睡眠/Spaces/全屏、重新登录、Intel／黑苹果、其他Mac及网络下载后的Gatekeeper首开仍未验证。包继续为ad-hoc、未公证；其他人运行不需要Xcode，但首次系统拦截需按包内说明处理。
 
@@ -37,3 +37,18 @@
 - 物理键盘/Finder/焦点、系统、Intel/其他Mac及Gatekeeper按既定范围保留手动待测；API和模拟不替代它们。如果边界判断不足，这些真实场景仍可能有缺陷。
 - 标题栏选中Tab在NSView缓存PNG中呈黑色胶囊，缓存不能证明实际屏幕上选中文字的颜色；继续使用系统原生TabView样式，TODO补真实界面确认。若这不是缓存差异，实际选中文字可能暂不可读，需要按真实反馈修复。
 - 干净包与个人App升级作为评审后的实际检查完成，不能用源码评审替代；如果省略这层检查，包内容或迁移错误可能遗漏。后续交付结果单独记录。
+
+## 最终安装包与日用App
+
+干净来源为`06817fa62993364e0a13fc4c594c2a33e20747d9`，两个架构build-info均为同一完整提交且trackedChanges=false；后续本次收尾提交仅更新文档。ARM和Intel各有DMG、ZIP及各自SHA-256，共八份文件，均在dist根目录。`verify-final.py`实际挂载两份DMG、解出两份ZIP，逐文件/链接核对与所构建App一致，签名和原素材哈希通过；ARM从已弹出源镜像的另一目录启动、正常退出、重开恢复位置通过。`prepare-release.py --check-only`对这八份最终附件、版本、来源和说明离线检查通过，未联系GitHub、创建草稿或发布。
+
+| 架构 | DMG SHA-256 | ZIP SHA-256 |
+| --- | --- | --- |
+| arm64 | `2bf595bf9a20805296ff328b79baa358b57d0e16740d7e04ef2e3ffc048712fd` | `351b829efa8a1756849a5e58b0d5d0ea979b30f48b361dacdefe3e4cf853e304` |
+| x86_64 | `fb015cb908a5a9a116fee01d50b70e72fcd59e795701a6aabc66b3fcd2fc6e75` | `6055e61b2060068a7550c15535737fc7d59ad53fef57d9adbe0716db7f3eee72` |
+
+已按当时准确可执行路径核实并正常退出旧日用进程，备份旧App和退出后配置，再安装`/Applications/YeShunguangPet.app`的0.1.12/build13。个人schema7→8后原偏好、所选皮肤和更新时位置保留，keyboardShortcuts=[]；未登记/撤销正式登录项。安装后先做一次正常启动/退出核验，再正常启动留作体验；交付核验时运行PID为73086。PID只记录当时事实，后续操作必须重新核对路径。
+
+回退备份为忽略目录中的`previous-installed-0.1.11.app`和`personal-settings-migration-baseline.json`，不属于Git提交。完整最终证据为`final-source.json`、`final-delivery.json`、`local-install.json`、`final-relocated-smoke.json`和对应日志。个人配置快照只在本机忽略目录，不加入仓库或安装包。
+
+用户整体验收尚待确认；尤其真实跨应用全局按键、选中分组文字、既有系统场景、外机/Intel和Gatekeeper仍保留上述边界。当前开发分支保留为`codex/macos-update-shortcuts-settings`，本轮没有合并main、推送、打标签或写入远端Release。

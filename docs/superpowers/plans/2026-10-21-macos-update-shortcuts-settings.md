@@ -150,9 +150,9 @@
 
 六项任务连续实施，不逐项请求继续。按executing-plans记录任务BASE、RED/GREEN、接口核对和必要Ruling；任务完成后使用requesting-code-review派出一次只读独立评审，覆盖整个分支、设计、计划、Review Focus和Ruling。按实际影响处理Critical/Important并以失败回归→修复→完整原生/受影响检查证明；Minor如不处理明确记录。此阶段不合并main或推送。
 
-- [ ] 评审及必要修复完成并提交后，从明确干净来源导出构建目录，先确认两架构build-info均指向同一来源且`trackedChanges=false`；导出目录内现有脚本会向父目录查询Git，因此双架构构建期间父仓库HEAD及跟踪文件保持不变，逐一核对输出commit。依次构建/打包ARM和Intel，运行`bash scripts/package-app.sh arm64`及`bash scripts/package-app.sh x86_64`，检查八份版本/架构命名附件、SHA-256、DMG挂载、ZIP内容、ad-hoc签名、最低系统与原素材哈希，保留ARM搬移/重开证据。此为本机验证，不称Intel运行或Gatekeeper首开通过。
-- [ ] 升级日用App前按准确可执行路径识别并正常退出旧进程，备份旧App与当时个人配置；不复制旧PID操作其他进程。安装`/Applications/YeShunguangPet.app`后正常启动，核对0.1.12/build13及schema7→8偏好、UUID和更新时位置保留、快捷键为空；不自动开启登录项、不触发查询。失败使用备份恢复并报告真实结果。
-- [ ] 将最终来源、测试数、包摘要、渲染/API边界、个人App迁移和未验证项目写入验证文档；本地提交文档，保持构建产物仍指向已核实的实现提交。按finishing-a-development-branch保留该开发分支，交付ARM App/DMG链接与简短体验步骤，不再询问已确定的实施方式，不自行推送/打标签/创建草稿/发布。
+- [x] 评审及必要修复完成并提交后，从明确干净来源导出构建目录，先确认两架构build-info均指向同一来源且`trackedChanges=false`；导出目录内现有脚本会向父目录查询Git，因此双架构构建期间父仓库HEAD及跟踪文件保持不变，逐一核对输出commit。依次构建/打包ARM和Intel，运行`bash scripts/package-app.sh arm64`及`bash scripts/package-app.sh x86_64`，检查八份版本/架构命名附件、SHA-256、DMG挂载、ZIP内容、ad-hoc签名、最低系统与原素材哈希，保留ARM搬移/重开证据。此为本机验证，不称Intel运行或Gatekeeper首开通过。
+- [x] 升级日用App前按准确可执行路径识别并正常退出旧进程，备份旧App与当时个人配置；不复制旧PID操作其他进程。安装`/Applications/YeShunguangPet.app`后正常启动，核对0.1.12/build13及schema7→8偏好、UUID和更新时位置保留、快捷键为空；不自动开启登录项、不触发查询。失败使用备份恢复并报告真实结果。
+- [x] 将最终来源、测试数、包摘要、渲染/API边界、个人App迁移和未验证项目写入验证文档；本地提交文档，保持构建产物仍指向已核实的实现提交。按finishing-a-development-branch保留该开发分支，交付ARM App/DMG链接与简短体验步骤，不再询问已确定的实施方式，不自行推送/打标签/创建草稿/发布。
 
 ## 计划自检
 
