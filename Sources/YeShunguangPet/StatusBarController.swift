@@ -5,7 +5,8 @@ import PetCore
     let updates:ReleaseUpdateModel
     private(set) var shortcuts:ShortcutController?
     private let loginItem:LoginItemController?
-    private var menuOpen=false,terminating=false
+    private var openMenus=Set<ObjectIdentifier>(),terminating=false
+    private var menuOpen:Bool { !openMenus.isEmpty }
     let checkUpdatesItem=NSMenuItem(title:"检查更新…",action:#selector(checkUpdates),keyEquivalent:"")
     private let item: NSStatusItem
     weak var session: PetSession?
@@ -15,6 +16,12 @@ import PetCore
     let quietItem=NSMenuItem(title:"安静模式",action:#selector(toggleQuiet),keyEquivalent:"")
     private(set) var settingsController: SettingsWindowController?
     let menu=NSMenu()
+    private let contextMenu=NSMenu()
+    private let contextSettingsItem=NSMenuItem(title:"设置…",action:#selector(openSettings),keyEquivalent:"")
+    private let contextQuietItem=NSMenuItem(title:"安静模式",action:#selector(toggleQuiet),keyEquivalent:"")
+    private let contextHideItem=NSMenuItem(title:"隐藏角色",action:#selector(toggle),keyEquivalent:"")
+    private let waveItem=NSMenuItem(title:"挥手",action:#selector(wave),keyEquivalent:"")
+    private let jumpItem=NSMenuItem(title:"跳跃",action:#selector(jump),keyEquivalent:"")
     private let persistenceItem=NSMenuItem(title:"",action:nil,keyEquivalent:"")
     private let retryItem=NSMenuItem(title:"重试保存设置",action:#selector(retry),keyEquivalent:"")
     private let resetItem=NSMenuItem(title:"备份原配置并重置",action:#selector(reset),keyEquivalent:"")
@@ -50,6 +57,13 @@ import PetCore
         menu.addItem(.separator())
         let quit=NSMenuItem(title:"退出",action:#selector(quit),keyEquivalent:""); quit.target=self; menu.addItem(quit)
         menu.delegate=self; item.menu=menu
+        contextMenu.autoenablesItems=false;contextMenu.delegate=self
+        for entry in [contextSettingsItem,contextQuietItem,contextHideItem,waveItem,jumpItem] {entry.target=self;contextMenu.addItem(entry)}
+        contextQuietItem.toolTip=quietItem.toolTip
+        session?.view.contextMenu = { [weak self] in
+            guard let self,!self.terminating,self.session?.gate.shouldRunFrames==true,self.settingsController?.hasBlockingSheet != true,NSApp.modalWindow==nil else{return nil}
+            self.refresh();return self.contextMenu
+        }
         session?.onStatusChange = { [weak self] in self?.refresh() }; refresh()
     }
     func refresh() {
@@ -57,6 +71,8 @@ import PetCore
         checkUpdatesItem.isEnabled=session != nil
         settingsItem.isEnabled=session != nil; settingsController?.model.refresh()
         quietItem.isEnabled=session != nil;quietItem.state=session?.isQuiet == true ? .on : .off
+        contextQuietItem.state=quietItem.state
+        for entry in contextMenu.items {entry.isEnabled=session != nil && !terminating && session?.gate.exiting != true}
         skinWarningItem.isHidden=session?.skinWarning==nil; skinWarningItem.toolTip=session?.skinWarning
         let message=session?.persistenceError
         persistenceItem.isHidden=message==nil; persistenceItem.title=session?.protectedSettings == true ? "原配置受保护，设置暂不保存" : "设置保存失败"; persistenceItem.toolTip=message
@@ -65,8 +81,15 @@ import PetCore
     }
     @objc private func retry() { session?.retrySave(); refresh() }
     @objc private func reset() { session?.resetProtectedSettings(); refresh() }
-    func menuWillOpen(_ menu: NSMenu) { menuOpen=true; session?.setMenuOpen(true); refresh() }
-    func menuDidClose(_ menu: NSMenu) { menuOpen=false; session?.setMenuOpen(false) }
+    func menuWillOpen(_ menu: NSMenu) {
+        guard menu === self.menu || menu === contextMenu else{return}
+        openMenus.insert(ObjectIdentifier(menu));session?.setMenuOpen(true);refresh()
+    }
+    func menuDidClose(_ menu: NSMenu) {
+        openMenus.remove(ObjectIdentifier(menu));session?.setMenuOpen(menuOpen)
+    }
+    @objc private func wave() {guard !terminating else{return};session?.play(.waving)}
+    @objc private func jump() {guard !terminating else{return};session?.play(.jumping)}
     @objc private func toggle() { if let session { session.setVisible(!session.isVisible) }; refresh() }
     @objc private func recall() { session?.recall(); refresh() }
     @objc private func toggleQuiet() { if let session {session.setQuiet(!session.isQuiet)};refresh() }
@@ -78,8 +101,8 @@ import PetCore
     }
     @objc private func checkUpdates() {guard session != nil else{return};presentSettings(tab:.about);updates.check()}
     func startShortcuts(){shortcuts?.start()}
-    func beginTermination(){terminating=true;updates.cancel();settingsController?.beginTermination()}
-    func cancelTermination(){terminating=false;settingsController?.model.cancelTermination()}
+    func beginTermination(){terminating=true;contextMenu.cancelTracking();updates.cancel();settingsController?.beginTermination();refresh()}
+    func cancelTermination(){terminating=false;settingsController?.model.cancelTermination();refresh()}
     @objc private func quit() { onQuit() }
-    func dispose() { terminating=true;updates.cancel();shortcuts?.dispose();settingsController?.close(); settingsController=nil; session?.setMenuOpen(false); item.menu=nil; menu.delegate=nil; NSStatusBar.system.removeStatusItem(item) }
+    func dispose() { terminating=true;contextMenu.cancelTracking();session?.view.contextMenu=nil;contextMenu.delegate=nil;openMenus.removeAll();updates.cancel();shortcuts?.dispose();settingsController?.close(); settingsController=nil; session?.setMenuOpen(false); item.menu=nil; menu.delegate=nil; NSStatusBar.system.removeStatusItem(item) }
 }
