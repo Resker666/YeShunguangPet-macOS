@@ -48,4 +48,4 @@ C六项状态/路径/失败回归先观察12处断言失败，再实现适配与
 
 旧版按准确可执行文件路径确认后正常退出；个人配置先备份到忽略目录。0.1.9 arm64已安装于`/Applications/YeShunguangPet.app`并实际启动、正常退出迁移、再次启动。schema6升级7时原偏好、已选皮肤和迁移时位置保留，台词默认关闭，安静模式默认正常；当前留新版运行供体验。正式登录项未由开发流程开启或撤销。用户可在设置中自行开启并按需完成真实重登验收。
 
-证据保存在忽略的`.build/daily-validation/`：`rehearsal.json`及各步骤日志、`real-skins.json`与窗口PNG、`final-delivery.json`、`local-install.json`及个人配置备份；安装产物位于`dist`。本轮仅本地提交，未推送、打标签或发布。用户0.1.9整体验收及真实重登仍待完成，见TODO。
+证据保存在忽略的`.build/daily-validation/`：`rehearsal.json`及各步骤日志、`real-skins.json`与窗口PNG、`final-delivery.json`、`local-install.json`及个人配置备份；安装产物位于`dist`。本地交付后，用户明确要求“推送”，按既有流程同步main和`codex/macos-daily-companion`，不打标签或创建Release。该指令不记作逐项体验或真实重登验收，0.1.9整体验收及真实重登继续保留在TODO中。
