@@ -256,6 +256,7 @@
 				<string>1C6DB998C403210D69D368C8</string>
 				<string>B0E56FF5915DA3ACA3767AEA</string>
 				<string>501EA0E4F561B1E4DCDC3BDC</string>
+				<string>BCA692505E41460C20DA83B1</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -598,6 +599,7 @@
 				<string>F866D30E0F142C793404349F</string>
 				<string>630549681CCB20040EC4CFE9</string>
 				<string>0BDA2873CD942884D62788FD</string>
+				<string>456185A222D9FF6477263AB0</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1001,6 +1003,7 @@
 				<string>DC008FB9534995D2F77F7E22</string>
 				<string>A9C3FBAE9AFE8547CF97D249</string>
 				<string>5C60D23B19848E378F377E34</string>
+				<string>335FA44CC4C028B18FCAEC70</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1383,6 +1386,8 @@
 				<string>F8B7D43C0DF8D595E8FBAC2D</string>
 				<string>F46F06696CE4FDEC57860F15</string>
 				<string>9015B2D4DA916E4052942BBC</string>
+				<string>3C822CF77830F88780653AA7</string>
+				<string>DA08D6CA0144256A5942502A</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1647,6 +1652,10 @@
 				<string>59B8FC0EB38D540B169DF17B</string>
 				<string>9630E1EC4D965C3E56B7186C</string>
 				<string>621B6ECEA4D11529EEBAC62B</string>
+				<string>7CD08ED8474B6BA43236E6C1</string>
+				<string>DB8CC5B23753BF35E9ECA82A</string>
+				<string>FB5A891ED228B27E3F4042DD</string>
+				<string>62EB7AF77548EE6DE0AF59FA</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -1979,6 +1988,85 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>621B6ECEA4D11529EEBAC62B</string>
+		</dict>
+		<key>7CD08ED8474B6BA43236E6C1</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/PetCore/Runtime/Speech.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>BCA692505E41460C20DA83B1</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>7CD08ED8474B6BA43236E6C1</string>
+		</dict>
+		<key>DB8CC5B23753BF35E9ECA82A</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetCoreTests/SpeechTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>456185A222D9FF6477263AB0</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>DB8CC5B23753BF35E9ECA82A</string>
+		</dict>
+		<key>FB5A891ED228B27E3F4042DD</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/SpeechSessionTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>3C822CF77830F88780653AA7</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>FB5A891ED228B27E3F4042DD</string>
+		</dict>
+		<key>62EB7AF77548EE6DE0AF59FA</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/SpeechBubble.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>335FA44CC4C028B18FCAEC70</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>62EB7AF77548EE6DE0AF59FA</string>
+		</dict>
+		<key>DA08D6CA0144256A5942502A</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>62EB7AF77548EE6DE0AF59FA</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

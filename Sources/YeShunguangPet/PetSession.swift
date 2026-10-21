@@ -39,6 +39,10 @@ import PetCore
     private var roamingMoved=false,roamingCount=0,roamingPointerSamples=0
     private var roamingDistance: CGFloat=0
     private var roamingPlacement: PlacementSnapshot?
+    private var speech=SpeechPolicy()
+    private var speechBubble:SpeechBubble?
+    private var speechDeadline:Duration?
+    private var speechShownCount=0
     var gazeDirection: Int? { gaze.direction }
     var supportsGaze: Bool { skin.manifest.lookDirections.count==16 }
     var supportsRoaming: Bool { skin.manifest.animations[.runningLeft]?.loop==true && skin.manifest.animations[.runningRight]?.loop==true }
@@ -68,7 +72,7 @@ import PetCore
         playback=SpritePlayback(now:now); interaction=PetInteraction(doubleClickInterval:.seconds(NSEvent.doubleClickInterval),now:now)
         super.init(); gate.loaded=true; panel.contentView=view
         playback.start(skin.manifest.animations[.idle]!)
-        view.onDown = { [weak self] point,count in guard let self,self.gate.shouldRunFrames else { return }; self.stopRoaming(); self.cancelAutomaticAction(); self.interaction.pointerDown(at:point,clickCount:count); self.reschedule() }
+        view.onDown = { [weak self] point,count in guard let self,self.gate.shouldRunFrames else { return }; self.dismissSpeech(); self.stopRoaming(); self.cancelAutomaticAction(); self.interaction.pointerDown(at:point,clickCount:count); self.reschedule() }
         view.onMove = { [weak self] point in guard let self else { return }; self.apply(self.interaction.pointerMoved(to:point)); self.reschedule() }
         view.onUp = { [weak self] point in guard let self else { return }; self.apply(self.interaction.pointerUp(at:point)); self.reschedule() }
         NotificationCenter.default.addObserver(self,selector:#selector(screenNotification),name:NSApplication.didChangeScreenParametersNotification,object:nil)
@@ -168,6 +172,7 @@ import PetCore
     func play(_ requested: PetAction) { startAction(requested,automatic:false) }
     private func startAction(_ requested: PetAction, automatic: Bool) {
         guard !gate.exiting else { return }
+        dismissSpeech()
         stopRoaming()
         isAutomaticAction=automatic
         gaze.reset(); nextGazeSample=nil
@@ -184,6 +189,7 @@ import PetCore
     @objc private func willSleep(_ notification: Notification) { setSleeping(true) }
     @objc private func didWake(_ notification: Notification) { setSleeping(false) }
     func cancelInput() {
+        dismissSpeech()
         stopRoaming()
         cancelAutomaticAction()
         let wasLooking=gaze.direction != nil
@@ -236,7 +242,7 @@ import PetCore
             self.roamingPointerSamples += 1
             return AutomaticActions.isCursorNear(self.pointerPosition(),bounds:frame,radius:radius)
         }) {
-            if !wasWalking && roaming.isWalking { roamingCount += 1;roamingMoved=false;roamingPlacement=current }
+            if !wasWalking && roaming.isWalking { dismissSpeech();roamingCount += 1;roamingMoved=false;roamingPlacement=current }
             if sample.x != frame.minX {
                 panel.setFrameOrigin(CGPoint(x:sample.x,y:frame.minY))
                 let distance=abs(panel.frame.minX-frame.minX)
@@ -260,8 +266,8 @@ import PetCore
                 let requested: PetAction=dx>0 ? .runningRight : dx<0 ? .runningLeft : .idle
                 let resolved=skin.manifest.resolve(requested)
                 if resolved != action { play(resolved) }
-            case .finishDrag: finishDrag(); play(.idle)
-            case .play(let requested): play(requested)
+            case .finishDrag: finishDrag(); play(.idle);requestSpeech(.drag)
+            case .play(let requested): play(requested);if requested == .waving {requestSpeech(.click)}
             }
         }
     }
@@ -269,6 +275,14 @@ import PetCore
         applyPlacement(WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()))
         _=savePosition()
     }
+    private func requestSpeech(_ event:SpeechEvent) {
+        guard gate.shouldRunFrames,preferences.speechEnabled,!isQuiet,!menuOpen,!settingsOpen,!interaction.isPointerBusy,
+              let text=speech.select(lines:skin.manifest.speech,event:event,at:now()),
+              let area=WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens())?.visibleFrame else{return}
+        if speechBubble==nil {speechBubble=SpeechBubble()}
+        if speechBubble?.show(text,owner:panel,area:area)==true {speechDeadline=now() + .seconds(6);speechShownCount += 1}
+    }
+    private func dismissSpeech() {speechDeadline=nil;speechBubble?.dismiss()}
     private func render() {
         var sample=playback.sample()
         if sample.completed { action = .idle; isAutomaticAction=false; playback.start(skin.manifest.animations[.idle]!); sample=playback.sample() }
@@ -281,6 +295,7 @@ import PetCore
     }
     func tick() {
         guard gate.shouldRunFrames else { return }
+        if let deadline=speechDeadline,now()>=deadline {dismissSpeech()}
         apply(interaction.expireClick()); render()
         advanceRoaming()
         updateAutomatic()
@@ -318,6 +333,7 @@ import PetCore
         if let deadline=nextGazeSample { let look=max(.zero,deadline-now()); delay=delay.map{min($0,look)} ?? look }
         if let deadline=automatic.nextDeadline { let wait=max(.zero,deadline-now()); delay=delay.map{min($0,wait)} ?? wait }
         if let deadline=roaming.nextDeadline { let move=max(.zero,deadline-now());delay=delay.map{min($0,move)} ?? move }
+        if let deadline=speechDeadline {let expiry=max(.zero,deadline-now());delay=delay.map{min($0,expiry)} ?? expiry}
         scheduler.schedule(after:delay)
     }
     private func updateAutomatic() {
@@ -335,10 +351,12 @@ import PetCore
         data["roamIntervalSeconds"]=preferences.roamIntervalSeconds
         data["roamingCount"]=roamingCount;data["roamingDistancePoints"]=roamingDistance;data["roamingPointerSamples"]=roamingPointerSamples
         data["quietMode"]=isQuiet
+        data["speechEnabled"]=preferences.speechEnabled;data["speechShownCount"]=speechShownCount;data["speechVisible"]=speechDeadline != nil
         try JSONSerialization.data(withJSONObject:data,options:[.prettyPrinted,.sortedKeys]).write(to:url,options:.atomic)
     }
     func prepareToExit() {
         guard !gate.exiting else { return }
+        dismissSpeech();speechBubble?.close();speechBubble=nil
         gate.exiting=true; gaze.reset(); nextGazeSample=nil; interaction.cancel(); playback.pause(); scheduler.cancel()
         roaming.update(enabled:false,intervalSeconds:preferences.roamIntervalSeconds,available:false,at:now())
         NSWorkspace.shared.notificationCenter.removeObserver(self)

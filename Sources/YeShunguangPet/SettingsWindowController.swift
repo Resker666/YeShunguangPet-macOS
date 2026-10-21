@@ -176,6 +176,10 @@ import UniformTypeIdentifiers
         guard !isTerminating else { return }
         var value=preferences;value.roamIntervalSeconds=seconds;session?.setPreferences(value);refresh()
     }
+    func setSpeechEnabled(_ enabled:Bool) {
+        guard !isTerminating else{return}
+        var value=preferences;value.speechEnabled=enabled;session?.setPreferences(value);refresh()
+    }
 }
 
 @MainActor final class SettingsWindowController: NSWindowController, NSWindowDelegate {
@@ -306,6 +310,12 @@ private struct PetSettingsView: View {
                 Text(model.gazeAvailable ? "关闭设置窗口后，鼠标靠近时会短暂注视。菜单、点击和拖动期间暂停。" : "此皮肤未提供注视帧；偏好会保留，切换到支持的皮肤后生效。")
                     .font(.caption).foregroundStyle(.secondary)
                 Text("修改立即生效并自动保存。关闭置顶后，角色可能被其他窗口遮挡，可从菜单栏召回。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section("互动台词") {
+                Toggle("显示互动台词",isOn:Binding(get:{model.preferences.speechEnabled},set:{model.setSpeechEnabled($0)}))
+                    .accessibilityIdentifier("pet-speech-enabled")
+                Text("默认关闭。单击或拖动结束时回应，约6秒后收起，至少间隔30秒。优先使用皮肤台词；未提供时使用默认文案。安静模式下暂停显示。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("自动小动作") {

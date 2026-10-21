@@ -31,7 +31,7 @@ final class SettingsStoreTests: XCTestCase {
         guard case .loaded(let saved)=store.load() else { return XCTFail("valid imported selection must load") }
         try store.save(saved)
         let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
-        XCTAssertEqual(encoded["schemaVersion"] as? Int,6)
+        XCTAssertEqual(encoded["schemaVersion"] as? Int,7)
         XCTAssertEqual(encoded["selectedSkinID"] as? String,"4AEFD8B7-6164-482F-997F-13ABFBB4275D")
         XCTAssertEqual(saved.placement,placement)
         XCTAssertEqual(saved.preferences,PetPreferences(scale:1.5,alwaysOnTop:false))
@@ -42,7 +42,7 @@ final class SettingsStoreTests: XCTestCase {
         guard case .loaded(let saved)=store.load() else { return XCTFail("legacy position must load") }
         try store.save(saved)
         let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
-        XCTAssertEqual(encoded["schemaVersion"] as? Int,6)
+        XCTAssertEqual(encoded["schemaVersion"] as? Int,7)
         let preferences=try XCTUnwrap(encoded["preferences"] as? [String:Any])
         XCTAssertEqual(preferences["scale"] as? Double,1)
         XCTAssertEqual(preferences["alwaysOnTop"] as? Bool,true)
@@ -137,7 +137,7 @@ final class SettingsStoreTests: XCTestCase {
             XCTAssertTrue(saved.preferences.lookAtMouse)
             try store.save(saved)
             let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
-            XCTAssertEqual(encoded["schemaVersion"] as? Int,6)
+            XCTAssertEqual(encoded["schemaVersion"] as? Int,7)
             XCTAssertEqual((encoded["preferences"] as? [String:Any])?["lookAtMouse"] as? Bool,true)
             if version==3 { XCTAssertEqual(encoded["selectedSkinID"] as? String,"4AEFD8B7-6164-482F-997F-13ABFBB4275D") }
         }
@@ -205,6 +205,32 @@ final class SettingsStoreTests: XCTestCase {
             try data.write(to:settingsURL);let store=SettingsStore(url:settingsURL)
             guard case .protectedFile=store.load() else { XCTFail("invalid roaming preference accepted");continue }
             XCTAssertThrowsError(try store.save(.init(placement:nil)));XCTAssertEqual(try Data(contentsOf:settingsURL),data)
+        }
+    }
+    func testVersionSixMigratesSpeechOffAndVersionSevenRetainsEnabledSelectionAndPosition() throws {
+        try Data(#"{"schemaVersion":6,"placement":{"screenID":"main","x":100,"y":200,"visibleX":0,"visibleY":40,"visibleWidth":1000,"visibleHeight":700},"preferences":{"scale":1.5,"alwaysOnTop":false,"lookAtMouse":false,"automaticActions":true,"automaticActionIntervalSeconds":15,"desktopRoaming":true,"roamIntervalSeconds":20},"selectedSkinID":"4AEFD8B7-6164-482F-997F-13ABFBB4275D"}"#.utf8).write(to:settingsURL)
+        let store=SettingsStore(url:settingsURL)
+        guard case .loaded(let saved)=store.load() else{return XCTFail("v6 migration")}
+        try store.save(saved)
+        var object=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
+        var preferences=try XCTUnwrap(object["preferences"] as? [String:Any])
+        XCTAssertEqual(object["schemaVersion"] as? Int,7);XCTAssertEqual(preferences["speechEnabled"] as? Bool,false)
+        preferences["speechEnabled"]=true;object["preferences"]=preferences;object["schemaVersion"]=7
+        try JSONSerialization.data(withJSONObject:object).write(to:settingsURL)
+        let reopened=SettingsStore(url:settingsURL)
+        guard case .loaded(let enabled)=reopened.load() else{return XCTFail("v7 round trip")}
+        XCTAssertEqual(enabled.placement,placement);XCTAssertEqual(enabled.selectedSkinID,"4AEFD8B7-6164-482F-997F-13ABFBB4275D")
+        XCTAssertTrue(enabled.preferences.automaticActions);XCTAssertTrue(enabled.preferences.desktopRoaming)
+        try reopened.save(enabled)
+        let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
+        XCTAssertEqual((encoded["preferences"] as? [String:Any])?["speechEnabled"] as? Bool,true)
+    }
+    func testInvalidOrMissingVersionSevenSpeechKeepsOriginalProtected() throws {
+        for field in ["",",\"speechEnabled\":1",",\"speechEnabled\":null",",\"speechEnabled\":\"true\""] {
+            let bad=Data("{\"schemaVersion\":7,\"preferences\":{\"scale\":1,\"alwaysOnTop\":true,\"lookAtMouse\":true,\"automaticActions\":false,\"automaticActionIntervalSeconds\":60,\"desktopRoaming\":false,\"roamIntervalSeconds\":75\(field)}}".utf8)
+            try bad.write(to:settingsURL);let store=SettingsStore(url:settingsURL)
+            guard case .protectedFile=store.load() else{XCTFail("invalid speech preference accepted");continue}
+            XCTAssertThrowsError(try store.save(.init(placement:nil)));XCTAssertEqual(try Data(contentsOf:settingsURL),bad)
         }
     }
 }
