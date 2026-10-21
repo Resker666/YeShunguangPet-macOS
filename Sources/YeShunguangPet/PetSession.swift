@@ -33,10 +33,17 @@ import PetCore
     private let automaticRandom: () -> Double
     private var automatic: AutomaticActions
     private var isAutomaticAction=false,automaticActionCount=0
+    private let roamingRandom: () -> Double
+    private var roaming: PetRoaming
+    private var roamingMoved=false,roamingCount=0,roamingPointerSamples=0
+    private var roamingDistance: CGFloat=0
+    private var roamingPlacement: PlacementSnapshot?
     var gazeDirection: Int? { gaze.direction }
     var supportsGaze: Bool { skin.manifest.lookDirections.count==16 }
-    private var canSampleGaze: Bool { gate.shouldRunFrames && preferences.lookAtMouse && supportsGaze && action == .idle && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
-    private var canRunAutomatic: Bool { gate.shouldRunFrames && action == .idle && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
+    var supportsRoaming: Bool { skin.manifest.animations[.runningLeft]?.loop==true && skin.manifest.animations[.runningRight]?.loop==true }
+    private var canSampleGaze: Bool { gate.shouldRunFrames && preferences.lookAtMouse && supportsGaze && action == .idle && !roaming.isWalking && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
+    private var canRunAutomatic: Bool { gate.shouldRunFrames && action == .idle && !roaming.isWalking && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
+    private var canRoam: Bool { gate.shouldRunFrames && !interaction.isPointerBusy && !menuOpen && !settingsOpen && (action == .idle || roaming.isWalking) }
     func setMenuOpen(_ open: Bool) {
         guard !gate.exiting,menuOpen != open else { return }; menuOpen=open; cancelInput()
     }
@@ -44,10 +51,11 @@ import PetCore
         guard !gate.exiting,settingsOpen != open else { return }; settingsOpen=open; cancelInput()
     }
     lazy var scheduler=FrameScheduler(now:now) { [weak self] in self?.tick() }
-    init(skin: LoadedSkin, defaultSkin: LoadedSkin? = nil, now: @escaping () -> Duration, settings: SettingsStore, screens: @escaping () -> [ScreenArea], pointerPosition: @escaping () -> CGPoint = { NSEvent.mouseLocation }, automaticRandom: @escaping () -> Double = { Double.random(in:0..<1) }) {
+    init(skin: LoadedSkin, defaultSkin: LoadedSkin? = nil, now: @escaping () -> Duration, settings: SettingsStore, screens: @escaping () -> [ScreenArea], pointerPosition: @escaping () -> CGPoint = { NSEvent.mouseLocation }, automaticRandom: @escaping () -> Double = { Double.random(in:0..<1) },roamingRandom: @escaping () -> Double = { Double.random(in:0..<1) }) {
         self.settings=settings; self.screens=screens; self.startedAt=now()
         self.pointerPosition=pointerPosition
         self.automaticRandom=automaticRandom; automatic=AutomaticActions(manifest:skin.manifest,random:automaticRandom)
+        self.roamingRandom=roamingRandom;roaming=PetRoaming(random:roamingRandom)
         self.defaultSkin=defaultSkin ?? skin; library=SkinLibrary(directory:settings.url.deletingLastPathComponent().appendingPathComponent("Skins",isDirectory:true))
         self.skin=skin; self.now=now; atlas=SpriteAtlas(skin:skin)
         let size=CGSize(width:skin.manifest.cellWidth,height:skin.manifest.cellHeight)
@@ -55,7 +63,7 @@ import PetCore
         playback=SpritePlayback(now:now); interaction=PetInteraction(doubleClickInterval:.seconds(NSEvent.doubleClickInterval),now:now)
         super.init(); gate.loaded=true; panel.contentView=view
         playback.start(skin.manifest.animations[.idle]!)
-        view.onDown = { [weak self] point,count in guard let self,self.gate.shouldRunFrames else { return }; self.cancelAutomaticAction(); self.interaction.pointerDown(at:point,clickCount:count); self.reschedule() }
+        view.onDown = { [weak self] point,count in guard let self,self.gate.shouldRunFrames else { return }; self.stopRoaming(); self.cancelAutomaticAction(); self.interaction.pointerDown(at:point,clickCount:count); self.reschedule() }
         view.onMove = { [weak self] point in guard let self else { return }; self.apply(self.interaction.pointerMoved(to:point)); self.reschedule() }
         view.onUp = { [weak self] point in guard let self else { return }; self.apply(self.interaction.pointerUp(at:point)); self.reschedule() }
         NotificationCenter.default.addObserver(self,selector:#selector(screenNotification),name:NSApplication.didChangeScreenParametersNotification,object:nil)
@@ -78,6 +86,7 @@ import PetCore
             } catch { selectedSkinID=nil; skinWarning="上次使用的皮肤无法读取，已恢复默认角色：\(error.localizedDescription)" }
         }
         automatic=AutomaticActions(manifest:skin.manifest,random:automaticRandom)
+        roaming=PetRoaming(random:roamingRandom)
         applyWindowPreferences()
         applyPlacement(WindowPlacement.restore(placement,size:panel.frame.size,screens:screens()))
         setVisible(true)
@@ -105,6 +114,7 @@ import PetCore
             automatic=nextAutomatic
         }
         scheduler.cancel(); skin=next; atlas=nextAtlas; selectedSkinID=id; skinWarning=nil; persistenceError=nil
+        roaming=PetRoaming(random:roamingRandom)
         action = .idle; playback.start(animation); frame=first; view.image=image; frameUpdates += 1
         applyWindowPreferences(); applyPlacement(nextPlacement); synchronize(); onStatusChange?()
     }
@@ -153,6 +163,7 @@ import PetCore
     func play(_ requested: PetAction) { startAction(requested,automatic:false) }
     private func startAction(_ requested: PetAction, automatic: Bool) {
         guard !gate.exiting else { return }
+        stopRoaming()
         isAutomaticAction=automatic
         gaze.reset(); nextGazeSample=nil
         let next=skin.manifest.resolve(requested)
@@ -168,6 +179,7 @@ import PetCore
     @objc private func willSleep(_ notification: Notification) { setSleeping(true) }
     @objc private func didWake(_ notification: Notification) { setSleeping(false) }
     func cancelInput() {
+        stopRoaming()
         cancelAutomaticAction()
         let wasLooking=gaze.direction != nil
         gaze.reset(); nextGazeSample=nil
@@ -179,6 +191,55 @@ import PetCore
         guard isAutomaticAction else { return }
         isAutomaticAction=false; action = .idle
         playback.start(skin.manifest.animations[.idle]!); render()
+    }
+    private func stopRoaming() {
+        guard roaming.isWalking else { return }
+        roaming.cancel(at:now());setRoamingAnimation(.idle);saveRoamingPosition()
+    }
+    private func saveRoamingPosition() {
+        guard roamingMoved else { return }
+        roamingMoved=false
+        // A display change can interrupt motion before the screen handler restores placement.
+        if let current=WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()) {
+            applyPlacement(current)
+        } else if let remembered=roamingPlacement {
+            placement=PlacementSnapshot(screenID:remembered.screenID,origin:panel.frame.origin,visibleFrame:remembered.visibleFrame)
+        }
+        roamingPlacement=nil
+        _ = savePosition()
+    }
+    private func setRoamingAnimation(_ next: PetAction) {
+        gaze.reset();nextGazeSample=nil
+        guard action != next else { return }
+        action=next;isAutomaticAction=false;playback.start(skin.manifest.animations[next]!);render()
+    }
+    private func currentRoamingPlacement() -> PlacementSnapshot? {
+        guard let current=WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()),current.origin==panel.frame.origin else { return nil }
+        return current
+    }
+    private func updateRoaming() {
+        let enabled=preferences.desktopRoaming && supportsRoaming
+        if roaming.isWalking && (!enabled || !canRoam) { stopRoaming() }
+        roaming.update(enabled:enabled,intervalSeconds:preferences.roamIntervalSeconds,available:canRoam,at:now())
+    }
+    private func advanceRoaming() {
+        updateRoaming()
+        guard let deadline=roaming.nextDeadline,now()>=deadline else { return }
+        let wasWalking=roaming.isWalking,radius:CGFloat=roaming.isPaused ? 100 : 80
+        let frame=panel.frame,current=currentRoamingPlacement()
+        if let sample=roaming.step(at:now(),frame:frame,area:current?.visibleFrame ?? .zero,cursorNear:{
+            self.roamingPointerSamples += 1
+            return AutomaticActions.isCursorNear(self.pointerPosition(),bounds:frame,radius:radius)
+        }) {
+            if !wasWalking && roaming.isWalking { roamingCount += 1;roamingMoved=false;roamingPlacement=current }
+            if sample.x != frame.minX {
+                panel.setFrameOrigin(CGPoint(x:sample.x,y:frame.minY))
+                let distance=abs(panel.frame.minX-frame.minX)
+                if distance>0 { roamingMoved=true;roamingDistance += distance }
+            }
+            setRoamingAnimation(sample.isFinished || sample.isPaused ? .idle : sample.direction>0 ? .runningRight : .runningLeft)
+            if sample.isFinished { saveRoamingPosition() }
+        }
     }
     private func synchronize() {
         if gate.shouldRunFrames { playback.resume(); render() } else { playback.pause() }
@@ -216,6 +277,7 @@ import PetCore
     func tick() {
         guard gate.shouldRunFrames else { return }
         apply(interaction.expireClick()); render()
+        advanceRoaming()
         updateAutomatic()
         if let next=automatic.takeAction(at:now(),cursorNear:{ AutomaticActions.isCursorNear(self.pointerPosition(),bounds:self.panel.frame) }) {
             automaticActionCount += 1; startAction(next,automatic:true)
@@ -242,6 +304,7 @@ import PetCore
         return previous != gaze.direction
     }
     func reschedule() {
+        updateRoaming()
         updateAutomatic()
         guard gate.shouldRunFrames else { gaze.reset(); nextGazeSample=nil; scheduler.cancel(); return }
         if updateGaze(allowSample:false) { render() }
@@ -249,6 +312,7 @@ import PetCore
         if let deadline=interaction.nextClickDeadline { let click=max(.zero,deadline-now()); delay=delay.map{min($0,click)} ?? click }
         if let deadline=nextGazeSample { let look=max(.zero,deadline-now()); delay=delay.map{min($0,look)} ?? look }
         if let deadline=automatic.nextDeadline { let wait=max(.zero,deadline-now()); delay=delay.map{min($0,wait)} ?? wait }
+        if let deadline=roaming.nextDeadline { let move=max(.zero,deadline-now());delay=delay.map{min($0,move)} ?? move }
         scheduler.schedule(after:delay)
     }
     private func updateAutomatic() {
@@ -262,11 +326,15 @@ import PetCore
         data["automaticActionsEnabled"]=preferences.automaticActions
         data["automaticActionIntervalSeconds"]=preferences.automaticActionIntervalSeconds
         data["automaticActionCount"]=automaticActionCount
+        data["desktopRoamingEnabled"]=preferences.desktopRoaming
+        data["roamIntervalSeconds"]=preferences.roamIntervalSeconds
+        data["roamingCount"]=roamingCount;data["roamingDistancePoints"]=roamingDistance;data["roamingPointerSamples"]=roamingPointerSamples
         try JSONSerialization.data(withJSONObject:data,options:[.prettyPrinted,.sortedKeys]).write(to:url,options:.atomic)
     }
     func prepareToExit() {
         guard !gate.exiting else { return }
         gate.exiting=true; gaze.reset(); nextGazeSample=nil; interaction.cancel(); playback.pause(); scheduler.cancel()
+        roaming.update(enabled:false,intervalSeconds:preferences.roamIntervalSeconds,available:false,at:now())
         NSWorkspace.shared.notificationCenter.removeObserver(self)
         NotificationCenter.default.removeObserver(self)
         view.onDown=nil; view.onMove=nil; view.onUp=nil

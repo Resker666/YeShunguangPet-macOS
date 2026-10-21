@@ -55,9 +55,9 @@ public struct AutomaticActions {
     }
     private func unitRandom() -> Double { min(max(random(),0),1.nextDown) }
     private func nextDelay() -> Duration { .seconds(Double(intervalSeconds)*(0.75+unitRandom()*0.5)) }
-    public static func isCursorNear(_ pointer: CGPoint, bounds: CGRect) -> Bool {
+    public static func isCursorNear(_ pointer: CGPoint, bounds: CGRect, radius: CGFloat = 80) -> Bool {
         let dx=max(bounds.minX-pointer.x,0,pointer.x-bounds.maxX)
         let dy=max(bounds.minY-pointer.y,0,pointer.y-bounds.maxY)
-        return hypot(dx,dy)<=80
+        return hypot(dx,dy)<=radius
     }
 }

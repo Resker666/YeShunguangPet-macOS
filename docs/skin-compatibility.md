@@ -8,7 +8,7 @@
 | ID、名称、描述、格尺寸、图像上限 | 按原规范限制；文本上限使用 UTF-16 单元 | 窗口尺寸来自单格 |
 | PNG | 有界读取、普通文件、PNG 头/尺寸、实际解码、禁止资源链接与目录越界 | 原像素裁帧、透明绘制 |
 | idle | 必需且循环 | 待机 |
-| runningRight / runningLeft | 可选 | 拖动方向；缺失回 idle |
+| runningRight / runningLeft | 可选 | 拖动方向；缺失回 idle。两者均循环时可选小范围自动走动 |
 | waving | 可选，单次 | 单击与召回；缺失回 idle |
 | jumping | 可选，单次 | 双击；缺失回 waving，再缺失回 idle |
 | failed / waiting / running / review | 识别及校验 | failed可由自动规则使用；其他暂无入口 |

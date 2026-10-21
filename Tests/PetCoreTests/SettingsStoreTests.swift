@@ -31,7 +31,7 @@ final class SettingsStoreTests: XCTestCase {
         guard case .loaded(let saved)=store.load() else { return XCTFail("valid imported selection must load") }
         try store.save(saved)
         let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
-        XCTAssertEqual(encoded["schemaVersion"] as? Int,5)
+        XCTAssertEqual(encoded["schemaVersion"] as? Int,6)
         XCTAssertEqual(encoded["selectedSkinID"] as? String,"4AEFD8B7-6164-482F-997F-13ABFBB4275D")
         XCTAssertEqual(saved.placement,placement)
         XCTAssertEqual(saved.preferences,PetPreferences(scale:1.5,alwaysOnTop:false))
@@ -42,7 +42,7 @@ final class SettingsStoreTests: XCTestCase {
         guard case .loaded(let saved)=store.load() else { return XCTFail("legacy position must load") }
         try store.save(saved)
         let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
-        XCTAssertEqual(encoded["schemaVersion"] as? Int,5)
+        XCTAssertEqual(encoded["schemaVersion"] as? Int,6)
         let preferences=try XCTUnwrap(encoded["preferences"] as? [String:Any])
         XCTAssertEqual(preferences["scale"] as? Double,1)
         XCTAssertEqual(preferences["alwaysOnTop"] as? Bool,true)
@@ -137,7 +137,7 @@ final class SettingsStoreTests: XCTestCase {
             XCTAssertTrue(saved.preferences.lookAtMouse)
             try store.save(saved)
             let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
-            XCTAssertEqual(encoded["schemaVersion"] as? Int,5)
+            XCTAssertEqual(encoded["schemaVersion"] as? Int,6)
             XCTAssertEqual((encoded["preferences"] as? [String:Any])?["lookAtMouse"] as? Bool,true)
             if version==3 { XCTAssertEqual(encoded["selectedSkinID"] as? String,"4AEFD8B7-6164-482F-997F-13ABFBB4275D") }
         }
@@ -186,6 +186,25 @@ final class SettingsStoreTests: XCTestCase {
             guard case .protectedFile=store.load() else { XCTFail("invalid automatic preference accepted"); continue }
             XCTAssertThrowsError(try store.save(.init(placement:nil)))
             XCTAssertEqual(try Data(contentsOf:settingsURL),data)
+        }
+    }
+    func testVersionFiveMigratesRoamingOffAndRetainsAutomaticActions() throws {
+        try Data(#"{"schemaVersion":5,"preferences":{"scale":1.5,"alwaysOnTop":false,"lookAtMouse":false,"automaticActions":true,"automaticActionIntervalSeconds":15},"selectedSkinID":"4AEFD8B7-6164-482F-997F-13ABFBB4275D"}"#.utf8).write(to:settingsURL)
+        let store=SettingsStore(url:settingsURL)
+        guard case .loaded(let saved)=store.load() else { return XCTFail("version five migration") }
+        XCTAssertFalse(saved.preferences.desktopRoaming);XCTAssertEqual(saved.preferences.roamIntervalSeconds,75)
+        XCTAssertTrue(saved.preferences.automaticActions);XCTAssertEqual(saved.preferences.automaticActionIntervalSeconds,15)
+        var preferences=saved.preferences;preferences.desktopRoaming=true;preferences.roamIntervalSeconds=20
+        try store.save(.init(placement:placement,preferences:preferences,selectedSkinID:saved.selectedSkinID))
+        guard case .loaded(let reopened)=SettingsStore(url:settingsURL).load() else { return XCTFail("reopen") }
+        XCTAssertEqual(reopened.preferences,preferences);XCTAssertEqual(reopened.selectedSkinID,saved.selectedSkinID);XCTAssertEqual(reopened.placement,placement)
+    }
+    func testInvalidRoamingPreferencesProtectOriginalBytes() throws {
+        for fields in [#""desktopRoaming":1,"roamIntervalSeconds":75"#,#""desktopRoaming":true,"roamIntervalSeconds":19"#,#""desktopRoaming":false,"roamIntervalSeconds":181"#,#""desktopRoaming":true,"roamIntervalSeconds":20.5"#,#""desktopRoaming":true"#] {
+            let data=Data("{\"schemaVersion\":6,\"preferences\":{\"scale\":1,\"alwaysOnTop\":true,\"lookAtMouse\":false,\"automaticActions\":false,\"automaticActionIntervalSeconds\":60,\(fields)}}".utf8)
+            try data.write(to:settingsURL);let store=SettingsStore(url:settingsURL)
+            guard case .protectedFile=store.load() else { XCTFail("invalid roaming preference accepted");continue }
+            XCTAssertThrowsError(try store.save(.init(placement:nil)));XCTAssertEqual(try Data(contentsOf:settingsURL),data)
         }
     }
 }

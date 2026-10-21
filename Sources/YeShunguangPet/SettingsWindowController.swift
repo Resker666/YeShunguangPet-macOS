@@ -17,6 +17,7 @@ import UniformTypeIdentifiers
     @Published private(set) var libraryError: String?
     @Published private(set) var isTerminating=false
     @Published private(set) var gazeAvailable=false
+    @Published private(set) var roamingAvailable=false
     private(set) var hasPendingMutation=false
     private(set) var terminationCleanupError: String?
     private let installPackage: @Sendable (SkinLibrary,SkinPackage) throws -> ImportedSkin
@@ -143,6 +144,7 @@ import UniformTypeIdentifiers
         preferences=session.preferences; saveError=session.persistenceError
         skinName=session.skin.manifest.name; skinWarning=session.skinWarning
         gazeAvailable=session.supportsGaze
+        roamingAvailable=session.supportsRoaming
         let idle=session.skin.manifest.animations[.idle]!
         currentImage=try? session.atlas.frame(at:.init(row:idle.row,column:idle.startColumn))
     }
@@ -165,6 +167,14 @@ import UniformTypeIdentifiers
     func setAutomaticActionInterval(_ seconds: Int) {
         guard !isTerminating else { return }
         var value=preferences; value.automaticActionIntervalSeconds=seconds; session?.setPreferences(value); refresh()
+    }
+    func setDesktopRoaming(_ enabled: Bool) {
+        guard !isTerminating else { return }
+        var value=preferences;value.desktopRoaming=enabled;session?.setPreferences(value);refresh()
+    }
+    func setRoamInterval(_ seconds: Int) {
+        guard !isTerminating else { return }
+        var value=preferences;value.roamIntervalSeconds=seconds;session?.setPreferences(value);refresh()
     }
 }
 
@@ -308,6 +318,18 @@ private struct PetSettingsView: View {
                 .disabled(!model.preferences.automaticActions)
                 .accessibilityIdentifier("pet-automatic-action-interval")
                 Text("默认关闭。开启后按皮肤规则做动作，间隔有 ±25% 浮动；旧皮肤使用挥手或跳跃。点击、拖动、菜单和设置期间暂停，关闭此窗口后开始等待。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section("桌面走动") {
+                Toggle("空闲时走动一小段",isOn:Binding(get:{model.preferences.desktopRoaming},set:{model.setDesktopRoaming($0)}))
+                    .accessibilityIdentifier("pet-desktop-roaming")
+                LabeledContent("走动间隔",value:"约 \(model.preferences.roamIntervalSeconds) 秒")
+                Slider(value:Binding(get:{Double(model.preferences.roamIntervalSeconds)},set:{model.setRoamInterval(Int($0.rounded()))}),in:20...180,step:5) {
+                    Text("走动间隔")
+                } minimumValueLabel: { Text("20 秒") } maximumValueLabel: { Text("180 秒") }
+                .disabled(!model.preferences.desktopRoaming)
+                .accessibilityIdentifier("pet-roam-interval")
+                Text(model.roamingAvailable ? "默认关闭，间隔有 ±25% 浮动，每次约60–120点。鼠标靠近时停下；点击、拖动、菜单和设置会结束本次走动。走完自动保存位置。" : "此皮肤缺少左右循环行走动画；偏好会保留，换到支持的皮肤后生效。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             if let error=model.saveError {
