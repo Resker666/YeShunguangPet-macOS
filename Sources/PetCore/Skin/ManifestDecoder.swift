@@ -29,12 +29,15 @@ public enum ManifestDecoder {
     private static func check(_ valid: Bool, _ field: String) throws { if !valid { throw SkinError("皮肤字段无效：\(field)") } }
     private static func hasControl(_ s: String) -> Bool { s.unicodeScalars.contains { $0.properties.generalCategory == .control } }
     private static func present(_ v: JSONValue?) -> JSONValue? { guard let v else { return nil }; if case .null=v { return nil }; return v }
+    public static func isValidID(_ id:String)->Bool {
+        let reserved=["con","prn","aux","nul"]+(1...9).flatMap { ["com\($0)","lpt\($0)"] }
+        return id.range(of:"^[a-z][a-z0-9-]{0,63}$",options:.regularExpression) != nil && !id.contains("\n") && !reserved.contains(id)
+    }
     public static func decode(_ data: Data) throws -> PetManifest {
         let root=try Object(StrictJSON.parse(data),keys:["schemaVersion","id","name","description","spriteSheet","cellWidth","cellHeight","columns","rows","animations","lookDirections","speech","behavior"],path:"pet")
         let version=try root.int("schemaVersion"), id=try root.string("id"), name=try root.string("name"), description=try root.string("description",default:""), sheet=try root.string("spriteSheet",default:"spritesheet.png")
         try check(version==1,"schemaVersion")
-        let reserved=["con","prn","aux","nul"]+(1...9).flatMap { ["com\($0)","lpt\($0)"] }
-        try check(id.range(of:"^[a-z][a-z0-9-]{0,63}$",options:.regularExpression) != nil && !id.contains("\n") && !reserved.contains(id),"id")
+        try check(isValidID(id),"id")
         try check(!name.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty && name.utf16.count<=64 && !hasControl(name) && description.utf16.count<=400,"name/description")
         try check(!sheet.isEmpty && sheet.utf16.count<=100 && sheet.lowercased().hasSuffix(".png") && !sheet.contains(where:{ "/\\<>:\"|?*".contains($0) }) && !hasControl(sheet),"spriteSheet")
         let w=try root.int("cellWidth"), h=try root.int("cellHeight"), cols=try root.int("columns"), rows=try root.int("rows")

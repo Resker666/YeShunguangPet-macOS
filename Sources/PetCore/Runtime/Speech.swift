@@ -1,18 +1,14 @@
 import Foundation
 
-public enum SpeechEvent { case click,drag }
+public enum SpeechEvent:String,CaseIterable,Sendable { case click,drag,focusCompleted,breakCompleted }
 public struct SpeechPolicy {
     private let random:()->Double
     private var lastShown:Duration?
     private var lastLine:String?
     public init(random:@escaping ()->Double = {Double.random(in:0..<1)}) {self.random=random}
     public mutating func select(lines:SpeechLines?,event:SpeechEvent,at now:Duration)->String? {
-        if let lastShown,now-lastShown < .seconds(30) {return nil}
-        let choices:[String]
-        switch event {
-        case .click:choices=lines?.click ?? ["我在，今天也一起加油吧。","需要我陪你一会儿吗？"]
-        case .drag:choices=lines?.drag ?? ["换个位置，继续陪你。","就在这里吧。"]
-        }
+        if event == .click || event == .drag,let lastShown,now-lastShown < .seconds(30) {return nil}
+        let choices=(lines ?? .defaults).lines(for:event)
         guard !choices.isEmpty else{return nil}
         let alternatives=choices.filter{$0 != lastLine},available=alternatives.isEmpty ? choices : alternatives
         let draw=random(),unit=draw.isFinite ? min(max(draw,0),1.nextDown) : 0
