@@ -159,7 +159,7 @@ import PetCore
         do { try settings.backupAndReset(); protectedSettings=false; _=savePosition() }
         catch { persistenceError=error.localizedDescription; onStatusChange?() }
     }
-    func requestExit() -> Bool { savePosition() }
+    func requestExit() -> Bool { stopRoaming();return savePosition() }
     func play(_ requested: PetAction) { startAction(requested,automatic:false) }
     private func startAction(_ requested: PetAction, automatic: Bool) {
         guard !gate.exiting else { return }

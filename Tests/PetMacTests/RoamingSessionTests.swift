@@ -136,4 +136,13 @@ import PetCore
             XCTAssertEqual(reopened.panel.frame.origin,CGPoint(x:104,y:100))
         }
     }
+    func testQuitDuringMotionRetainsPositionBeforeNoScreensNotificationArrives() throws {
+        let f=try fixture();defer{f.close()};f.session.finishDrag()
+        f.input.time = .seconds(20);f.session.tick();f.input.time += .milliseconds(100);f.session.tick()
+        f.input.screens=[]
+        XCTAssertTrue(f.session.requestExit())
+        guard case .loaded(let saved)=SettingsStore(url:f.session.settings.url).load() else{return XCTFail("quit snapshot missing")}
+        XCTAssertEqual(saved.placement?.origin,CGPoint(x:104,y:100))
+        XCTAssertEqual(f.session.action,.idle)
+    }
 }
