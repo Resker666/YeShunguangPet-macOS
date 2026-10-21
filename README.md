@@ -1,8 +1,8 @@
 # YeShunguangPet macOS
 
-为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前开发体验版为 0.1.11，增加拖拽导入与发版草稿流程，尚未公开发布；最新已发布版为0.1.9。
+为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前开发体验版为 0.1.12，增加手动检查更新、全局快捷键与设置分组，本版尚未公开发布；本轮实际查询的公开最新版为0.1.11。
 
-延后验证事项与后续候选路线见 [项目待办](TODO.md)。日用设置见 [设置验证记录](docs/settings-validation.md)；皮肤导入与切换见 [皮肤导入记录](docs/skin-import-validation.md)，已有副本管理见 [皮肤库验证记录](docs/skin-library-validation.md)，注视与资源采样见 [注视验证记录](docs/gaze-validation.md)，自动小动作见 [验证记录](docs/automatic-actions-validation.md)，小范围走动见 [走动验证](docs/roaming-validation.md)。
+延后验证事项与后续候选路线见 [项目待办](TODO.md)。0.1.12更新、快捷键和设置分组的证据与限制见[验证记录](docs/update-shortcuts-settings-validation.md)。日用设置见 [设置验证记录](docs/settings-validation.md)；皮肤导入与切换见 [皮肤导入记录](docs/skin-import-validation.md)，已有副本管理见 [皮肤库验证记录](docs/skin-library-validation.md)，注视与资源采样见 [注视验证记录](docs/gaze-validation.md)，自动小动作见 [验证记录](docs/automatic-actions-validation.md)，小范围走动见 [走动验证](docs/roaming-validation.md)。
 
 ## 安装体验版
 
@@ -10,7 +10,7 @@
 
 使用者不需要安装 Xcode、Swift 或其他依赖。日用包请选择 M 系列 Mac（arm64）；另提供x86_64实验包用于Intel／黑苹果验证。两种包分开，文件名标明架构。部署目标仍为15.0，日用体验在 M4 / macOS 27.0 实测，另有macOS 26.6.2云端自动回归；真实Intel／黑苹果及其他系统的日用体验尚待验证。
 
-1. M 系列打开 `YeShunguangPet-0.1.9-macOS-arm64.dmg`；Intel测试机选择文件名以`x86_64.dmg`结尾的实验包。将 App 拖到旁边的 Applications。
+1. M 系列打开 `YeShunguangPet-0.1.11-macOS-arm64.dmg`；Intel测试机选择文件名以`x86_64.dmg`结尾的实验包。将 App 拖到旁边的 Applications。
 2. 弹出 DMG，从“应用程序”打开 App；菜单栏爪印提供操作和退出入口。
 3. 免费体验版使用 ad-hoc 签名，未公证。网上下载后若系统拦截，请先核实来源，在尝试打开后按 [Apple 官方说明](https://support.apple.com/zh-cn/102445) 前往“隐私与安全性 → 仍要打开”。DMG 不会消除系统提示。
 
@@ -24,7 +24,13 @@
 open dist/YeShunguangPet.app
 ```
 
-菜单栏爪印提供 **显示/隐藏角色、召回角色、设置、退出**。拖动角色移动位置；单击挥手，双击跳跃。单击等待系统双击间隔后触发，拖动不会补发点击。缺失动作按原版规则回退。
+菜单栏爪印提供 **显示/隐藏角色、召回角色、安静模式、设置、检查更新、退出**。拖动角色移动位置；单击挥手，双击跳跃。单击等待系统双击间隔后触发，拖动不会补发点击。缺失动作按原版规则回退。
+
+0.1.12将设置分为“皮肤、通用、互动、快捷键、关于”五组，首次打开默认皮肤，重开保留本次运行选中的分组。任意组都可拖入支持的皮肤文件，自动转到皮肤页预览，仍需确认才导入。大小、置顶和登录启动在通用页，注视、台词及自动行为在互动页。
+
+“快捷键”页可为显示/隐藏、召回、切换安静模式分别设置组合键，默认全部不绑定。勾选至少两个修饰键且包含Control或Option，选择美式物理键位对应的字母、数字或F1–F12，再点“应用”；“清除”解除该动作，“重试登记 / 释放”处理冲突或释放失败。切页或关窗丢弃未应用的编辑。系统拒绝或保存失败会保留原偏好，并明确显示已激活、未激活或仍待释放的状态。按住同一组合不会反复切换，菜单或模态确认打开时暂停，普通设置窗口打开时可用；不读取其他应用的键盘内容。
+
+菜单“检查更新…”会打开关于页并发起一次匿名GitHub查询；关于页也可手动重试。启动、普通打开设置或唤醒不会自动查询。界面区分有新版、相同版本和开发版高于公开版；只有点击官方发布页或对应架构的DMG按钮才打开浏览器，不自动下载或安装。查询失败或无对应安装包会明确提示，不影响桌宠。查询不发送个人配置、皮肤、位置、快捷键或日志。
 
 支持注视素材的皮肤在待机时会短暂看向附近鼠标，最多约2秒，然后恢复待机；鼠标离开有效范围再靠近可再次触发。“设置…”中的“注视鼠标”默认开启，可关闭并记住选择。关闭设置窗口后生效；菜单、设置、点击判定、拖动和手动动作期间暂停注视，隐藏、睡眠及退出时停止检测。不支持注视的皮肤继续正常待机，偏好保留。
 
@@ -64,7 +70,7 @@ dist/YeShunguangPet.app/Contents/MacOS/YeShunguangPet --skin /绝对路径/pet.j
 
 显式指定的皮肤加载失败时，菜单栏显示错误并保留退出入口，不静默回退。皮肤文件不会被编辑。`lookDirections`用于16向注视；`behavior`用于可选自动动作，`speech.click`和`speech.drag`用于可选互动台词，其余两类仅校验，详见 [兼容矩阵](docs/skin-compatibility.md)。输入按角色矩形处理，逐像素透明区域穿透未验证。
 
-位置、显示偏好、注视/自动动作/走动/台词开关、对应间隔和所选导入皮肤保存在 `~/Library/Application Support/YeShunguangPet-macOS/settings.json`。新版读取schemaVersion 1–6，保存为7；旧版App无法读取新版配置，会保留原文件而不覆盖。导入素材缺失或损坏时恢复默认角色，在菜单栏和设置中提示原因。隐藏状态不跨进程保存，重新启动默认显示。损坏或未知版本配置不会被自动覆盖；菜单栏提供“备份原配置并重置”。保存失败会在设置窗口和菜单栏提示，可重试，也可明确选择继续退出。
+位置、显示偏好、注视/自动动作/走动/台词开关、对应间隔、已应用快捷键和所选导入皮肤保存在 `~/Library/Application Support/YeShunguangPet-macOS/settings.json`。新版读取schemaVersion 1–7，保存为8；旧版迁移默认不绑定快捷键；旧版App无法读取新版配置，会保留原文件而不覆盖。导入素材缺失或损坏时恢复默认角色，在菜单栏和设置中提示原因。隐藏状态不跨进程保存，重新启动默认显示。损坏或未知版本配置不会被自动覆盖；菜单栏提供“备份原配置并重置”。保存失败会在设置窗口和菜单栏提示，可重试，也可明确选择继续退出。
 
 开发检查可设置 `YSGPET_SETTINGS_PATH` 为隔离配置的绝对路径，导入素材也隔离在该文件同级的`Skins/`；`YSGPET_METRICS_PATH` 为退出时的本地运行指标输出路径。普通启动不启用指标输出，不联网、不上传日志。
 
@@ -90,7 +96,7 @@ python3 scripts/smoke-app.py --app /绝对路径/YeShunguangPet.app --check-rest
 
 构建需要 Xcode；使用 App 不需要。默认ARM App在`dist/YeShunguangPet.app`，Intel App在`dist/x86_64/YeShunguangPet.app`。两者主程序和嵌入框架架构必须一致；打包时会核对所选架构，拒绝错误标签或混合框架。
 
-打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.11-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.9已按用户指令发布；0.1.10已体验通过并推送。0.1.11已获本机拖拽体验通过及推送授权，本版标签、Release草稿及公开发布仍需新的明确指令。
+打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.12-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.9已按用户指令发布；0.1.10已体验通过并推送。0.1.11已获本机拖拽体验通过并推送；本轮查询发现公开最新版已为0.1.11，此为既有远端状态。0.1.12的推送、标签、Release草稿及公开发布仍需新的明确指令。
 
 App 图标由原仓库 ICO 转换，原图256×256；大尺寸仅作缩放，不新增绘制细节。需要重新生成时运行 `bash tools/make-icon.sh`，使用系统 sips/iconutil，无外部图像工具依赖。
 
@@ -98,7 +104,7 @@ App 图标由原仓库 ICO 转换，原图256×256；大尺寸仅作缩放，不
 
 GitHub Actions 的 [macOS App 流水线](.github/workflows/macos-build.yml)在推送至`main`或`codex/**`、提交面向`main`的PR时自动运行，也支持手动触发。使用`macos-26`的Apple Silicon机器、Xcode 26.6，复用上述测试/构建/打包脚本；本机开发使用Xcode 27，两种环境的验证结果分别记录。
 
-原生测试、双架构Release构建及完整分发回归通过后，上传ARM与Intel两份安装产物，名称包含版本、架构、运行编号和重试次数。每份含DMG、ZIP及各自SHA-256；App、安装说明和许可已封装在安装包内，避免直接上传App目录丢失执行权限或链接。另保留环境、构建/测试日志和XCTest结果，失败时也尝试上传诊断产物。产物保留14天，流水线不创建GitHub Release。
+原生测试、双架构Release构建及完整分发回归通过后，上传ARM与Intel两份安装产物，名称包含版本、架构、运行编号和重试次数。每份含DMG、ZIP及各自SHA-256；App、安装说明和许可已封装在安装包内，避免直接上传App目录丢失执行权限或链接。另保留环境、构建/测试日志和XCTest结果，失败时也尝试上传诊断产物。产物保留14天，普通推送不创建GitHub Release。
 
 推送工作流后，打开[仓库Actions页面](https://github.com/Resker666/YeShunguangPet-macOS/actions)，选择`macOS App`的一次成功运行，在摘要的下载链接或底部`Artifacts`下载对应架构；需登录GitHub。下载的外层ZIP先解压，再按上文安装其中的DMG或备用ZIP。手动运行时选择`macOS App → Run workflow`；该入口需工作流先进入默认分支。具体流程、排错及验证边界见[CI说明](docs/ci.md)。
 

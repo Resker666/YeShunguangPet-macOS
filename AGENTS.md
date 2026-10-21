@@ -2,7 +2,7 @@
 适用于本仓库。先读 docs/superpowers/specs/2026-10-20-macos-first-playable-design.md 和对应 plans 文件，检查 git status。
 - Swift 6、AppKit、macOS 15+；arm64优先日用，x86_64为用户同意增加的实验交叉构建。使用现有Xcode，不引入外部依赖。
 - 测试：bash scripts/test.sh；构建：bash scripts/build-app.sh；打包：bash scripts/package-app.sh。独立启动回归：python3 scripts/smoke-app.py。
-- 分发：0.1.11 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
+- 分发：0.1.12 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
 - 独立进程验证设置 YSGPET_SETTINGS_PATH 使用临时配置；不带该变量才使用个人 Application Support。
 - 用户已确认真实拖动、单击/双击、菜单隐藏/显示和召回正常。GUI 工具首次超时，后续可读取实际角色画面；焦点、Spaces、锁屏和真实睡眠仍未验证，不能以属性或模拟事件当作通过。
 - 真实皮肤 JSON/PNG 字节保持不变；源码 MIT 与第三方素材声明分开。
@@ -31,3 +31,9 @@
 - 0.1.11设置窗口接受单个本地fileURL复制拖放，ZIP/文件夹/JSON后台读取并复用预览确认，配置仍schema7；不在角色窗口注册。排队即阻止重复，文件面板/确认sheet、处理或退出期间拒收，关闭及退出取消未确认任务。设置首开刷新不得抢占已接受的预览。原生Pasteboard/协议回调测试不等于Finder物理拖放或焦点实测，详见docs/release-drop-validation.md。仅本地交付，推送、标签、草稿创建及公开发布均等待用户明确指令。
 - 0.1.11本地交付完成：来源660a79e，187项原生、13项离线发版、10项分发通过；四种实际工作流触发门控、三套真实素材的Pasteboard/控制器预览确认及渲染、双架构包/签名/内容和ARM搬移重开通过。单次只读评审无Critical/Important/Minor。ARM已安装/Applications且schema7偏好、选择及更新时位置保留，未登记或撤销正式登录项。示例ZIP放在可见的dist/皮肤示例。交付时真实Finder、云端草稿与既有系统/外机/Intel实测待验证，未推送或远端发布。
 - 0.1.11用户随后反馈“验证通过，推送”，确认本机拖拽导入整体体验，授权按既有流程同步main与codex/macos-release-and-skin-drop。只做普通push，不触发prepare_release，不创建草稿、标签或公开发布。此反馈不扩展为逐项操作、自动化真实鼠标、焦点/睡眠/Spaces、登录或Intel/外机通过；云端草稿写入继续待单独授权和验证。
+
+- 0.1.12本轮用户批准A/B/C设计、书面计划并明确“开始执行”，沿用独立Mac仓库本会话直接实施，不额外创建工作树；仍只本地提交，未授权本版push/tag/Release写入。
+- 0.1.12更新只由菜单或关于页按钮手动触发，固定匿名GitHub Latest接口，ephemeral URLSession，15/20秒，实际响应最多1 MiB；严格稳定三段数字版本和官方页面/版本架构DMG路径，纯文本说明最多8000字符。并发去重，关窗/退出取消，代次挡旧结果；不进入皮肤isBusy或逐帧调度。
+- 0.1.12快捷键默认空；Control或Option加至少另一修饰键，美式物理A–Z/0–9/F1–F12。Carbon独占登记只在主线程，加载配置后启动，菜单/模态/退出抑制，普通设置允许；跟踪按下/松开，旧ID和重复按住忽略。候选登记/旧释放/配置保存失败逐项恢复；恢复失败明确实际active及pendingCleanup并允许重试，不假装两资源原子成功。只用PetSession.saveKeyboardShortcuts提交；普通setPreferences不能绕过。
+- 0.1.12 schema8读取1–7且快捷键默认[]，v7用专用旧结构；v8缺失/非法/重复保护原字节。设置拆为五个Tab，复用单份SettingsModel和既有皮肤任务；任意页拖入转皮肤预览，切页不导入，关窗取消。服务由StatusBarController持有，视图重建不联网或重新登记登录项/热键。
+- 0.1.12阶段验证：213项原生（107Core/106Mac）、13项离线发版、10项分发与ARM独立重开通过；独立Bundle一次真实匿名GET于2026-10-21T08:34:27Z返回公开0.1.11，正确显示ahead。本轮未发布0.1.11，此为已存在远端状态。原生渲染及真实Carbon独占冲突/释放已有隔离证据，物理全局按键、Finder/焦点、系统/Intel/外机仍未据此验证。最终评审、干净包及个人App更新结果见docs/update-shortcuts-settings-validation.md，不从阶段测试推定已交付。

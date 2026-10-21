@@ -24,7 +24,7 @@ struct AboutSettingsView:View {
                     Text(comparison == .newer ? "发现新版本。" : comparison == .current ? "当前版本与公开版本相同。" : "当前开发版本高于公开版本，无需更新。")
                     Button("查看官方发布页") {_=NSWorkspace.shared.open(info.pageURL)}
                     if let url=info.downloadURL {
-                        Button(comparison == .ahead ? "公开版安装包（\(info.version)，较旧）" : "下载 \(updates.architecture.rawValue) 安装包") {_=NSWorkspace.shared.open(url)}
+                        Button(comparison == .ahead ? "公开版安装包（\(info.version.description)，较旧）" : "下载 \(updates.architecture.rawValue) 安装包") {_=NSWorkspace.shared.open(url)}
                     }else{Text("此公开版本尚无 \(updates.architecture.rawValue) DMG，可在发布页查看其他附件。").font(.caption).foregroundStyle(.secondary)}
                     if !info.notes.isEmpty {Text(info.notes).font(.body).textSelection(.enabled)}
                 }

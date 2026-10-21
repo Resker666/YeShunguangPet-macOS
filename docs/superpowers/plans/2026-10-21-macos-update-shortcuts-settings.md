@@ -140,11 +140,11 @@
 
 **Interfaces:** 消费任务1–5的完整App与既有build/package/smoke脚本；不改变CI权限或触发Release草稿。验证文档区分自动化、本机API/进程、用户操作和外机证据。
 
-- [ ] **Step 1: 写分发回归断言并验证RED。** 在`test_settings.py`旧配置搬移用例断言重开为schema8、keyboardShortcuts为[]且原缩放/置顶/位置保留；该用例后半段用于重开的完整preferences字典也加入keyboardShortcuts空数组，避免生成缺字段的非法v8。确认`dist/YeShunguangPet.app`仍为0.1.11后运行`python3 -m unittest discover -s Tests/Distribution -p test_settings.py -k legacy_position -v`，Expected: 保存7与预期8不符；再构建新版验证，不把不存在的产物当RED。若产物已被新版替换，先在本计划忽略目录复制保留的0.1.11和同一测试/脚本布局，执行相同用例，不回退源码或个人App。
-- [ ] **Step 2: 运行完整检查。** 依次`bash scripts/test.sh`、`python3 -m unittest discover -s Tests/Release -v`、`bash scripts/build-app.sh arm64`、`bash scripts/build-app.sh x86_64`、`python3 -m unittest discover -s Tests/Distribution -v`、`python3 scripts/smoke-app.py`。Expected: 原生全部通过、13项发版离线和10项分发通过，两个架构构建成功；如现有数量变化，逐项说明新增/删改原因。
-- [ ] **Step 3: 做隔离原生探针并查看渲染。** 独立Bundle/临时配置实际匿名GET一次，记录时间/HTTP结果/当前公开版本与比较；断网/限流仅据实际结果报告，不把离线替身记公网成功。独立组合验证Carbon独占登记/释放。渲染并查看五组PNG，覆盖皮肤candidate、8000字符说明、长错误、恢复失败状态及小窗口滚动；测试不调用正式SMAppService登记/撤销。
-- [ ] **Step 4: 写使用与验证文档。** 写默认不绑定、如何应用/清除/重试、菜单手动检查、官方浏览器下载、未公证安装说明及schema兼容；TODO保留真实跨应用按键、焦点/睡眠/Spaces、重新登录、Intel/外机和云端草稿待验证。文档先记录已发生的结果，后续交付后再补最终包/安装证据，不能预填通过。
-- [ ] **Step 5: 本地提交并完成任务验证。** `git diff --check`与Step 2的全套检查均有新结果后提交`test: verify update shortcuts and grouped settings delivery`。完成记录引用日志和准确来源，不重复无变化的全套测试。
+- [x] **Step 1: 写分发回归断言并验证RED。** 在`test_settings.py`旧配置搬移用例断言重开为schema8、keyboardShortcuts为[]且原缩放/置顶/位置保留；该用例后半段用于重开的完整preferences字典也加入keyboardShortcuts空数组，避免生成缺字段的非法v8。确认`dist/YeShunguangPet.app`仍为0.1.11后运行`python3 -m unittest discover -s Tests/Distribution -p test_settings.py -k legacy_position -v`，Expected: 保存7与预期8不符；再构建新版验证，不把不存在的产物当RED。若产物已被新版替换，先在本计划忽略目录复制保留的0.1.11和同一测试/脚本布局，执行相同用例，不回退源码或个人App。
+- [x] **Step 2: 运行完整检查。** 依次`bash scripts/test.sh`、`python3 -m unittest discover -s Tests/Release -v`、`bash scripts/build-app.sh arm64`、`bash scripts/build-app.sh x86_64`、`python3 -m unittest discover -s Tests/Distribution -v`、`python3 scripts/smoke-app.py`。Expected: 原生全部通过、13项发版离线和10项分发通过，两个架构构建成功；如现有数量变化，逐项说明新增/删改原因。
+- [x] **Step 3: 做隔离原生探针并查看渲染。** 独立Bundle/临时配置实际匿名GET一次，记录时间/HTTP结果/当前公开版本与比较；断网/限流仅据实际结果报告，不把离线替身记公网成功。独立组合验证Carbon独占登记/释放。渲染并查看五组PNG，覆盖皮肤candidate、8000字符说明、长错误、恢复失败状态及小窗口滚动；测试不调用正式SMAppService登记/撤销。
+- [x] **Step 4: 写使用与验证文档。** 写默认不绑定、如何应用/清除/重试、菜单手动检查、官方浏览器下载、未公证安装说明及schema兼容；TODO保留真实跨应用按键、焦点/睡眠/Spaces、重新登录、Intel/外机和云端草稿待验证。文档先记录已发生的结果，后续交付后再补最终包/安装证据，不能预填通过。
+- [x] **Step 5: 本地提交并完成任务验证。** `git diff --check`与Step 2的全套检查均有新结果后提交`test: verify update shortcuts and grouped settings delivery`。完成记录引用日志和准确来源，不重复无变化的全套测试。
 
 ## 全分支评审后完成本地交付
 
