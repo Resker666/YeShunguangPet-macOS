@@ -53,7 +53,7 @@ App 不显示 Dock 图标；关闭 DMG 不会退出已安装的 App。
 ~/Library/Application Support/YeShunguangPet-macOS/settings.json
 这允许重新安装后恢复位置与偏好；卸载 App 不会自动删除个人配置。
 导入素材保存在上述目录同级的Skins文件夹；卸载App也会保留。
-新版兼容schemaVersion 1–5配置，保存后升级到6；旧版App不能读取
+新版兼容schemaVersion 1–6配置，保存后升级到7；旧版App不能读取
 新版配置，会保留原文件并提示，避免静默覆盖。
 
 版本、来源与校验

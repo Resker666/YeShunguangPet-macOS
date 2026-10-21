@@ -56,16 +56,16 @@ class StandaloneSettingsTests(unittest.TestCase):
             settings.write_text(json.dumps({"schemaVersion": 1, "placement": position}))
             migrated_metrics = SMOKE.run_once(binary, work, 2)
             migrated = json.loads(settings.read_text())
-            self.assertEqual(migrated["schemaVersion"], 6)
+            self.assertEqual(migrated["schemaVersion"], 7)
             self.assertEqual(migrated["preferences"], {"scale": 1, "alwaysOnTop": True, "lookAtMouse": True,
                                                       "automaticActions": False, "automaticActionIntervalSeconds": 60,
-                                                      "desktopRoaming": False, "roamIntervalSeconds": 75})
+                                                      "desktopRoaming": False, "roamIntervalSeconds": 75, "speechEnabled": False})
             self.assertTrue(migrated_metrics["lookAtMouseEnabled"])
             self.assertGreater(migrated_metrics["gazeSamples"], 0)
             self.assertEqual(migrated["placement"], position)
             preferences = {"scale": 1.5, "alwaysOnTop": False, "lookAtMouse": False,
                            "automaticActions": True, "automaticActionIntervalSeconds": 15,
-                           "desktopRoaming": True, "roamIntervalSeconds": 20}
+                           "desktopRoaming": True, "roamIntervalSeconds": 20, "speechEnabled": True}
             migrated["preferences"] = preferences
             settings.write_text(json.dumps(migrated))
             for sequence in [3, 4]:
@@ -81,6 +81,9 @@ class StandaloneSettingsTests(unittest.TestCase):
                 self.assertTrue(actual["desktopRoamingEnabled"])
                 self.assertEqual(actual["roamIntervalSeconds"], 20)
                 self.assertEqual(actual["roamingCount"], 0)
+                self.assertTrue(actual["speechEnabled"])
+                self.assertEqual(actual["speechShownCount"], 0)
+                self.assertFalse(actual["quietMode"])
                 self.assertEqual(saved["placement"], position)
             self.assertEqual(first["window"], {"width": 192, "height": 208})
 

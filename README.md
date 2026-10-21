@@ -1,6 +1,6 @@
 # YeShunguangPet macOS
 
-为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前为免费分发体验版 0.1.8。
+为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前为免费分发体验版 0.1.9。
 
 延后验证事项与后续候选路线见 [项目待办](TODO.md)。日用设置见 [设置验证记录](docs/settings-validation.md)；皮肤导入与切换见 [皮肤导入记录](docs/skin-import-validation.md)，已有副本管理见 [皮肤库验证记录](docs/skin-library-validation.md)，注视与资源采样见 [注视验证记录](docs/gaze-validation.md)，自动小动作见 [验证记录](docs/automatic-actions-validation.md)，小范围走动见 [走动验证](docs/roaming-validation.md)。
 
@@ -8,7 +8,7 @@
 
 使用者不需要安装 Xcode、Swift 或其他依赖。日用包请选择 M 系列 Mac（arm64）；另提供x86_64实验包用于Intel／黑苹果验证。两种包分开，文件名标明架构。部署目标仍为15.0，日用体验在 M4 / macOS 27.0 实测，另有macOS 26.6.2云端自动回归；真实Intel／黑苹果及其他系统的日用体验尚待验证。
 
-1. M 系列打开 `YeShunguangPet-0.1.8-macOS-arm64.dmg`；Intel测试机选择文件名以`x86_64.dmg`结尾的实验包。将 App 拖到旁边的 Applications。
+1. M 系列打开 `YeShunguangPet-0.1.9-macOS-arm64.dmg`；Intel测试机选择文件名以`x86_64.dmg`结尾的实验包。将 App 拖到旁边的 Applications。
 2. 弹出 DMG，从“应用程序”打开 App；菜单栏爪印提供操作和退出入口。
 3. 免费体验版使用 ad-hoc 签名，未公证。网上下载后若系统拦截，请先核实来源，在尝试打开后按 [Apple 官方说明](https://support.apple.com/zh-cn/102445) 前往“隐私与安全性 → 仍要打开”。DMG 不会消除系统提示。
 
@@ -30,6 +30,12 @@ open dist/YeShunguangPet.app
 
 “设置…”中的“空闲时走动一小段”默认关闭，间隔20–180秒，默认约75秒且有±25%浮动。角色在当前屏幕可用区域内左右移动约60–120逻辑点，完成后回待机并保存位置。鼠标靠近时原地停下，离开后继续；点击、拖动、菜单、设置、手动动作、隐藏及睡眠会结束本次走动，再等待下一次。皮肤需同时提供左右循环行走动画；空间不足时保持待机。
 
+菜单栏“安静模式”临时暂停注视、自动动作、走动及台词，保留待机动画和手动点击/拖动；不改原有开关，取消后继续等待，重开默认恢复正常。
+
+“设置…”中的“显示互动台词”默认关闭。开启后，单击确认或拖动结束时显示约6秒的气泡，至少间隔30秒；优先使用皮肤台词，未提供时使用原版默认文案，显式空台词保持安静。双击只播放动作。气泡不抢焦点、不接收鼠标，菜单、设置、安静模式、隐藏、睡眠及换肤会收起。
+
+“设置…”中的“登录时启动”由macOS管理，不会默认替你开启。先将App安装到系统或用户的“应用程序”目录并从那里运行，再按需开启；系统要求允许时，设置会明确提示并提供登录项设置入口。状态来自系统，关闭失败不会假装已关闭；此开关不写入桌宠JSON配置。
+
 App 不显示 Dock 图标；请从菜单栏退出。首次启动会在主屏右下角显示角色，后续恢复位置、大小和置顶偏好。关闭设置窗口不会退出桌宠。基础桌宠不需要录屏、辅助功能或麦克风权限。
 
 支持目标为 macOS 15+ / arm64，本机日用构建和验证环境为 Mac mini M4、macOS 27.0、Xcode 27.0；macOS 26.6.2 / Xcode 26.6云端自动检查见[CI记录](docs/ci.md#首次云端验证记录)，其他系统真实交互及Intel Mac仍未测。角色窗口采用非激活 NSPanel，默认浮动置顶；设置窗口可以正常获得键盘焦点。Spaces、全屏、Stage Manager 和真实睡眠恢复的当前证据见 [验证记录](docs/validation.md)，不能保证覆盖所有系统窗口。
@@ -48,9 +54,9 @@ App 不显示 Dock 图标；请从菜单栏退出。首次启动会在主屏右�
 dist/YeShunguangPet.app/Contents/MacOS/YeShunguangPet --skin /绝对路径/pet.json
 ```
 
-显式指定的皮肤加载失败时，菜单栏显示错误并保留退出入口，不静默回退。皮肤文件不会被编辑。`lookDirections`用于16向注视；`behavior`用于可选自动动作，`speech`会校验但暂不执行台词，详见 [兼容矩阵](docs/skin-compatibility.md)。输入按角色矩形处理，逐像素透明区域穿透未验证。
+显式指定的皮肤加载失败时，菜单栏显示错误并保留退出入口，不静默回退。皮肤文件不会被编辑。`lookDirections`用于16向注视；`behavior`用于可选自动动作，`speech.click`和`speech.drag`用于可选互动台词，其余两类仅校验，详见 [兼容矩阵](docs/skin-compatibility.md)。输入按角色矩形处理，逐像素透明区域穿透未验证。
 
-位置、显示偏好、注视/自动动作/走动开关、对应间隔和所选导入皮肤保存在 `~/Library/Application Support/YeShunguangPet-macOS/settings.json`。新版读取schemaVersion 1–5，保存为6；旧版App无法读取新版配置，会保留原文件而不覆盖。导入素材缺失或损坏时恢复默认角色，在菜单栏和设置中提示原因。隐藏状态不跨进程保存，重新启动默认显示。损坏或未知版本配置不会被自动覆盖；菜单栏提供“备份原配置并重置”。保存失败会在设置窗口和菜单栏提示，可重试，也可明确选择继续退出。
+位置、显示偏好、注视/自动动作/走动/台词开关、对应间隔和所选导入皮肤保存在 `~/Library/Application Support/YeShunguangPet-macOS/settings.json`。新版读取schemaVersion 1–6，保存为7；旧版App无法读取新版配置，会保留原文件而不覆盖。导入素材缺失或损坏时恢复默认角色，在菜单栏和设置中提示原因。隐藏状态不跨进程保存，重新启动默认显示。损坏或未知版本配置不会被自动覆盖；菜单栏提供“备份原配置并重置”。保存失败会在设置窗口和菜单栏提示，可重试，也可明确选择继续退出。
 
 开发检查可设置 `YSGPET_SETTINGS_PATH` 为隔离配置的绝对路径，导入素材也隔离在该文件同级的`Skins/`；`YSGPET_METRICS_PATH` 为退出时的本地运行指标输出路径。普通启动不启用指标输出，不联网、不上传日志。
 
@@ -76,7 +82,7 @@ python3 scripts/smoke-app.py --app /绝对路径/YeShunguangPet.app --check-rest
 
 构建需要 Xcode；使用 App 不需要。默认ARM App在`dist/YeShunguangPet.app`，Intel App在`dist/x86_64/YeShunguangPet.app`。两者主程序和嵌入框架架构必须一致；打包时会核对所选架构，拒绝错误标签或混合框架。
 
-打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.8-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名、公证或公开发布，`Contents/Resources/build-info.json`记录构建提交和架构。
+打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.9-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名、公证或公开发布，`Contents/Resources/build-info.json`记录构建提交和架构。
 
 App 图标由原仓库 ICO 转换，原图256×256；大尺寸仅作缩放，不新增绘制细节。需要重新生成时运行 `bash tools/make-icon.sh`，使用系统 sips/iconutil，无外部图像工具依赖。
 
