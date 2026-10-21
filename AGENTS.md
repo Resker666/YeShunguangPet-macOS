@@ -29,4 +29,5 @@
 - 0.1.10已按授权推送a5c3fd6，main云端39554507226及开发分支39554507295成功，云端181项原生/10项分发通过，两架构Artifacts已上传；该轮未另行下载附件，未打标签或发布。
 - 0.1.11用户选择B+C，扩展现有流程：手动main的prepare_release输入默认关闭，仅完整CI通过后独立草稿job有contents:write，按本次两份Artifact ID下载八份附件；核对来源/版本/摘要，固定完整SHA，仅建未发布草稿。既有版本/来源/附件冲突拒绝覆盖，同一构建可补传缺失项。python3 -m unittest discover -s Tests/Release -v；--check-only完全离线，不用正式Token写入GitHub，不因开发工作自动触发草稿或发布。
 - 0.1.11设置窗口接受单个本地fileURL复制拖放，ZIP/文件夹/JSON后台读取并复用预览确认，配置仍schema7；不在角色窗口注册。排队即阻止重复，文件面板/确认sheet、处理或退出期间拒收，关闭及退出取消未确认任务。设置首开刷新不得抢占已接受的预览。原生Pasteboard/协议回调测试不等于Finder物理拖放或焦点实测，详见docs/release-drop-validation.md。仅本地交付，推送、标签、草稿创建及公开发布均等待用户明确指令。
-- 0.1.11本地交付完成：来源660a79e，187项原生、13项离线发版、10项分发通过；四种实际工作流触发门控、三套真实素材的Pasteboard/控制器预览确认及渲染、双架构包/签名/内容和ARM搬移重开通过。单次只读评审无Critical/Important/Minor。ARM已安装/Applications且schema7偏好、选择及更新时位置保留，未登记或撤销正式登录项。示例ZIP放在可见的dist/皮肤示例。真实Finder、云端草稿与既有系统/外机/Intel实测保持待验证；本轮未推送或远端发布。
+- 0.1.11本地交付完成：来源660a79e，187项原生、13项离线发版、10项分发通过；四种实际工作流触发门控、三套真实素材的Pasteboard/控制器预览确认及渲染、双架构包/签名/内容和ARM搬移重开通过。单次只读评审无Critical/Important/Minor。ARM已安装/Applications且schema7偏好、选择及更新时位置保留，未登记或撤销正式登录项。示例ZIP放在可见的dist/皮肤示例。交付时真实Finder、云端草稿与既有系统/外机/Intel实测待验证，未推送或远端发布。
+- 0.1.11用户随后反馈“验证通过，推送”，确认本机拖拽导入整体体验，授权按既有流程同步main与codex/macos-release-and-skin-drop。只做普通push，不触发prepare_release，不创建草稿、标签或公开发布。此反馈不扩展为逐项操作、自动化真实鼠标、焦点/睡眠/Spaces、登录或Intel/外机通过；云端草稿写入继续待单独授权和验证。

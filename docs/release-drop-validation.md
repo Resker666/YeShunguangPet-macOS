@@ -34,4 +34,10 @@ prepare-release.py使用Python标准库，先核对目录恰好八份普通文�
 
 准确路径的个人0.1.10进程正常退出并备份，ARM0.1.11安装到`/Applications/YeShunguangPet.app`；实际启动/正常退出后再次启动留供体验。schema7、全部偏好（含已开启台词）、皮肤选择和更新时位置核对保留，没有登记/撤销正式登录项。根dist的两个App和八份文件均与最终导出构建一致；旧App与个人配置备份留在忽略的验证目录，旧版安装包继续保留。可见的`dist/皮肤示例/知更鸟.zip`与此前真实ZIP逐字节相同，便于用户从Finder体验。
 
-完整证据位于忽略的`.build/release-drop-validation/`：native-final.log、release-final.log、dispatch-gates.json、rehearsal.json、real-drops.json、渲染PNG、final-delivery.json、release-assets-check.json及local-install.json。当前仍仅本地提交，未推送、打标签、创建远端草稿或发布。本轮用户整体验收、真实Finder拖入和云端草稿写入继续待明确反馈/指令。
+完整证据位于忽略的`.build/release-drop-validation/`：native-final.log、release-final.log、dispatch-gates.json、rehearsal.json、real-drops.json、渲染PNG、final-delivery.json、release-assets-check.json及local-install.json。本地交付时仅本地提交，未推送、打标签、创建远端草稿或发布，用户整体验收及云端草稿写入待明确反馈/指令。
+
+## 用户验收与推送授权
+
+用户体验后明确反馈“验证通过，推送”，记录0.1.11本机拖拽导入整体体验通过，按既有流程同步main与codex/macos-release-and-skin-drop。此反馈不扩展为不同格式、取消/失败/重开等逐项操作均已实测，也不将原生回调测试改写为自动化真实鼠标通过；焦点、睡眠/Spaces、正式登录、Intel/外机等保持原验证状态。本次仅普通push，云端构建以对应提交Actions为准，不勾选prepare_release，不创建草稿、打标签或公开发布。
+
+推送前重新运行完整原生187项（98 Core + 89 Mac）、发版离线13项与actionlint，均退出0；测试逐项零失败。证据保存于忽略的push-native.log、push-release-tests.log和push-actionlint.log。此次验收记录仅改文档，产品、测试及构建代码仍与已交付并评审的660a79e一致。
