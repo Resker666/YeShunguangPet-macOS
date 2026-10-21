@@ -16,6 +16,16 @@
 
 补查目录载荷：声明为空的目录却携带Stored/Deflate数据，两种情况均先观察到“未抛错”的失败（archive-directory-red.log）；改为目录也逐块校验后通过。加入有效大体积文件/总量限制、唯一条目数量上限、损坏/尾随Deflate数据、Unicode路径extra、注释，以及AppKit预览→删除原ZIP→确认→重开、歧义包及取消不改当前角色/配置/皮肤库。完整177项原生（96 Core + 81 Mac）通过，日志native-first-green.log。系统linkd/Workspace诊断出现在测试输出，XCTest断言零失败，未把这些系统日志写作无日志告警。
 
+## 评审修复
+
+只读评审发现两项Important：普通退出没有等待ZIP预览临时文件清理；macOS系统bsdtar生成的合法`./`根目录条目被误拒。另有一项Minor：本地Unicode路径extra虽解析却未检查路径有效性/与中央记录一致。均接受并修复。
+
+根目录/Unicode专项先观察4处断言失败（review-archive-red.log）；预览退出专项先观察pending标记、等待和清理错误丢失共3处失败（review-preview-red.log）。新增退出测试以真实加载配合可控I/O返回边界，未用延迟猜测后台时序；首次异步XCTest断言及内部错误类型的访问编译问题单独保留，不计行为RED。
+
+修复后预览也参与原有hasPendingMutation/terminateLater等待，包含临时清理；即使预览取消，SkinImportCleanupError仍保留到退出协调。允许根目录占位符，但其目录类型、空载荷与CRC仍验证；本地存在Unicode路径extra时检查有效路径并与中央有效路径一致，仅中央存在Unicodeextra的合法包继续支持。完整181项（98 Core + 83 Mac）通过，见review-green-full.log。
+
+精心构造的EOCD注释签名碰撞、无签名数据描述符CRC恰等于签名字值的极低概率兼容边界，本轮未承诺全面支持；不把这些边界写为已验证。常见ZIP的真实工具输出另做核验。
+
 ## 交付状态
 
 只读评审、真实旧皮肤归档、原生文件面板和最终分发核验进行中。证据保存在忽略的`.build/zip-validation/`，产物最终放dist；0.1.10尚未推送或发布。Intel实机、真实系统场景与外机首开继续按原边界记录。

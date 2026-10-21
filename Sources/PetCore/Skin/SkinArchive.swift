@@ -72,7 +72,9 @@ private struct ZIPArchive {
             guard local<centralOffset,try reader.number(local,4)==0x04034b50,try reader.number(local+6,2)==flags,try reader.number(local+8,2)==method else {throw SkinError("ZIP 本地记录与目录不一致")}
             let localName=try reader.number(local+26,2),localExtra=try reader.number(local+28,2)
             guard try reader.bytes(local+30,localName)==rawName else {throw SkinError("ZIP 文件名记录不一致")}
-            _=try Self.unicodeName(rawName,extra:reader.bytes(local+30+localName,localExtra))
+            if let localUnicode=try Self.unicodeName(rawName,extra:reader.bytes(local+30+localName,localExtra)) {
+                guard try Self.normalizedPath(localUnicode)==path else {throw SkinError("ZIP 本地与中央 Unicode 路径不一致")}
+            }
             let start=local+30+localName+localExtra
             guard start<=centralOffset,packed<=centralOffset-start else {throw SkinError("ZIP 数据越界")}
             var recordEnd=start+packed
@@ -116,8 +118,16 @@ private struct ZIPArchive {
         return result
     }
     private static func path(_ raw:Data,extra:Data) throws -> String {
-        guard var path=try unicodeName(raw,extra:extra) ?? String(data:raw,encoding:.utf8) else {throw SkinError("ZIP 文件名编码不受支持，请先解压后选择皮肤")}
+        guard let path=try unicodeName(raw,extra:extra) ?? String(data:raw,encoding:.utf8) else {throw SkinError("ZIP 文件名编码不受支持，请先解压后选择皮肤")}
+        return try normalizedPath(path)
+    }
+    private static func normalizedPath(_ original:String) throws -> String {
+        guard !original.isEmpty else {throw SkinError("ZIP 文件路径为空")}
+        var path=original
         while path.hasPrefix("./"){path.removeFirst(2)}
+        // bsdtar and other ordinary writers include an explicit root directory.
+        // Keep its identity; the caller still checks directory type, size and CRC.
+        if path.isEmpty || path=="." {return "./"}
         let clean=path.hasSuffix("/") ? String(path.dropLast()):path,parts=clean.components(separatedBy:"/")
         guard !clean.isEmpty,clean.utf8.count<=1024,parts.count<=16,!path.contains(where:{"\\:".contains($0)}),!path.unicodeScalars.contains(where:{$0.properties.generalCategory == .control}),parts.allSatisfy({!$0.isEmpty && $0 != "." && $0 != ".."}) else {throw SkinError("ZIP 中含不安全或过深的文件路径")}
         return path

@@ -115,4 +115,21 @@ final class SkinArchiveTests:XCTestCase {
         try ZIPFixtures.archive(files,comment:Data("comment PK\u{05}\u{06}".utf8)).write(to:zip)
         var candidate:SkinPackage?;XCTAssertNoThrow(candidate=try SkinLoader.readPackage(manifestURL:zip));XCTAssertEqual(candidate?.skin.manifest.id,"my-pet")
     }
+    func testExplicitRootDirectoryEntryIsAcceptedAndStillValidated() throws {
+        var candidate:SkinPackage?
+        XCTAssertNoThrow(candidate=try load([.init("./",mode:0o040755)]+entries(prefix:"./")))
+        XCTAssertEqual(candidate?.skin.manifest.id,"my-pet")
+        XCTAssertThrowsError(try load([.init("./",Data([1]),mode:0o040755,declaredSize:0)]+entries(prefix:"./")))
+        XCTAssertThrowsError(try load([.init("./",mode:0o100644)]+entries(prefix:"./")))
+    }
+    func testLocalUnicodePathsCannotEscapeOrDisagreeWithCentralNames() throws {
+        for path in ["../outside/pet.json","other/pet.json"] {
+            var files=try entries();files[0].localExtra=ZIPFixtures.unicodeExtra(name:"pet.json",path:path)
+            XCTAssertThrowsError(try load(files),path)
+        }
+        var valid=try entries();valid[0].localExtra=ZIPFixtures.unicodeExtra(name:"pet.json",path:"pet.json")
+        XCTAssertNoThrow(try load(valid))
+        var centralOnly=try entries();centralOnly[0].name="ascii.json";centralOnly[0].extra=ZIPFixtures.unicodeExtra(name:"ascii.json",path:"pet.json");centralOnly[0].localExtra=Data()
+        XCTAssertNoThrow(try load(centralOnly))
+    }
 }

@@ -22,6 +22,7 @@ import ServiceManagement
     @Published private(set) var roamingAvailable=false
     private(set) var hasPendingMutation=false
     private(set) var terminationCleanupError: String?
+    private let previewPackage:@Sendable (URL)throws->SkinPackage
     private let installPackage: @Sendable (SkinLibrary,SkinPackage) throws -> ImportedSkin
     private var mutationWaiters=[CheckedContinuation<Void,Never>]()
     func beginTermination() {
@@ -83,19 +84,19 @@ import ServiceManagement
     func previewSkin(at url: URL) async {
         guard let session,!session.gate.exiting,!isTerminating,!isBusy else { return }
         session.cancelInput(); selectionGeneration += 1
-        let generation=selectionGeneration
-        candidate=nil; candidateImage=nil; skinError=nil; isBusy=true
-        defer { isBusy=false }
+        let generation=selectionGeneration,previewPackage=previewPackage
+        candidate=nil; candidateImage=nil; skinError=nil; isBusy=true; hasPendingMutation=true
+        defer { finishMutation() }
         do {
             let package=try await Task.detached(priority:.userInitiated) {
-                let isDirectory=try url.resourceValues(forKeys:[.isDirectoryKey]).isDirectory == true
-                return try SkinLoader.readPackage(manifestURL:isDirectory ? url.appendingPathComponent("pet.json") : url)
+                try previewPackage(url)
             }.value
             guard generation==selectionGeneration,!Task.isCancelled,!session.gate.exiting else { return }
             let idle=package.skin.manifest.animations[.idle]!
             candidateImage=try SpriteAtlas(skin:package.skin).frame(at:.init(row:idle.row,column:idle.startColumn))
             candidate=package
         } catch {
+            if error is SkinImportCleanupError {terminationCleanupError=error.localizedDescription}
             if generation==selectionGeneration,!Task.isCancelled { skinError=error.localizedDescription }
         }
     }
@@ -136,9 +137,13 @@ import ServiceManagement
         catch { skinError=error.localizedDescription; refresh() }
     }
     private weak var session: PetSession?
-    init(session: PetSession,loginItem:LoginItemController?=nil,installPackage: @escaping @Sendable (SkinLibrary,SkinPackage) throws -> ImportedSkin = { try $0.install($1) }) {
+    init(session: PetSession,loginItem:LoginItemController?=nil,previewPackage:@escaping @Sendable (URL)throws->SkinPackage={url in
+        let isDirectory=try url.resourceValues(forKeys:[.isDirectoryKey]).isDirectory == true
+        return try SkinLoader.readPackage(manifestURL:isDirectory ? url.appendingPathComponent("pet.json") : url)
+    },installPackage: @escaping @Sendable (SkinLibrary,SkinPackage) throws -> ImportedSkin = { try $0.install($1) }) {
         self.loginItem=loginItem ?? LoginItemController()
         self.installPackage=installPackage
+        self.previewPackage=previewPackage
         self.session=session; preferences=session.preferences; saveError=session.persistenceError; skinName=session.skin.manifest.name
         refresh()
     }

@@ -1,6 +1,6 @@
 import AppKit
 import XCTest
-import PetCore
+@testable import PetCore
 
 @MainActor final class SkinSelectionTests: XCTestCase {
     var directory: URL!, settingsURL: URL!, skin: LoadedSkin!, imported: ImportedSkin!
@@ -170,6 +170,41 @@ import PetCore
         await model.confirmImport();XCTAssertEqual(session.skin.manifest.id,"my-pet")
         await model.previewSkin(at:valid);model.cancelSkinSelection();await model.confirmImport()
         XCTAssertEqual(try Data(contentsOf:settingsURL),original);XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:session.library.directory.path),before)
+    }
+    func testNormalTerminationWaitsForOutstandingZIPPreview() async throws {
+        let zip=try ZIPFixtures.write([.init("pet.json",SkinFixtures.minimalManifest),.init("spritesheet.png",try SkinFixtures.directionalPNG())],to:directory.appendingPathComponent("preview.zip"))
+        let started=expectation(description:"ZIP read completed but preview has not returned"),release=DispatchSemaphore(value:0)
+        defer{release.signal()}
+        let session=makeSession();defer{session.prepareToExit()};session.start()
+        let model=SettingsModel(session:session,previewPackage:{url in
+            let result=try SkinLoader.readPackage(manifestURL:url);started.fulfill();release.wait();return result
+        })
+        let preview=Task{await model.previewSkin(at:zip)}
+        let readResult=await XCTWaiter.fulfillment(of:[started],timeout:5)
+        XCTAssertEqual(readResult,.completed)
+        XCTAssertTrue(model.isBusy);XCTAssertTrue(model.hasPendingMutation)
+        model.beginTermination()
+        var finished=false
+        let waiting=Task{@MainActor in await model.waitForPendingMutations();finished=true}
+        await Task.yield();XCTAssertFalse(finished)
+        release.signal();await preview.value;await waiting.value
+        XCTAssertTrue(finished);XCTAssertFalse(model.hasPendingMutation);XCTAssertFalse(model.isBusy)
+        XCTAssertNil(model.candidate);XCTAssertEqual(session.skin.manifest.id,"my-pet")
+    }
+    func testCancelledPreviewCleanupFailureRemainsAvailableToTermination() async throws {
+        let started=expectation(description:"preview cleanup held"),release=DispatchSemaphore(value:0)
+        defer{release.signal()}
+        let session=makeSession();defer{session.prepareToExit()};session.start();XCTAssertTrue(session.requestExit())
+        let original=try Data(contentsOf:settingsURL)
+        let model=SettingsModel(session:session,previewPackage:{url in
+            _=try SkinLoader.readPackage(manifestURL:url);started.fulfill();release.wait();throw SkinImportCleanupError(message:"temporary cleanup failed")
+        })
+        let preview=Task{await model.previewSkin(at:self.directory.appendingPathComponent("source/pet.json"))}
+        let readResult=await XCTWaiter.fulfillment(of:[started],timeout:5)
+        XCTAssertEqual(readResult,.completed)
+        model.beginTermination();release.signal();await model.waitForPendingMutations();await preview.value
+        XCTAssertNotNil(model.terminationCleanupError);XCTAssertNil(model.candidate)
+        XCTAssertEqual(session.skin.manifest.id,"my-pet");XCTAssertEqual(try Data(contentsOf:settingsURL),original)
     }
     func testProtectedSettingsRejectImportAndExitRejectsLateConfirmation() async throws {
         let original=Data("{broken".utf8); try original.write(to:settingsURL)
