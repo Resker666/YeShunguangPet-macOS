@@ -1,0 +1,148 @@
+name: macOS App
+
+on:
+  push:
+    branches:
+      - main
+      - 'codex/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-app-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Record build environment
+        id: metadata
+        run: |
+          set -euo pipefail
+          mkdir -p .build/ci-logs
+          test "$(uname -m)" = arm64
+          {
+            sw_vers
+            uname -m
+            xcodebuild -version
+            xcrun swift --version
+            python3 --version
+            git rev-parse HEAD
+          } | tee .build/ci-logs/environment.log
+          version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Sources/YeShunguangPet/Info.plist)
+          revision=$(git rev-parse --short=12 HEAD)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+
+      - name: Run native tests
+        run: bash scripts/test.sh -resultBundlePath .build/ci-logs/native-tests.xcresult 2>&1 | tee .build/ci-logs/native-tests.log
+
+      - name: Build Apple Silicon app
+        run: bash scripts/build-app.sh arm64 2>&1 | tee .build/ci-logs/build-arm64.log
+
+      - name: Cross-build Intel app
+        run: bash scripts/build-app.sh x86_64 2>&1 | tee .build/ci-logs/build-x86_64.log
+
+      - name: Run distribution and standalone app tests
+        run: python3 -m unittest discover -s Tests/Distribution -v 2>&1 | tee .build/ci-logs/distribution-tests.log
+
+      - name: Package Apple Silicon app
+        run: bash scripts/package-app.sh arm64 2>&1 | tee .build/ci-logs/package-arm64.log
+
+      - name: Package Intel app
+        run: bash scripts/package-app.sh x86_64 2>&1 | tee .build/ci-logs/package-x86_64.log
+
+      - name: Verify packaged files and source provenance
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          import plistlib
+          import subprocess
+
+          commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          if subprocess.check_output(['git', 'status', '--porcelain', '--untracked-files=no'], text=True).strip():
+              raise SystemExit('Tracked source changed during the build')
+          for architecture, app in [('arm64', Path('dist/YeShunguangPet.app')),
+                                    ('x86_64', Path('dist/x86_64/YeShunguangPet.app'))]:
+              info = json.loads((app / 'Contents/Resources/build-info.json').read_text())
+              if info != {'commit': commit, 'trackedChanges': False, 'architecture': architecture}:
+                  raise SystemExit('Unexpected build provenance: ' + architecture)
+              version = plistlib.loads((app / 'Contents/Info.plist').read_bytes())['CFBundleShortVersionString']
+              for extension in ['dmg', 'zip']:
+                  filename = 'YeShunguangPet-' + version + '-macOS-' + architecture + '.' + extension
+                  artifact = Path('dist') / filename
+                  if not artifact.is_file() or artifact.stat().st_size == 0:
+                      raise SystemExit('Missing package: ' + filename)
+                  subprocess.run(['shasum', '-a', '256', '-c', filename + '.sha256'], cwd='dist', check=True)
+          PY
+
+      - name: Upload Apple Silicon packages
+        id: arm64
+        uses: actions/upload-artifact@v7
+        with:
+          name: YeShunguangPet-${{ steps.metadata.outputs.version }}-arm64-${{ github.run_number }}-${{ github.run_attempt }}
+          path: |
+            dist/YeShunguangPet-*-macOS-arm64.dmg
+            dist/YeShunguangPet-*-macOS-arm64.dmg.sha256
+            dist/YeShunguangPet-*-macOS-arm64.zip
+            dist/YeShunguangPet-*-macOS-arm64.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Upload Intel packages
+        id: intel
+        uses: actions/upload-artifact@v7
+        with:
+          name: YeShunguangPet-${{ steps.metadata.outputs.version }}-x86_64-${{ github.run_number }}-${{ github.run_attempt }}
+          path: |
+            dist/YeShunguangPet-*-macOS-x86_64.dmg
+            dist/YeShunguangPet-*-macOS-x86_64.dmg.sha256
+            dist/YeShunguangPet-*-macOS-x86_64.zip
+            dist/YeShunguangPet-*-macOS-x86_64.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Show package download links
+        env:
+          ARM64_URL: ${{ steps.arm64.outputs.artifact-url }}
+          INTEL_URL: ${{ steps.intel.outputs.artifact-url }}
+          REVISION: ${{ steps.metadata.outputs.revision }}
+        run: |
+          {
+            printf '构建提交：`%s`\n\n' "$REVISION"
+            printf '[下载 Apple Silicon 安装包](%s)\n\n' "$ARM64_URL"
+            printf '[下载 Intel 实验安装包](%s)\n\n' "$INTEL_URL"
+            printf '每份产物包含 DMG、ZIP 和对应 SHA-256，保留14天。\n\n'
+            printf '产物为 ad-hoc 签名、未公证。Intel 仅交叉构建，未验证实机运行。\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload build and test diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: macOS-diagnostics-${{ github.run_number }}-${{ github.run_attempt }}
+          path: .build/ci-logs/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
