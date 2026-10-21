@@ -31,7 +31,7 @@ final class SettingsStoreTests: XCTestCase {
         guard case .loaded(let saved)=store.load() else { return XCTFail("valid imported selection must load") }
         try store.save(saved)
         let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
-        XCTAssertEqual(encoded["schemaVersion"] as? Int,7)
+        XCTAssertEqual(encoded["schemaVersion"] as? Int,8)
         XCTAssertEqual(encoded["selectedSkinID"] as? String,"4AEFD8B7-6164-482F-997F-13ABFBB4275D")
         XCTAssertEqual(saved.placement,placement)
         XCTAssertEqual(saved.preferences,PetPreferences(scale:1.5,alwaysOnTop:false))
@@ -42,7 +42,7 @@ final class SettingsStoreTests: XCTestCase {
         guard case .loaded(let saved)=store.load() else { return XCTFail("legacy position must load") }
         try store.save(saved)
         let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
-        XCTAssertEqual(encoded["schemaVersion"] as? Int,7)
+        XCTAssertEqual(encoded["schemaVersion"] as? Int,8)
         let preferences=try XCTUnwrap(encoded["preferences"] as? [String:Any])
         XCTAssertEqual(preferences["scale"] as? Double,1)
         XCTAssertEqual(preferences["alwaysOnTop"] as? Bool,true)
@@ -137,7 +137,7 @@ final class SettingsStoreTests: XCTestCase {
             XCTAssertTrue(saved.preferences.lookAtMouse)
             try store.save(saved)
             let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
-            XCTAssertEqual(encoded["schemaVersion"] as? Int,7)
+            XCTAssertEqual(encoded["schemaVersion"] as? Int,8)
             XCTAssertEqual((encoded["preferences"] as? [String:Any])?["lookAtMouse"] as? Bool,true)
             if version==3 { XCTAssertEqual(encoded["selectedSkinID"] as? String,"4AEFD8B7-6164-482F-997F-13ABFBB4275D") }
         }
@@ -214,7 +214,7 @@ final class SettingsStoreTests: XCTestCase {
         try store.save(saved)
         var object=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
         var preferences=try XCTUnwrap(object["preferences"] as? [String:Any])
-        XCTAssertEqual(object["schemaVersion"] as? Int,7);XCTAssertEqual(preferences["speechEnabled"] as? Bool,false)
+        XCTAssertEqual(object["schemaVersion"] as? Int,8);XCTAssertEqual(preferences["speechEnabled"] as? Bool,false)
         preferences["speechEnabled"]=true;object["preferences"]=preferences;object["schemaVersion"]=7
         try JSONSerialization.data(withJSONObject:object).write(to:settingsURL)
         let reopened=SettingsStore(url:settingsURL)
@@ -231,6 +231,62 @@ final class SettingsStoreTests: XCTestCase {
             try bad.write(to:settingsURL);let store=SettingsStore(url:settingsURL)
             guard case .protectedFile=store.load() else{XCTFail("invalid speech preference accepted");continue}
             XCTAssertThrowsError(try store.save(.init(placement:nil)));XCTAssertEqual(try Data(contentsOf:settingsURL),bad)
+        }
+    }
+
+    func testVersionsOneThroughSevenMigrateWithEmptyShortcuts()throws {
+        for version in 1...7 {
+            var prefs:[String:Any]=["scale":1.5,"alwaysOnTop":false]
+            if version>=4 {prefs["lookAtMouse"]=false}
+            if version>=5 {prefs["automaticActions"]=true;prefs["automaticActionIntervalSeconds"]=15}
+            if version>=6 {prefs["desktopRoaming"]=true;prefs["roamIntervalSeconds"]=20}
+            if version>=7 {prefs["speechEnabled"]=true}
+            var object:[String:Any]=["schemaVersion":version,"placement":try JSONSerialization.jsonObject(with:JSONEncoder().encode(placement))]
+            if version>1 {object["preferences"]=prefs}
+            if version>=3 {object["selectedSkinID"]="4AEFD8B7-6164-482F-997F-13ABFBB4275D"}
+            try JSONSerialization.data(withJSONObject:object).write(to:settingsURL)
+            let store=SettingsStore(url:settingsURL)
+            guard case .loaded(let value)=store.load() else{return XCTFail("v\(version) lost")}
+            XCTAssertEqual(value.placement,placement);XCTAssertTrue(value.preferences.keyboardShortcuts.isEmpty)
+            XCTAssertEqual(value.preferences.scale,version==1 ? 1 : 1.5)
+            XCTAssertEqual(value.preferences.alwaysOnTop,version==1)
+            XCTAssertEqual(value.preferences.lookAtMouse,version<4)
+            XCTAssertEqual(value.preferences.automaticActions,version>=5)
+            XCTAssertEqual(value.preferences.automaticActionIntervalSeconds,version>=5 ? 15 : 60)
+            XCTAssertEqual(value.preferences.desktopRoaming,version>=6)
+            XCTAssertEqual(value.preferences.roamIntervalSeconds,version>=6 ? 20 : 75)
+            XCTAssertEqual(value.preferences.speechEnabled,version>=7)
+            XCTAssertEqual(value.selectedSkinID,version>=3 ? "4AEFD8B7-6164-482F-997F-13ABFBB4275D" : nil)
+            try store.save(value)
+            XCTAssertEqual((try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any])["schemaVersion"] as? Int,8)
+            guard case .loaded(let again)=SettingsStore(url:settingsURL).load() else{return XCTFail("v8 reload")}
+            XCTAssertEqual(again,value)
+        }
+    }
+    func testInvalidVersionEightProtectsOriginalBytes()throws {
+        let base=try JSONSerialization.jsonObject(with:JSONEncoder().encode(PetPreferences())) as! [String:Any]
+        let valid:[String:Any]=["action":"recall","combination":["keyCode":0,"modifiers":6]]
+        let cases:[Any?]=[nil,NSNull(),"bad",[valid,valid],[["action":"unknown","combination":["keyCode":0,"modifiers":6]]],[["action":"recall","combination":["keyCode":999,"modifiers":6]]],[["action":"recall","combination":["keyCode":0,"modifiers":22]]],[["action":"recall","combination":["keyCode":true,"modifiers":6]]]]
+        for invalid in cases {
+            var prefs=base;prefs["keyboardShortcuts"]=invalid
+            let data=try JSONSerialization.data(withJSONObject:["schemaVersion":8,"preferences":prefs]);try data.write(to:settingsURL)
+            let store=SettingsStore(url:settingsURL)
+            guard case .protectedFile=store.load() else{XCTFail("bad v8 accepted");continue}
+            XCTAssertThrowsError(try store.save(.init(placement:nil)));XCTAssertEqual(try Data(contentsOf:settingsURL),data)
+        }
+    }
+    func testVersionEightRoundTripAndSixtyFourKiBBoundary()throws {
+        for bindings in [[],ShortcutAction.allCases.enumerated().map{ShortcutBinding(action:$0.element,combination:.init(keyCode:UInt32($0.offset),modifiers:[.control,.option]))}] {
+            let store=SettingsStore(url:settingsURL)
+            let value=PetSettings(placement:placement,preferences:.init(keyboardShortcuts:bindings))
+            try store.save(value)
+            let data=try Data(contentsOf:settingsURL)
+            try (data+Data(repeating:32,count:65536-data.count)).write(to:settingsURL)
+            guard case .loaded(let saved)=SettingsStore(url:settingsURL).load() else{return XCTFail("64 KiB valid")}
+            XCTAssertEqual(saved,value)
+            try (data+Data(repeating:32,count:65537-data.count)).write(to:settingsURL)
+            guard case .protectedFile=SettingsStore(url:settingsURL).load() else{return XCTFail("oversize")}
+            try FileManager.default.removeItem(at:settingsURL)
         }
     }
 }

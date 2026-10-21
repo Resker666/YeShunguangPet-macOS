@@ -97,11 +97,11 @@
 - `ShortcutCombination: Codable, Hashable, Sendable`，`init(keyCode: UInt32, modifiers: ShortcutModifiers)`；`isValid: Bool`按允许键码和修饰键规则验证；物理键码对应当前SDK的A–Z、0–9、F1–F12，不把范围中所有数字都当合法键。
 - `ShortcutBinding: Codable, Equatable, Sendable`，`action`与`combination`；`KeyboardShortcuts.validate(_ bindings: [ShortcutBinding]) throws`拒绝重复动作/组合及无效项。`PetPreferences.keyboardShortcuts: [ShortcutBinding]`默认`[]`。
 
-- [ ] **Step 1: 写失败用例。** `testDefaultAndModifierKeyContract`断言默认空、Control+Option+A(keyCode0)合法、Command+Shift+A/单Control/未知位/非白名单键码非法。`testDuplicateActionsAndCombinationsRejected`覆盖相同动作不同键、不同动作同键、三项合法往返。新增`testVersionsOneThroughSevenMigrateWithEmptyShortcuts`逐份旧schema夹具断言原位置/UUID及该版本已支持偏好完整保留、快捷键为空，保存schema8后再次读取相等。`testInvalidVersionEightProtectsOriginalBytes`覆盖缺字段/未知动作/类型错误/重复/非法键码及修饰位，断言save抛错、原字节不变。
-- [ ] **Step 2: 验证RED。** `bash scripts/test.sh -only-testing:PetCoreTests/KeyboardShortcutsTests -only-testing:PetCoreTests/SettingsStoreTests`。Expected: 新类型/字段缺失或保存版本仍为7的明确失败。
-- [ ] **Step 3: 实现模型与迁移。** v7使用专用旧偏好结构而非给v8解码字段静默补默认；v8必须包含keyboardShortcuts数组。沿用StrictJSON、65536字节实际读取、保护和原子写入；PetPreferences.isValid纳入完整绑定校验。
-- [ ] **Step 4: 验证GREEN。** 更新旧用例中“本版保存版本”断言为8，旧输入版本夹具继续保留。运行Step 2命令并补`testVersionEightRoundTripAndSixtyFourKiBBoundary`，断言合法空/三项绑定都可往返、65536合法/65537保护。
-- [ ] **Step 5: 本地提交。** 提交`feat: migrate settings to validated optional keyboard shortcuts`。
+- [x] **Step 1: 写失败用例。** `testDefaultAndModifierKeyContract`断言默认空、Control+Option+A(keyCode0)合法、Command+Shift+A/单Control/未知位/非白名单键码非法。`testDuplicateActionsAndCombinationsRejected`覆盖相同动作不同键、不同动作同键、三项合法往返。新增`testVersionsOneThroughSevenMigrateWithEmptyShortcuts`逐份旧schema夹具断言原位置/UUID及该版本已支持偏好完整保留、快捷键为空，保存schema8后再次读取相等。`testInvalidVersionEightProtectsOriginalBytes`覆盖缺字段/未知动作/类型错误/重复/非法键码及修饰位，断言save抛错、原字节不变。
+- [x] **Step 2: 验证RED。** `bash scripts/test.sh -only-testing:PetCoreTests/KeyboardShortcutsTests -only-testing:PetCoreTests/SettingsStoreTests`。Expected: 新类型/字段缺失或保存版本仍为7的明确失败。
+- [x] **Step 3: 实现模型与迁移。** v7使用专用旧偏好结构而非给v8解码字段静默补默认；v8必须包含keyboardShortcuts数组。沿用StrictJSON、65536字节实际读取、保护和原子写入；PetPreferences.isValid纳入完整绑定校验。
+- [x] **Step 4: 验证GREEN。** 更新旧用例中“本版保存版本”断言为8，旧输入版本夹具继续保留。运行Step 2命令并补`testVersionEightRoundTripAndSixtyFourKiBBoundary`，断言合法空/三项绑定都可往返、65536合法/65537保护。
+- [x] **Step 5: 本地提交。** 提交`feat: migrate settings to validated optional keyboard shortcuts`。
 
 ### Task 4: 系统登记、事务恢复与角色命令
 

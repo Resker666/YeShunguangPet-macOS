@@ -10,13 +10,14 @@ public struct PetPreferences: Codable, Equatable {
     public var desktopRoaming: Bool
     public var roamIntervalSeconds: Int
     public var speechEnabled: Bool
-    public init(scale: Double = 1, alwaysOnTop: Bool = true, lookAtMouse: Bool = true, automaticActions: Bool = false, automaticActionIntervalSeconds: Int = 60, desktopRoaming: Bool = false, roamIntervalSeconds: Int = 75,speechEnabled:Bool=false) {
+    public var keyboardShortcuts: [ShortcutBinding]
+    public init(scale: Double = 1, alwaysOnTop: Bool = true, lookAtMouse: Bool = true, automaticActions: Bool = false, automaticActionIntervalSeconds: Int = 60, desktopRoaming: Bool = false, roamIntervalSeconds: Int = 75,speechEnabled:Bool=false,keyboardShortcuts:[ShortcutBinding]=[]) {
         self.scale=scale; self.alwaysOnTop=alwaysOnTop; self.lookAtMouse=lookAtMouse
         self.automaticActions=automaticActions; self.automaticActionIntervalSeconds=automaticActionIntervalSeconds
         self.desktopRoaming=desktopRoaming;self.roamIntervalSeconds=roamIntervalSeconds
-        self.speechEnabled=speechEnabled
+        self.speechEnabled=speechEnabled;self.keyboardShortcuts=keyboardShortcuts
     }
-    public var isValid: Bool { scale.isFinite && (0.5...2).contains(scale) && (15...120).contains(automaticActionIntervalSeconds) && (20...180).contains(roamIntervalSeconds) }
+    public var isValid: Bool { scale.isFinite && (0.5...2).contains(scale) && (15...120).contains(automaticActionIntervalSeconds) && (20...180).contains(roamIntervalSeconds) && (try? KeyboardShortcuts.validate(keyboardShortcuts)) != nil }
 }
 public struct PetSettings: Equatable {
     public let placement: PlacementSnapshot?
@@ -36,6 +37,8 @@ public final class SettingsStore {
     private struct ActionConfiguration: Decodable { let placement: PlacementSnapshot?;let preferences: ActionPreferences;let selectedSkinID: String? }
     private struct RoamingPreferences:Decodable {let scale:Double;let alwaysOnTop,lookAtMouse,automaticActions:Bool;let automaticActionIntervalSeconds:Int;let desktopRoaming:Bool;let roamIntervalSeconds:Int}
     private struct RoamingConfiguration:Decodable {let placement:PlacementSnapshot?;let preferences:RoamingPreferences;let selectedSkinID:String?}
+    private struct SpeechPreferences:Decodable {let scale:Double;let alwaysOnTop,lookAtMouse,automaticActions:Bool;let automaticActionIntervalSeconds:Int;let desktopRoaming:Bool;let roamIntervalSeconds:Int;let speechEnabled:Bool}
+    private struct SpeechConfiguration:Decodable {let placement:PlacementSnapshot?;let preferences:SpeechPreferences;let selectedSkinID:String?}
     private struct Configuration: Codable { let schemaVersion: Int; let placement: PlacementSnapshot?; let preferences: PetPreferences; let selectedSkinID: String? }
     public let url: URL
     private var checked=false, blocked=false
@@ -67,6 +70,9 @@ public final class SettingsStore {
                 let config=try JSONDecoder().decode(RoamingConfiguration.self,from:data),p=config.preferences
                 saved=PetSettings(placement:config.placement,preferences:.init(scale:p.scale,alwaysOnTop:p.alwaysOnTop,lookAtMouse:p.lookAtMouse,automaticActions:p.automaticActions,automaticActionIntervalSeconds:p.automaticActionIntervalSeconds,desktopRoaming:p.desktopRoaming,roamIntervalSeconds:p.roamIntervalSeconds),selectedSkinID:config.selectedSkinID)
             case .number("7"):
+                let config=try JSONDecoder().decode(SpeechConfiguration.self,from:data),p=config.preferences
+                saved=PetSettings(placement:config.placement,preferences:.init(scale:p.scale,alwaysOnTop:p.alwaysOnTop,lookAtMouse:p.lookAtMouse,automaticActions:p.automaticActions,automaticActionIntervalSeconds:p.automaticActionIntervalSeconds,desktopRoaming:p.desktopRoaming,roamIntervalSeconds:p.roamIntervalSeconds,speechEnabled:p.speechEnabled),selectedSkinID:config.selectedSkinID)
+            case .number("8"):
                 let config=try JSONDecoder().decode(Configuration.self,from:data)
                 saved=PetSettings(placement:config.placement,preferences:config.preferences,selectedSkinID:config.selectedSkinID)
             default: throw SkinError("配置版本无效或尚不支持")
@@ -79,7 +85,7 @@ public final class SettingsStore {
         if !checked { _=load() }
         guard !blocked else { throw SkinError("原配置受保护，请先备份并重置") }
         guard settings.isValid else { throw SkinError("位置或偏好无效，未保存") }
-        let data=try JSONEncoder().encode(Configuration(schemaVersion:7,placement:settings.placement,preferences:settings.preferences,selectedSkinID:settings.selectedSkinID))
+        let data=try JSONEncoder().encode(Configuration(schemaVersion:8,placement:settings.placement,preferences:settings.preferences,selectedSkinID:settings.selectedSkinID))
         guard data.count<=65536 else { throw SkinError("配置超过 64 KiB") }
         try FileManager.default.createDirectory(at:url.deletingLastPathComponent(),withIntermediateDirectories:true)
         try write(data,url)
