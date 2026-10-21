@@ -50,13 +50,13 @@ shasum -a 256 -c YeShunguangPet-0.1.8-macOS-arm64.dmg.sha256
 
 ## 验证边界与来源
 
-本机排练成功不能写成GitHub云端成功。云端运行需用户明确授权推送工作流后再验证；目前不把尚未发生的云端构建、上传或下载写成已通过。云端Xcode 26.6与本机Xcode 27不同，首次运行可能暴露编译器、SDK、WindowServer或测试时限差异，应根据真实失败修复。
+本机排练成功不能写成GitHub云端成功。用户明确授权推送后，首次云端构建、上传及实际下载验证已完成，具体环境与结果另记于下文。云端Xcode 26.6与本机Xcode 27不同；后续编译器、SDK、WindowServer或测试时限差异仍需根据真实失败处理。
 
 云端即使全部通过，也只证明对应机器上的构建与自动回归。Intel为ARM机器上的交叉构建，不证明Intel／黑苹果运行；ARM独立进程验证不证明其他系统、用户鼠标、Spaces、真实睡眠或网上下载后的Gatekeeper首开。产物仍为ad-hoc签名、未公证，安装时沿用README与安装说明中的系统操作。
 
 ## 本地验证记录
 
-2026-10-21，在Mac mini M4 / macOS 27 / Xcode 27上验证，本次只添加CI编排和文档，应用仍为0.1.8。实现提交`f1c7ec7`，提交作者为`Resker <resker666@gmail.com>`。后续记录提交仅修改文档，不改变此构建来源；当前开发分支`codex/macos-ci-artifacts`尚未推送、合并、打标签或发布。
+2026-10-21，在Mac mini M4 / macOS 27 / Xcode 27上验证，本次只添加CI编排和文档，应用仍为0.1.8。实现提交`f1c7ec7`，提交作者为`Resker <resker666@gmail.com>`。本地排练来源为该提交；本地验证结束时，开发分支`codex/macos-ci-artifacts`尚未推送、合并、打标签或发布。后续用户授权及云端来源另记于下文。
 
 - 官方actionlint 1.7.12开发工具仅下载到忽略的验证目录，按官方release API提供的SHA-256核验后运行；工作流语法、表达式与内置检查无报错。另对9个`run`块执行`bash -n`，均通过。未安装ShellCheck，也不宣称通过其检查。
 - 独立原生基线135项（74 Core + 61 Mac）通过。随后从干净提交导出临时副本，直接使用YAML中的8个环境/测试/构建/打包/来源检查命令排练；使用本机Xcode 27替代云端26.6，其余命令不变。副本位于忽略目录，构建提交由父仓库读取，原有日用App及dist包未被替换。
@@ -65,6 +65,27 @@ shasum -a 256 -c YeShunguangPet-0.1.8-macOS-arm64.dmg.sha256
 - 独立只读评审范围`45f147c..f1c7ec7`：Critical 0、Important 0、Minor 0。未判断的实际云端编译/运行、Artifacts上传下载及Intel实机运行已明确列出，继续待实测。
 
 证据仅保存在忽略的`.build/ci-validation/`：`actionlint.log`、`native-baseline.log`、`rehearsal.log`、`rehearsal.json`、`gate-checks.json`、`original-dist.json`及副本中的`.build/ci-logs/`。本地未执行checkout/upload-artifact的云端动作，也未将下载链接摘要模拟为真实上传成功。
+
+## 首次云端验证记录
+
+2026-10-21，用户明确指令“推送”。推送前actionlint及完整135项原生测试通过；核对远端main没有额外更新后，将main快进并与`codex/macos-ci-artifacts`原子推送至`d7805ec983410d02ec48a267790f1aab80079287`，远端两个引用均一致，未打标签或发布Release。
+
+首轮[main运行39524442532](https://github.com/Resker666/YeShunguangPet-macOS/actions/runs/39524442532)最终为`completed / success`。实际环境为`macos-26-arm64`、macOS 26.6.2（25G83）、Xcode 26.6、Swift 6.3.3、Python 3.15.0。原生135项（74 Core + 61 Mac）零失败，分发10项通过（72.836秒）；ARM/Intel构建、打包、来源检查、两份安装产物及诊断上传步骤均成功。
+
+首次安装产物为：
+
+| 产物 | GitHub下载入口 | 外层ZIP SHA-256 |
+| --- | --- | --- |
+| ARM，12088888字节 | [YeShunguangPet-0.1.8-arm64-1-1](https://github.com/Resker666/YeShunguangPet-macOS/actions/runs/39524442532/artifacts/12312735091) | `67e1e0a48f3a7a53cd0faaf6aa2de6916533746e08c18a839a46e5898be90c38` |
+| Intel，12134909字节 | [YeShunguangPet-0.1.8-x86_64-1-1](https://github.com/Resker666/YeShunguangPet-macOS/actions/runs/39524442532/artifacts/12311879943) | `b9885e518fca6f70660464b994d429faccd9432467e0ad903d8f9cfa78dd6a42` |
+
+安装产物与诊断`macOS-diagnostics-1-1`的API元数据、过期时间均已读取；当前保留至2026-11-04，链接过期后应选择后续成功运行。两份安装产物实际经GitHub连接器下载到忽略的验证目录，外层摘要与API的digest一致；各自准确包含DMG、ZIP及两个校验文件，内部4个SHA-256全部通过。
+
+继续解压内层ZIP并只读挂载DMG，核对两个App的签名、主程序/框架架构、默认皮肤原字节、许可、依赖和构建来源；元数据均为上述完整`d7805ec`提交、`trackedChanges=false`及相应架构。DMG与ZIP中的App逐文件哈希/链接一致，DMG中的Applications链接正确。弹出映像后，将云端ARM App复制到中文改名路径，使用临时配置和素材运行现有smoke检查，独立启动、可见动画、正常退出及第二次启动位置恢复通过。Intel仅检查包和交叉构建，不执行Intel程序；没有替换个人日用App或配置。
+
+本次证明云端构建/上传以及两份安装产物的实际下载可用，不证明用户鼠标、真实系统睡眠、Intel／黑苹果运行或Gatekeeper首开。诊断产物已确认上传，未另行下载约97MB诊断ZIP。完整工作流日志保存在GitHub，本地提取的环境、测试数与上传摘要及原始API结果、下载包和核验收据位于`.build/ci-push/`；主要文件为`cloud-run-final.json`、`cloud-artifacts.json`、`cloud-job-summary.log`、`cloud-verification.log`及`downloads/verification.json`。
+
+本记录提交仅更新文档，不改变首轮已验证安装包的构建来源；推送本记录后，常规push触发规则仍会生成后续运行。
 
 实施时核对的官方资料：
 
