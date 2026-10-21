@@ -52,3 +52,7 @@
 回退备份为忽略目录中的`previous-installed-0.1.11.app`和`personal-settings-migration-baseline.json`，不属于Git提交。完整最终证据为`final-source.json`、`final-delivery.json`、`local-install.json`、`final-relocated-smoke.json`和对应日志。个人配置快照只在本机忽略目录，不加入仓库或安装包。
 
 用户整体验收尚待确认；尤其真实跨应用全局按键、选中分组文字、既有系统场景、外机/Intel和Gatekeeper仍保留上述边界。当前开发分支保留为`codex/macos-update-shortcuts-settings`，本轮没有合并main、推送、打标签或写入远端Release。
+
+## 推送授权与推送前核验
+
+用户随后明确要求“推送，并且执行CA”，授权按既有流程同步main和codex/macos-update-shortcuts-settings；此为推送指令，未声明0.1.12整体验收通过，既有真实输入/界面与设备边界保留。推送前本机当前树213项原生（107Core/106Mac）与13项离线发版再次通过；远端main仍为fa64742且可快进。本次只做普通push，不触发prepare_release，不创建标签、草稿或公开发布。远端推送及Actions结果以实际命令和云端记录为准。
