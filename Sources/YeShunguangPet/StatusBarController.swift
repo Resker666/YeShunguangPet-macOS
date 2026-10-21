@@ -6,6 +6,7 @@ import AppKit
     let visibilityItem=NSMenuItem(title:"显示角色",action:#selector(toggle),keyEquivalent:"")
     let recallItem=NSMenuItem(title:"召回角色",action:#selector(recall),keyEquivalent:"")
     let settingsItem=NSMenuItem(title:"设置…",action:#selector(openSettings),keyEquivalent:",")
+    let quietItem=NSMenuItem(title:"安静模式",action:#selector(toggleQuiet),keyEquivalent:"")
     private(set) var settingsController: SettingsWindowController?
     let menu=NSMenu()
     private let persistenceItem=NSMenuItem(title:"",action:nil,keyEquivalent:"")
@@ -20,7 +21,8 @@ import AppKit
         item.button?.toolTip="叶瞬光桌宠"; item.button?.setAccessibilityLabel("叶瞬光桌宠")
         menu.autoenablesItems=false
         if let error { let label=NSMenuItem(title:"加载失败：\(error)",action:nil,keyEquivalent:""); label.isEnabled=false; menu.addItem(label); menu.addItem(.separator()) }
-        for entry in [visibilityItem,recallItem] { entry.target=self; menu.addItem(entry) }
+        for entry in [visibilityItem,recallItem,quietItem] { entry.target=self; menu.addItem(entry) }
+        quietItem.toolTip="本次运行暂时暂停注视、自动动作和走动，保留待机与手动互动；重开恢复正常。"
         settingsItem.target=self; menu.addItem(settingsItem)
         skinWarningItem.target=self; menu.addItem(skinWarningItem)
         persistenceItem.isEnabled=false
@@ -33,6 +35,7 @@ import AppKit
     func refresh() {
         visibilityItem.title=session?.isVisible == true ? "隐藏角色" : "显示角色"; visibilityItem.isEnabled=session != nil; recallItem.isEnabled=session != nil
         settingsItem.isEnabled=session != nil; settingsController?.model.refresh()
+        quietItem.isEnabled=session != nil;quietItem.state=session?.isQuiet == true ? .on : .off
         skinWarningItem.isHidden=session?.skinWarning==nil; skinWarningItem.toolTip=session?.skinWarning
         let message=session?.persistenceError
         persistenceItem.isHidden=message==nil; persistenceItem.title=session?.protectedSettings == true ? "原配置受保护，设置暂不保存" : "设置保存失败"; persistenceItem.toolTip=message
@@ -45,6 +48,7 @@ import AppKit
     func menuDidClose(_ menu: NSMenu) { session?.setMenuOpen(false) }
     @objc private func toggle() { if let session { session.setVisible(!session.isVisible) }; refresh() }
     @objc private func recall() { session?.recall(); refresh() }
+    @objc private func toggleQuiet() { if let session {session.setQuiet(!session.isQuiet)};refresh() }
     @objc private func openSettings() {
         guard let session else { return }
         if settingsController == nil { settingsController=SettingsWindowController(session:session) }

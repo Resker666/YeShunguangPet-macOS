@@ -25,6 +25,7 @@ import PetCore
     private var dragOrigin=CGPoint.zero
     var onStatusChange: (() -> Void)?
     var isVisible: Bool { gate.visible }
+    private(set) var isQuiet=false
     private var gaze=MouseGaze()
     private var nextGazeSample: Duration?
     private var gazeSamples=0
@@ -41,9 +42,13 @@ import PetCore
     var gazeDirection: Int? { gaze.direction }
     var supportsGaze: Bool { skin.manifest.lookDirections.count==16 }
     var supportsRoaming: Bool { skin.manifest.animations[.runningLeft]?.loop==true && skin.manifest.animations[.runningRight]?.loop==true }
-    private var canSampleGaze: Bool { gate.shouldRunFrames && preferences.lookAtMouse && supportsGaze && action == .idle && !roaming.isWalking && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
-    private var canRunAutomatic: Bool { gate.shouldRunFrames && action == .idle && !roaming.isWalking && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
-    private var canRoam: Bool { gate.shouldRunFrames && !interaction.isPointerBusy && !menuOpen && !settingsOpen && (action == .idle || roaming.isWalking) }
+    private var canSampleGaze: Bool { gate.shouldRunFrames && !isQuiet && preferences.lookAtMouse && supportsGaze && action == .idle && !roaming.isWalking && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
+    private var canRunAutomatic: Bool { gate.shouldRunFrames && !isQuiet && action == .idle && !roaming.isWalking && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
+    private var canRoam: Bool { gate.shouldRunFrames && !isQuiet && !interaction.isPointerBusy && !menuOpen && !settingsOpen && (action == .idle || roaming.isWalking) }
+    func setQuiet(_ quiet:Bool) {
+        guard !gate.exiting,quiet != isQuiet else{return}
+        isQuiet=quiet;cancelInput();onStatusChange?()
+    }
     func setMenuOpen(_ open: Bool) {
         guard !gate.exiting,menuOpen != open else { return }; menuOpen=open; cancelInput()
     }
@@ -329,6 +334,7 @@ import PetCore
         data["desktopRoamingEnabled"]=preferences.desktopRoaming
         data["roamIntervalSeconds"]=preferences.roamIntervalSeconds
         data["roamingCount"]=roamingCount;data["roamingDistancePoints"]=roamingDistance;data["roamingPointerSamples"]=roamingPointerSamples
+        data["quietMode"]=isQuiet
         try JSONSerialization.data(withJSONObject:data,options:[.prettyPrinted,.sortedKeys]).write(to:url,options:.atomic)
     }
     func prepareToExit() {

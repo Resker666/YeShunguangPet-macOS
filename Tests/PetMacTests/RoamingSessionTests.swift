@@ -11,7 +11,7 @@ import PetCore
         let directory:URL,session:PetSession,input:RoamingInput
         func close() { session.prepareToExit();try? FileManager.default.removeItem(at:directory) }
     }
-    private func fixture(enabled:Bool=true,support:Bool=true,automatic:Bool=false,gaze:Bool=false) throws -> Fixture {
+    private func fixture(enabled:Bool=true,support:Bool=true,automatic:Bool=false,gaze:Bool=false,automaticDraw:Double=0) throws -> Fixture {
         _=NSApplication.shared
         let directory=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),input=RoamingInput()
         let manifest=try SkinFixtures.writePackage(in:directory.appendingPathComponent("default"))
@@ -22,7 +22,7 @@ import PetCore
             if input.failWrites { throw SkinError("write failed") };try data.write(to:url,options:.atomic);input.writes += 1
         })
         try store.save(.init(placement:nil,preferences:.init(lookAtMouse:gaze,automaticActions:automatic,automaticActionIntervalSeconds:20,desktopRoaming:enabled,roamIntervalSeconds:20)))
-        let session=PetSession(skin:try SkinLoader.load(manifestURL:manifest),now:{input.time},settings:store,screens:{input.screenReads += 1;return input.screens},pointerPosition:{input.reads += 1;return input.point},automaticRandom:{0},roamingRandom:{0.5})
+        let session=PetSession(skin:try SkinLoader.load(manifestURL:manifest),now:{input.time},settings:store,screens:{input.screenReads += 1;return input.screens},pointerPosition:{input.reads += 1;return input.point},automaticRandom:{automaticDraw},roamingRandom:{0.5})
         session.start();session.panel.setFrameOrigin(CGPoint(x:100,y:100))
         return .init(directory:directory,session:session,input:input)
     }
@@ -144,5 +144,77 @@ import PetCore
         guard case .loaded(let saved)=SettingsStore(url:f.session.settings.url).load() else{return XCTFail("quit snapshot missing")}
         XCTAssertEqual(saved.placement?.origin,CGPoint(x:104,y:100))
         XCTAssertEqual(f.session.action,.idle)
+    }
+    private func toggleQuiet(_ status:StatusBarController) throws {
+        let item=try XCTUnwrap(status.menu.items.first{$0.title=="安静模式"})
+        status.menu.performActionForItem(at:status.menu.index(of:item))
+    }
+    func testQuietModeStopsAutomaticSamplingWithoutChangingPreferencesOrManualInteraction() throws {
+        let f=try fixture(automatic:true,gaze:true);defer{f.close()}
+        let status=StatusBarController(session:f.session,onQuit:{});defer{status.dispose()}
+        let before=try Data(contentsOf:f.session.settings.url),preferences=f.session.preferences
+        try toggleQuiet(status)
+        let reads=f.input.reads,screens=f.input.screenReads
+        f.input.time = .seconds(500);f.session.tick()
+        XCTAssertEqual(f.input.reads,reads);XCTAssertEqual(f.input.screenReads,screens)
+        XCTAssertEqual(try metrics(f)["automaticActionCount"] as? Int,0)
+        XCTAssertEqual(try metrics(f)["roamingCount"] as? Int,0)
+        XCTAssertNil(f.session.gazeDirection);XCTAssertEqual(f.session.scheduler.pendingCount,1)
+        XCTAssertEqual(f.session.preferences,preferences);XCTAssertEqual(try Data(contentsOf:f.session.settings.url),before)
+        f.session.view.onDown?(.zero,1);f.session.view.onUp?(.zero)
+        f.input.time += .seconds(1);f.session.tick();XCTAssertEqual(f.session.action,.waving)
+        f.session.view.onDown?(.zero,1);f.session.view.onMove?(CGPoint(x:20,y:10));f.session.view.onUp?(CGPoint(x:20,y:10))
+        XCTAssertEqual(f.session.panel.frame.origin,CGPoint(x:120,y:110));XCTAssertEqual(f.session.action,.idle)
+        XCTAssertEqual(f.session.preferences,preferences)
+    }
+    func testQuietModeInterruptsWalkAndSavesOnceThenResumesWaiting() throws {
+        let f=try fixture();defer{f.close()}
+        let status=StatusBarController(session:f.session,onQuit:{});defer{status.dispose()}
+        f.input.time = .seconds(20);f.session.tick();f.input.time += .milliseconds(100);f.session.tick()
+        let writes=f.input.writes
+        try toggleQuiet(status)
+        XCTAssertEqual(f.session.action,.idle);XCTAssertEqual(f.input.writes,writes+1)
+        f.input.time = .seconds(500);f.session.tick();XCTAssertEqual(f.session.panel.frame.minX,104)
+        XCTAssertEqual(f.input.writes,writes+1)
+        try toggleQuiet(status);f.session.tick()
+        XCTAssertEqual(f.session.action,.idle);XCTAssertEqual(try metrics(f)["roamingCount"] as? Int,1)
+        XCTAssertTrue(f.session.preferences.desktopRoaming)
+        guard case .loaded(let saved)=SettingsStore(url:f.session.settings.url).load() else{return XCTFail("missing saved point")}
+        XCTAssertEqual(saved.placement?.origin,CGPoint(x:104,y:100))
+    }
+    func testQuietModeEndsAutomaticGestureAndActiveGaze() throws {
+        let f=try fixture(automatic:true,gaze:true);defer{f.close()}
+        let status=StatusBarController(session:f.session,onQuit:{});defer{status.dispose()}
+        f.input.point=CGPoint(x:216,y:116);f.input.time = .milliseconds(100);f.session.tick()
+        XCTAssertNotNil(f.session.gazeDirection)
+        try toggleQuiet(status);XCTAssertNil(f.session.gazeDirection)
+        try toggleQuiet(status)
+        f.input.point=CGPoint(x:900,y:650);f.input.time = .seconds(15);f.session.tick()
+        XCTAssertEqual(f.session.action,.waving)
+        try toggleQuiet(status);XCTAssertEqual(f.session.action,.idle)
+        f.input.time = .seconds(500);f.session.tick();try toggleQuiet(status);f.session.tick()
+        XCTAssertEqual(f.session.action,.idle);XCTAssertEqual(try metrics(f)["automaticActionCount"] as? Int,1)
+    }
+    func testQuietModeIsTemporaryAndReopeningRetainsOriginalAutomationPreferences() throws {
+        let f=try fixture(automatic:true,gaze:true);defer{f.close()}
+        let status=StatusBarController(session:f.session,onQuit:{});defer{status.dispose()}
+        try toggleQuiet(status)
+        XCTAssertEqual(status.menu.items.first{$0.title=="安静模式"}?.state,.on)
+        XCTAssertTrue(f.session.requestExit())
+        let reopened=PetSession(skin:f.session.skin,now:{.zero},settings:SettingsStore(url:f.session.settings.url),screens:{f.input.screens})
+        defer{reopened.prepareToExit()};reopened.start()
+        let other=StatusBarController(session:reopened,onQuit:{});defer{other.dispose()}
+        XCTAssertEqual(other.menu.items.first{$0.title=="安静模式"}?.state,.off)
+        XCTAssertEqual(reopened.preferences,f.session.preferences)
+    }
+    func testRoamingWinsWhenAutomaticGestureIsDueAtExactlyTheSameTime() throws {
+        let f=try fixture(automatic:true,gaze:true,automaticDraw:0.5);defer{f.close()}
+        f.input.time = .seconds(20);f.session.tick()
+        XCTAssertEqual(f.session.action,.runningRight);XCTAssertNil(f.session.gazeDirection)
+        XCTAssertEqual(try metrics(f)["roamingCount"] as? Int,1)
+        XCTAssertEqual(try metrics(f)["automaticActionCount"] as? Int,0)
+        f.input.time += .milliseconds(100);f.session.tick()
+        XCTAssertEqual(f.session.action,.runningRight);XCTAssertEqual(try metrics(f)["automaticActionCount"] as? Int,0)
+        XCTAssertEqual(f.session.scheduler.pendingCount,1)
     }
 }
