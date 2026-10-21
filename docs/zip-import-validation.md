@@ -38,4 +38,10 @@
 
 个人0.1.9按准确可执行路径正常退出并备份；ARM版已安装到`/Applications/YeShunguangPet.app`，实际启动、正常退出后再次启动留供体验。schema7保持不变，原有全部偏好（含用户已启用的台词）、皮肤选择及更新时位置核对保留；未调用正式登录项登记或撤销。dist已复制最终两个App及8份安装/校验文件，旧版包继续保留。
 
-证据位于忽略的`.build/zip-validation/`：review-green-full.log、rehearsal.json、各构建/分发日志、real-zips.json、model-import.json、preview-render.png、final-delivery.json、local-install.json和配置/App备份。当前分支`codex/macos-zip-skin-import`仅本地提交，未推送、打标签或发布，文件面板与0.1.10用户整体验收仍待完成。
+证据位于忽略的`.build/zip-validation/`：review-green-full.log、rehearsal.json、各构建/分发日志、real-zips.json、model-import.json、preview-render.png、final-delivery.json、local-install.json和配置/App备份。本地交付时分支`codex/macos-zip-skin-import`仅本地提交，未推送、打标签或发布，文件面板与0.1.10用户整体验收待确认。
+
+## 用户验收与推送授权
+
+用户在文件面板中未看到隐藏的`.build`目录，已说明可按⌘⇧G前往示例ZIP所在完整路径；随后用户明确反馈“验证通过，推送”。据此记录0.1.10本机ZIP导入整体体验通过，并按既有流程同步main与`codex/macos-zip-skin-import`。本次反馈不扩展为取消、失败、重开等逐项操作均已实测，不将此前中断的文件面板自动化改写为通过；真实系统登录、睡眠、Spaces、外机与Intel实机保持原有未测状态。本次仅授权推送，标签和Release仍需新的明确指令。
+
+推送前重新运行`bash scripts/test.sh`，xcodebuild退出0；98项Core与83项Mac测试逐项通过，共181项、零失败。日志保存于忽略的`.build/zip-validation/push-native.log`。本次验收记录只改文档，产品代码仍与已交付的d91d2af一致；推送后的云端构建、分发与产物状态以对应提交的Actions运行为准。

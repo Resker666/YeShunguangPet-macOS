@@ -88,7 +88,7 @@ python3 scripts/smoke-app.py --app /绝对路径/YeShunguangPet.app --check-rest
 
 构建需要 Xcode；使用 App 不需要。默认ARM App在`dist/YeShunguangPet.app`，Intel App在`dist/x86_64/YeShunguangPet.app`。两者主程序和嵌入框架架构必须一致；打包时会核对所选架构，拒绝错误标签或混合框架。
 
-打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.10-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.9已按用户指令发布，0.1.10仍先本地交付，后续推送与发布需明确指令。
+打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.10-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.9已按用户指令发布；0.1.10已获本机体验通过及推送授权，本版标签和Release仍需新的明确指令。
 
 App 图标由原仓库 ICO 转换，原图256×256；大尺寸仅作缩放，不新增绘制细节。需要重新生成时运行 `bash tools/make-icon.sh`，使用系统 sips/iconutil，无外部图像工具依赖。
 
