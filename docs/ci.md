@@ -54,6 +54,18 @@ shasum -a 256 -c YeShunguangPet-0.1.8-macOS-arm64.dmg.sha256
 
 云端即使全部通过，也只证明对应机器上的构建与自动回归。Intel为ARM机器上的交叉构建，不证明Intel／黑苹果运行；ARM独立进程验证不证明其他系统、用户鼠标、Spaces、真实睡眠或网上下载后的Gatekeeper首开。产物仍为ad-hoc签名、未公证，安装时沿用README与安装说明中的系统操作。
 
+## 本地验证记录
+
+2026-10-21，在Mac mini M4 / macOS 27 / Xcode 27上验证，本次只添加CI编排和文档，应用仍为0.1.8。实现提交`f1c7ec7`，提交作者为`Resker <resker666@gmail.com>`。后续记录提交仅修改文档，不改变此构建来源；当前开发分支`codex/macos-ci-artifacts`尚未推送、合并、打标签或发布。
+
+- 官方actionlint 1.7.12开发工具仅下载到忽略的验证目录，按官方release API提供的SHA-256核验后运行；工作流语法、表达式与内置检查无报错。另对9个`run`块执行`bash -n`，均通过。未安装ShellCheck，也不宣称通过其检查。
+- 独立原生基线135项（74 Core + 61 Mac）通过。随后从干净提交导出临时副本，直接使用YAML中的8个环境/测试/构建/打包/来源检查命令排练；使用本机Xcode 27替代云端26.6，其余命令不变。副本位于忽略目录，构建提交由父仓库读取，原有日用App及dist包未被替换。
+- 排练中的完整原生135项与分发10项（56.402秒）均通过，ARM/Intel Release、签名、两个架构的DMG/ZIP生成及4份SHA-256检查通过，8个步骤全部退出0。构建元数据记录`f1c7ec7`对应的完整提交、`trackedChanges=false`及正确架构。
+- 在临时副本伪造构建来源、损坏ZIP、移走DMG，来源/包检查均非零退出并指出对应错误；恢复原文件后重新通过。使用GitHub同样的bash执行参数，失败命令经`tee`后仍返回原退出码37。两份上传路径各选中准确4个文件；原dist的构建元数据与已有安装包哈希保持一致。
+- 独立只读评审范围`45f147c..f1c7ec7`：Critical 0、Important 0、Minor 0。未判断的实际云端编译/运行、Artifacts上传下载及Intel实机运行已明确列出，继续待实测。
+
+证据仅保存在忽略的`.build/ci-validation/`：`actionlint.log`、`native-baseline.log`、`rehearsal.log`、`rehearsal.json`、`gate-checks.json`、`original-dist.json`及副本中的`.build/ci-logs/`。本地未执行checkout/upload-artifact的云端动作，也未将下载链接摘要模拟为真实上传成功。
+
 实施时核对的官方资料：
 
 - [GitHub标准runner及架构](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)。

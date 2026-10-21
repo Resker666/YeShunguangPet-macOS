@@ -78,6 +78,8 @@ python3 scripts/smoke-app.py --app /绝对路径/YeShunguangPet.app --check-rest
 
 打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.8-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名、公证或公开发布，`Contents/Resources/build-info.json`记录构建提交和架构。
 
+App 图标由原仓库 ICO 转换，原图256×256；大尺寸仅作缩放，不新增绘制细节。需要重新生成时运行 `bash tools/make-icon.sh`，使用系统 sips/iconutil，无外部图像工具依赖。
+
 ## 云端构建与下载
 
 GitHub Actions 的 [macOS App 流水线](.github/workflows/macos-build.yml)在推送至`main`或`codex/**`、提交面向`main`的PR时自动运行，也支持手动触发。使用`macos-26`的Apple Silicon机器、Xcode 26.6，复用上述测试/构建/打包脚本；本机开发使用Xcode 27，两种环境的验证结果分别记录。
@@ -85,8 +87,6 @@ GitHub Actions 的 [macOS App 流水线](.github/workflows/macos-build.yml)在�
 原生测试、双架构Release构建及完整分发回归通过后，上传ARM与Intel两份安装产物，名称包含版本、架构、运行编号和重试次数。每份含DMG、ZIP及各自SHA-256；App、安装说明和许可已封装在安装包内，避免直接上传App目录丢失执行权限或链接。另保留环境、构建/测试日志和XCTest结果，失败时也尝试上传诊断产物。产物保留14天，流水线不创建GitHub Release。
 
 推送工作流后，打开[仓库Actions页面](https://github.com/Resker666/YeShunguangPet-macOS/actions)，选择`macOS App`的一次成功运行，在摘要的下载链接或底部`Artifacts`下载对应架构；需登录GitHub。下载的外层ZIP先解压，再按上文安装其中的DMG或备用ZIP。手动运行时选择`macOS App → Run workflow`；该入口需工作流先进入默认分支。具体流程、排错及验证边界见[CI说明](docs/ci.md)。
-
-App 图标由原仓库 ICO 转换，原图256×256；大尺寸仅作缩放，不新增绘制细节。需要重新生成时运行 `bash tools/make-icon.sh`，使用系统 sips/iconutil，无外部图像工具依赖。
 
 ## 项目与素材
 
