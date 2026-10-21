@@ -2,7 +2,7 @@
 
 日期：2026-10-21（Asia/Shanghai）。
 
-状态：用户已选择A、B、C；本书面设计待用户评审，尚未开始产品代码实现或配置迁移。之后沿用用户已选择的本会话实施方式，在独立Mac仓库原地开发，先本地交付；本版推送、标签、Release草稿和公开发布均另等明确指令。
+状态：用户已选择A、B、C，并在阅读本设计后回复“执行”，设计已批准；尚未开始产品代码实现或配置迁移。之后沿用用户已选择的本会话实施方式，在独立Mac仓库原地开发，先本地交付；本版推送、标签、Release草稿和公开发布均另等明确指令。
 
 ## 目标与范围
 
@@ -130,4 +130,4 @@
 
 参考[GitHub Latest Release接口](https://docs.github.com/en/rest/releases/releases#get-the-latest-release)、[URLSession字节流接口](https://developer.apple.com/documentation/foundation/urlsession/bytes(for:delegate:))和本机macOS SDK公开CarbonEvents.h的RegisterEventHotKey/UnregisterEventHotKey说明。Apple网页工具无法完整展示Carbon页面，快捷键语义以本机公开SDK原文为依据。
 
-自检已完成：范围与用户A/B/C选择一致，默认/迁移/失败/生命周期和测试边界已定义；无未决占位符。书面设计尚未获用户评审；通过后编写实施计划，再按既有本会话实施方式推进。
+自检已完成：范围与用户A/B/C选择一致，默认/迁移/失败/生命周期和测试边界已定义；无未决占位符。书面设计已获用户批准；接续编写实施计划，评审后按既有本会话实施方式推进。
