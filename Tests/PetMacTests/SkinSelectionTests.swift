@@ -19,14 +19,14 @@ import XCTest
     }
     func testSettingsRegistersNativeFileDropDestination() throws {
         let session=makeSession(); defer { session.prepareToExit() }
-        let controller=SettingsWindowController(session:session)
+        let controller=makeTestSettingsController(session:session)
         let view=try XCTUnwrap(controller.window?.contentView)
         XCTAssertTrue(view.registeredDraggedTypes.contains(.fileURL),"settings must accept native Finder file drops")
         XCTAssertFalse(session.view.registeredDraggedTypes.contains(.fileURL),"pet dragging must keep moving the character")
     }
     func testNativeDropCallbacksHighlightAndRouteToSharedPreview() throws {
         let session=makeSession(); session.start()
-        let controller=SettingsWindowController(session:session); controller.present()
+        let controller=makeTestSettingsController(session:session); controller.present()
         defer { controller.window?.close(); session.prepareToExit() }
         let board=pasteboard([directory.appendingPathComponent("source/pet.json")]); defer { board.releaseGlobally() }
         let view=try XCTUnwrap(controller.window?.contentView), info=SkinDraggingInfo(board:board,window:controller.window)
@@ -45,7 +45,7 @@ import XCTest
     }
     func testDroppedZIPFolderAndJSONPreviewBeforeImportAndKeepSourceBytes() async throws {
         let session=makeSession(); session.start()
-        let controller=SettingsWindowController(session:session); controller.present()
+        let controller=makeTestSettingsController(session:session); controller.present()
         defer { controller.window?.close(); session.prepareToExit() }
         let manifest=directory.appendingPathComponent("source/pet.json"), png=manifest.deletingLastPathComponent().appendingPathComponent("spritesheet.png")
         let json=try Data(contentsOf:manifest), image=try Data(contentsOf:png)
@@ -68,7 +68,7 @@ import XCTest
     }
     func testDropRejectsMultipleRemoteAndTextWithoutChangingExistingPreview() async throws {
         let session=makeSession(); session.start()
-        let controller=SettingsWindowController(session:session); controller.present()
+        let controller=makeTestSettingsController(session:session); controller.present()
         defer { controller.window?.close(); session.prepareToExit() }
         let source=directory.appendingPathComponent("source/pet.json")
         await controller.model.previewSkin(at:source)
@@ -86,7 +86,7 @@ import XCTest
     }
     func testPendingDropBlocksSecondDropAndCloseCancelsQueuedPreview() async throws {
         let session=makeSession(); session.start()
-        let controller=SettingsWindowController(session:session); controller.present()
+        let controller=makeTestSettingsController(session:session); controller.present()
         defer { controller.window?.close(); session.prepareToExit() }
         let board=pasteboard([directory.appendingPathComponent("source/pet.json")]); defer { board.releaseGlobally() }
         let task=try XCTUnwrap(controller.acceptSkinDrop(from:board))
@@ -99,7 +99,7 @@ import XCTest
     }
     func testDropIsBlockedWithSheetOrClosedWindowAndBadFileKeepsCurrentSkin() async throws {
         let session=makeSession(); session.start()
-        let controller=SettingsWindowController(session:session)
+        let controller=makeTestSettingsController(session:session)
         defer { controller.window?.close(); session.prepareToExit() }
         let source=directory.appendingPathComponent("source/pet.json"), board=pasteboard([source]); defer { board.releaseGlobally() }
         XCTAssertNil(controller.acceptSkinDrop(from:board))

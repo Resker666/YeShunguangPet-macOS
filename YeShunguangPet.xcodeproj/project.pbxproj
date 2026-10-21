@@ -1016,6 +1016,13 @@
 				<string>60BC3DF5EC1B4C0E1AB4D0FD</string>
 				<string>48F2F3C96F1146BAD7E0FB00</string>
 				<string>A782A57FAE34559A63A6E4BD</string>
+				<string>2EAE7A29F28D5D70008F34B8</string>
+				<string>5AC20E61183797805E66DCBF</string>
+				<string>94FB2779CB5D039BB16C10B0</string>
+				<string>7A72E550BF015AE97ED6F0A6</string>
+				<string>171C486FD7EE703294D8947E</string>
+				<string>2ACB708180B5C29D797725CA</string>
+				<string>1C95BE7A72AC571A38329DFA</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1411,6 +1418,14 @@
 				<string>9E46F530A088ABCBE66FAC8D</string>
 				<string>966C53CCE4DFD2E10BD4813D</string>
 				<string>7620F143E182D5A57E959C99</string>
+				<string>EC7A2CA23AA2A39984370ADF</string>
+				<string>939D74674CBBC68F35106061</string>
+				<string>D4D8F846A5E094BD52C5A6E5</string>
+				<string>7B93E40F79485307B077E136</string>
+				<string>14822A24F71D4F11AB22855B</string>
+				<string>ED1A0152BB28467846D9DC33</string>
+				<string>D556D874D489F774087E6CF3</string>
+				<string>668E6E369B9ED89D3A109878</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1696,6 +1711,14 @@
 				<string>A17DB53241DBC5268116D466</string>
 				<string>F3E2C1DE108775BD18010FD4</string>
 				<string>DBDCAAC663AF5351B992A07B</string>
+				<string>FD7C848951C73FDB7B7E9855</string>
+				<string>97362A495DA83DC2712F8AED</string>
+				<string>49885223A9B4514CF3D81884</string>
+				<string>DC011087A0728D8C29195EC9</string>
+				<string>A9F2781DD93C2BB369EF36F9</string>
+				<string>ACCDD3380885E165FD741717</string>
+				<string>9BC5A4A03A5B7381E1BDDE63</string>
+				<string>9251C199A0288BF1E4587CB4</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -2455,6 +2478,199 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>DBDCAAC663AF5351B992A07B</string>
+		</dict>
+		<key>FD7C848951C73FDB7B7E9855</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/SettingsGroupsTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>EC7A2CA23AA2A39984370ADF</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>FD7C848951C73FDB7B7E9855</string>
+		</dict>
+		<key>97362A495DA83DC2712F8AED</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Settings/SettingsModel.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>2EAE7A29F28D5D70008F34B8</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>97362A495DA83DC2712F8AED</string>
+		</dict>
+		<key>939D74674CBBC68F35106061</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>97362A495DA83DC2712F8AED</string>
+		</dict>
+		<key>49885223A9B4514CF3D81884</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Settings/SettingsTabsView.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>5AC20E61183797805E66DCBF</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>49885223A9B4514CF3D81884</string>
+		</dict>
+		<key>D4D8F846A5E094BD52C5A6E5</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>49885223A9B4514CF3D81884</string>
+		</dict>
+		<key>DC011087A0728D8C29195EC9</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Settings/SkinSettingsView.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>94FB2779CB5D039BB16C10B0</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>DC011087A0728D8C29195EC9</string>
+		</dict>
+		<key>7B93E40F79485307B077E136</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>DC011087A0728D8C29195EC9</string>
+		</dict>
+		<key>A9F2781DD93C2BB369EF36F9</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Settings/GeneralSettingsView.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>7A72E550BF015AE97ED6F0A6</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>A9F2781DD93C2BB369EF36F9</string>
+		</dict>
+		<key>14822A24F71D4F11AB22855B</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>A9F2781DD93C2BB369EF36F9</string>
+		</dict>
+		<key>ACCDD3380885E165FD741717</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Settings/InteractionSettingsView.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>171C486FD7EE703294D8947E</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>ACCDD3380885E165FD741717</string>
+		</dict>
+		<key>ED1A0152BB28467846D9DC33</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>ACCDD3380885E165FD741717</string>
+		</dict>
+		<key>9BC5A4A03A5B7381E1BDDE63</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Settings/ShortcutSettingsView.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>2ACB708180B5C29D797725CA</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>9BC5A4A03A5B7381E1BDDE63</string>
+		</dict>
+		<key>D556D874D489F774087E6CF3</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>9BC5A4A03A5B7381E1BDDE63</string>
+		</dict>
+		<key>9251C199A0288BF1E4587CB4</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Settings/AboutSettingsView.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>1C95BE7A72AC571A38329DFA</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>9251C199A0288BF1E4587CB4</string>
+		</dict>
+		<key>668E6E369B9ED89D3A109878</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>9251C199A0288BF1E4587CB4</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

@@ -39,3 +39,13 @@ import PetCore
     }
     func close(){input.writeFails=false;registry.failedRemovals=[];controller.dispose();session.prepareToExit();try? FileManager.default.removeItem(at:directory)}
 }
+
+struct NoReleaseRequests:ReleaseFetching {
+    func fetchLatest(architecture:ReleaseArchitecture)async throws->ReleaseInfo {throw NSError(domain:"test.unexpected-network",code:1)}
+}
+@MainActor func makeTestSettingsController(session:PetSession)->SettingsWindowController {
+    let updates=ReleaseUpdateModel(currentVersion:ReleaseVersion(tag:"0.1.12")!,architecture:.arm64,client:NoReleaseRequests())
+    let shortcuts=ShortcutController(session:session,registry:FakeHotKeyRegistry(),canDispatch:{true});shortcuts.start()
+    let login=LoginItemController(bundleURL:URL(fileURLWithPath:"/private/tmp/test.app"),status:{.notRegistered},register:{throw NSError(domain:"test.unexpected-login",code:1)},unregister:{throw NSError(domain:"test.unexpected-login",code:2)})
+    return SettingsWindowController(session:session,updates:updates,shortcuts:shortcuts,loginItem:login)
+}

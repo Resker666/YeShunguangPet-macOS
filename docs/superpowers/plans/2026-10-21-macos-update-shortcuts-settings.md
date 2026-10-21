@@ -128,11 +128,11 @@
 - `SettingsWindowController.init(session: PetSession, updates: ReleaseUpdateModel, shortcuts: ShortcutController, loginItem: LoginItemController? = nil)`；`present(tab: SettingsTab? = nil)`、`hasBlockingSheet: Bool`，保留`acceptSkinDrop(from:)`和原退出等待接口。`ShortcutSettingsView`编辑态切页/关窗重置为已应用值；更新结果和皮肤candidate不因切页丢失。
 - `StatusBarController.startShortcuts()`由AppDelegate在session.start后调用；`beginTermination()`取消查询并抑制命令，`cancelTermination()`恢复允许调度但不自动查询，`dispose()`释放两服务。新增`checkUpdatesItem`进入about再check；原openSettings只present。
 
-- [ ] **Step 1: 写失败用例。** `testFiveGroupsAndManualUpdateMenuOnly`断言五个tab顺序、首次skin、普通打开/刷新/切页/会话状态变化均请求0次，菜单检查进入about且请求1次。`testTabReopenAndDropFromEveryGroup`逐组使用原生Pasteboard拖入同一合成ZIP，断言转skin、candidate有值但库未安装，切页candidate仍在，close清空且重开无隐式导入。`testModalAndTerminationGatesDoNotRecreateServices`断言sheet拒收拖入及热键命令，开始退出取消查询、取消退出能继续使用，所有刷新不增加登记/登录注册次数。
-- [ ] **Step 2: 验证RED。** `bash scripts/test.sh -only-testing:PetMacTests/SettingsGroupsTests -only-testing:PetMacTests/SkinSelectionTests -only-testing:PetMacTests/LoginItemTests`。Expected: 新tab/窗口依赖接口未提供。为既有原生测试提供共享的无网络/隔离登记器工厂，不能以默认生产服务掩盖测试外部副作用。
-- [ ] **Step 3: 移动模型并组装界面。** 单份皮肤模型保留任务/代次/确认/关闭清理；TabView各Form独立滚动，窗口仍正常key/main，共用保存错误与整窗拖入高亮。任意页成功接收支持文件时转skin再走共享预览。通用与互动保留原控件、范围、提示和登录项真源。快捷键明确美式物理键位、应用/清除/重试及实际状态；about显示当前版本/架构、三种版本关系、纯文本说明和缺附件提示。
-- [ ] **Step 4: 接入菜单/生命周期并验证GREEN。** 浏览器只在点击时通过NSWorkspace.open打开任务1已验证的URL；启动不查询、偏好加载后才注册，普通刷新不注册。窗口关闭取消查询/编辑，退出取消和真正退出资源释放分别处理。运行Step 2命令及`bash scripts/test.sh -only-testing:PetMacTests/ReleaseUpdateTests -only-testing:PetMacTests/ShortcutControllerTests`。Expected: 全部通过且原ZIP/文件夹/JSON导入、退出等待回归保留。
-- [ ] **Step 5: 本地提交。** 提交`feat: group settings and expose manual updates and shortcuts`。
+- [x] **Step 1: 写失败用例。** `testFiveGroupsAndManualUpdateMenuOnly`断言五个tab顺序、首次skin、普通打开/刷新/切页/会话状态变化均请求0次，菜单检查进入about且请求1次。`testTabReopenAndDropFromEveryGroup`逐组使用原生Pasteboard拖入同一合成ZIP，断言转skin、candidate有值但库未安装，切页candidate仍在，close清空且重开无隐式导入。`testModalAndTerminationGatesDoNotRecreateServices`断言sheet拒收拖入及热键命令，开始退出取消查询、取消退出能继续使用，所有刷新不增加登记/登录注册次数。
+- [x] **Step 2: 验证RED。** `bash scripts/test.sh -only-testing:PetMacTests/SettingsGroupsTests -only-testing:PetMacTests/SkinSelectionTests -only-testing:PetMacTests/LoginItemTests`。Expected: 新tab/窗口依赖接口未提供。为既有原生测试提供共享的无网络/隔离登记器工厂，不能以默认生产服务掩盖测试外部副作用。
+- [x] **Step 3: 移动模型并组装界面。** 单份皮肤模型保留任务/代次/确认/关闭清理；TabView各Form独立滚动，窗口仍正常key/main，共用保存错误与整窗拖入高亮。任意页成功接收支持文件时转skin再走共享预览。通用与互动保留原控件、范围、提示和登录项真源。快捷键明确美式物理键位、应用/清除/重试及实际状态；about显示当前版本/架构、三种版本关系、纯文本说明和缺附件提示。
+- [x] **Step 4: 接入菜单/生命周期并验证GREEN。** 浏览器只在点击时通过NSWorkspace.open打开任务1已验证的URL；启动不查询、偏好加载后才注册，普通刷新不注册。窗口关闭取消查询/编辑，退出取消和真正退出资源释放分别处理。运行Step 2命令及`bash scripts/test.sh -only-testing:PetMacTests/ReleaseUpdateTests -only-testing:PetMacTests/ShortcutControllerTests`。Expected: 全部通过且原ZIP/文件夹/JSON导入、退出等待回归保留。
+- [x] **Step 5: 本地提交。** 提交`feat: group settings and expose manual updates and shortcuts`。
 
 ### Task 6: 回归、原生探针与交付说明
 

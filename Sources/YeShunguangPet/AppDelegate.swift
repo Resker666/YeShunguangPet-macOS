@@ -25,27 +25,27 @@ import Darwin
             if let path=ProcessInfo.processInfo.environment["YSGPET_SETTINGS_PATH"],path.hasPrefix("/") { settingsURL=URL(fileURLWithPath:path) }
             else { settingsURL=FileManager.default.urls(for:.applicationSupportDirectory,in:.userDomainMask)[0].appendingPathComponent("YeShunguangPet-macOS/settings.json") }
             let session=PetSession(skin:skin,defaultSkin:bundled,now:{origin.duration(to:clock.now)},settings:SettingsStore(url:settingsURL),screens:ScreenProvider.areas)
-            self.session=session; status=StatusBarController(session:session,onQuit:{ NSApp.terminate(nil) }); session.start(restoringSkin:options.skinURL==nil); trace("runtime ready")
+            self.session=session; status=StatusBarController(session:session,onQuit:{ NSApp.terminate(nil) }); session.start(restoringSkin:options.skinURL==nil); status?.startShortcuts(); trace("runtime ready")
         } catch { status=StatusBarController(session:nil,error:error.localizedDescription,onQuit:{NSApp.terminate(nil)}) }
     }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         if terminationPending { return .terminateLater }
         let controller=status?.settingsController
-        controller?.beginTermination()
+        status?.beginTermination()
         let model=controller?.model
         if let model,model.hasPendingMutation {
             terminationPending=true
             Task {
                 await model.waitForPendingMutations()
                 let proceed=confirmTermination(model:model)
-                if !proceed { model.cancelTermination() }
+                if !proceed { status?.cancelTermination() }
                 terminationPending=false
                 sender.reply(toApplicationShouldTerminate:proceed)
             }
             return .terminateLater
         }
         let proceed=confirmTermination(model:model)
-        if !proceed { model?.cancelTermination() }
+        if !proceed { status?.cancelTermination() }
         return proceed ? .terminateNow : .terminateCancel
     }
     private func confirmTermination(model: SettingsModel?) -> Bool {

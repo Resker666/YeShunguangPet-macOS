@@ -1,6 +1,12 @@
 import AppKit
+import PetCore
 
 @MainActor final class StatusBarController: NSObject, NSMenuDelegate {
+    let updates:ReleaseUpdateModel
+    private(set) var shortcuts:ShortcutController?
+    private let loginItem:LoginItemController?
+    private var menuOpen=false,terminating=false
+    let checkUpdatesItem=NSMenuItem(title:"检查更新…",action:#selector(checkUpdates),keyEquivalent:"")
     private let item: NSStatusItem
     weak var session: PetSession?
     let visibilityItem=NSMenuItem(title:"显示角色",action:#selector(toggle),keyEquivalent:"")
@@ -14,9 +20,22 @@ import AppKit
     private let resetItem=NSMenuItem(title:"备份原配置并重置",action:#selector(reset),keyEquivalent:"")
     let skinWarningItem=NSMenuItem(title:"皮肤恢复提示（查看设置…）",action:#selector(openSettings),keyEquivalent:"")
     private let onQuit: () -> Void
-    init(session: PetSession?, error: String? = nil, onQuit: @escaping () -> Void) {
+    init(session: PetSession?, error: String? = nil, updates:ReleaseUpdateModel?=nil,registry:(any HotKeyRegistry)?=nil,loginItem:LoginItemController?=nil, onQuit: @escaping () -> Void) {
+        #if arch(arm64)
+        let architecture=ReleaseArchitecture.arm64
+        #else
+        let architecture=ReleaseArchitecture.x86_64
+        #endif
+        self.updates=updates ?? ReleaseUpdateModel(currentVersion:ReleaseVersion(tag:Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") ?? ReleaseVersion(tag:"0.1.12")!,architecture:architecture,client:ReleaseUpdateClient())
+        self.loginItem=loginItem
         self.session=session; self.onQuit=onQuit; item=NSStatusBar.system.statusItem(withLength:NSStatusItem.squareLength)
         super.init()
+        if let session {
+            shortcuts=ShortcutController(session:session,registry:registry ?? CarbonHotKeyRegistry(),canDispatch:{[weak self] in
+                guard let self else{return false}
+                return !self.menuOpen && !self.terminating && self.settingsController?.hasBlockingSheet != true && NSApp.modalWindow==nil
+            })
+        }
         item.button?.image=NSImage(systemSymbolName:"pawprint.fill",accessibilityDescription:"叶瞬光桌宠")
         item.button?.toolTip="叶瞬光桌宠"; item.button?.setAccessibilityLabel("叶瞬光桌宠")
         menu.autoenablesItems=false
@@ -24,6 +43,7 @@ import AppKit
         for entry in [visibilityItem,recallItem,quietItem] { entry.target=self; menu.addItem(entry) }
         quietItem.toolTip="本次运行暂时暂停注视、自动动作和走动，保留待机与手动互动；重开恢复正常。"
         settingsItem.target=self; menu.addItem(settingsItem)
+        checkUpdatesItem.target=self;menu.addItem(checkUpdatesItem)
         skinWarningItem.target=self; menu.addItem(skinWarningItem)
         persistenceItem.isEnabled=false
         for entry in [persistenceItem,retryItem,resetItem] { entry.target=self; menu.addItem(entry) }
@@ -34,6 +54,7 @@ import AppKit
     }
     func refresh() {
         visibilityItem.title=session?.isVisible == true ? "隐藏角色" : "显示角色"; visibilityItem.isEnabled=session != nil; recallItem.isEnabled=session != nil
+        checkUpdatesItem.isEnabled=session != nil
         settingsItem.isEnabled=session != nil; settingsController?.model.refresh()
         quietItem.isEnabled=session != nil;quietItem.state=session?.isQuiet == true ? .on : .off
         skinWarningItem.isHidden=session?.skinWarning==nil; skinWarningItem.toolTip=session?.skinWarning
@@ -44,16 +65,21 @@ import AppKit
     }
     @objc private func retry() { session?.retrySave(); refresh() }
     @objc private func reset() { session?.resetProtectedSettings(); refresh() }
-    func menuWillOpen(_ menu: NSMenu) { session?.setMenuOpen(true); refresh() }
-    func menuDidClose(_ menu: NSMenu) { session?.setMenuOpen(false) }
+    func menuWillOpen(_ menu: NSMenu) { menuOpen=true; session?.setMenuOpen(true); refresh() }
+    func menuDidClose(_ menu: NSMenu) { menuOpen=false; session?.setMenuOpen(false) }
     @objc private func toggle() { if let session { session.setVisible(!session.isVisible) }; refresh() }
     @objc private func recall() { session?.recall(); refresh() }
     @objc private func toggleQuiet() { if let session {session.setQuiet(!session.isQuiet)};refresh() }
-    @objc private func openSettings() {
-        guard let session else { return }
-        if settingsController == nil { settingsController=SettingsWindowController(session:session) }
-        settingsController?.present()
+    @objc private func openSettings() {presentSettings()}
+    private func presentSettings(tab:SettingsTab?=nil) {
+        guard let session,let shortcuts else { return }
+        if settingsController == nil { settingsController=SettingsWindowController(session:session,updates:updates,shortcuts:shortcuts,loginItem:loginItem) }
+        settingsController?.present(tab:tab)
     }
+    @objc private func checkUpdates() {guard session != nil else{return};presentSettings(tab:.about);updates.check()}
+    func startShortcuts(){shortcuts?.start()}
+    func beginTermination(){terminating=true;updates.cancel();settingsController?.beginTermination()}
+    func cancelTermination(){terminating=false;settingsController?.model.cancelTermination()}
     @objc private func quit() { onQuit() }
-    func dispose() { settingsController?.close(); settingsController=nil; session?.setMenuOpen(false); item.menu=nil; menu.delegate=nil; NSStatusBar.system.removeStatusItem(item) }
+    func dispose() { terminating=true;updates.cancel();shortcuts?.dispose();settingsController?.close(); settingsController=nil; session?.setMenuOpen(false); item.menu=nil; menu.delegate=nil; NSStatusBar.system.removeStatusItem(item) }
 }
