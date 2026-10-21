@@ -3,7 +3,26 @@ import SwiftUI
 import PetCore
 
 @MainActor final class SettingsModel: ObservableObject {
-    @Published var selectedTab:SettingsTab = .skin {didSet{if oldValue != selectedTab{resetShortcutEdits()}}}
+    @Published var selectedTab:SettingsTab = .skin {didSet{if oldValue != selectedTab{resetShortcutEdits();resetSpeechEdits();onSettingsPresentationChange?()}}}
+    let focus:FocusController
+    var onSettingsPresentationChange:(()->Void)?
+    @Published private(set) var speechEditGeneration=0
+    private var editingSpeechID:String?
+    func resetSpeechEdits(){speechEditGeneration+=1}
+    var currentSpeechID:String {session?.skin.manifest.id ?? ""}
+    var resolvedSpeech:SpeechLines {PersonalSpeech.resolve(id:currentSpeechID,skin:session?.skin.manifest.speech,overrides:preferences.speechOverrides)}
+    var canEditPersonalSpeech:Bool {!isTerminating && !isBusy && session?.gate.exiting==false && session?.protectedSettings==false && NSApp.modalWindow==nil}
+    func applyPersonalSpeech(_ lines:SpeechLines,for id:String,generation:Int)throws {
+        guard canEditPersonalSpeech,id==currentSpeechID,generation==speechEditGeneration,let session else{throw SkinError("角色已切换、编辑已关闭或暂不能保存，请重新编辑。")}
+        var overrides=session.preferences.speechOverrides;overrides[id]=lines
+        try session.saveSpeechOverrides(overrides);resetSpeechEdits();refresh()
+    }
+    func removePersonalSpeech(for id:String)throws {
+        guard canEditPersonalSpeech,let session else{throw SkinError("当前不能清除个人台词，请稍后重试。")}
+        var overrides=session.preferences.speechOverrides
+        if overrides.removeValue(forKey:id) != nil {try session.saveSpeechOverrides(overrides)}
+        resetSpeechEdits();refresh()
+    }
     @Published private(set) var shortcutEditGeneration=0
     func resetShortcutEdits(){shortcutEditGeneration+=1}
     let loginItem:LoginItemController
@@ -148,7 +167,8 @@ import PetCore
             throw NSError(domain:"SkinDrop",code:1,userInfo:[NSLocalizedDescriptionKey:"请选择一套皮肤的 ZIP、皮肤文件夹或 pet.json。"])
         }
         return try SkinLoader.readPackage(manifestURL:isDirectory ? url.appendingPathComponent("pet.json") : url)
-    },installPackage: @escaping @Sendable (SkinLibrary,SkinPackage) throws -> ImportedSkin = { try $0.install($1) },loadSkin:@escaping @Sendable (SkinLibrary,String)throws->LoadedSkin = {try $0.load(id:$1)}) {
+    },installPackage: @escaping @Sendable (SkinLibrary,SkinPackage) throws -> ImportedSkin = { try $0.install($1) },loadSkin:@escaping @Sendable (SkinLibrary,String)throws->LoadedSkin = {try $0.load(id:$1)},focus:FocusController?=nil) {
+        self.focus=focus ?? FocusController(session:session)
         self.loginItem=loginItem ?? LoginItemController()
         self.installPackage=installPackage
         self.loadSkin=loadSkin
@@ -161,6 +181,7 @@ import PetCore
         loginItem.refresh()
         preferences=session.preferences; saveError=session.persistenceError
         skinName=session.skin.manifest.name; skinWarning=session.skinWarning
+        if editingSpeechID != session.skin.manifest.id {editingSpeechID=session.skin.manifest.id;resetSpeechEdits()}
         gazeAvailable=session.supportsGaze
         roamingAvailable=session.supportsRoaming
         let idle=session.skin.manifest.animations[.idle]!

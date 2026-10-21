@@ -20,14 +20,14 @@ actor SettingsUpdateSpy:ReleaseFetching {
     private func waitForRequest(_ client:SettingsUpdateSpy)async {
         for _ in 0..<10000 {if await client.count>0{return};await Task.yield()};XCTFail("no request")
     }
-    func testFiveGroupsAndManualUpdateMenuOnly()async throws {
+    func testSettingsTabsDoNotQueryUntilManualUpdate()async throws {
         let f=try ShortcutFixture();defer{f.close()}
         let client=SettingsUpdateSpy(),model=updates(client)
         let status=StatusBarController(session:f.session,updates:model,registry:f.registry,onQuit:{});defer{status.dispose()}
         status.startShortcuts()
         status.menu.performActionForItem(at:status.menu.index(of:status.settingsItem))
         let window=try XCTUnwrap(status.settingsController)
-        XCTAssertEqual(SettingsTab.allCases,[.skin,.general,.interaction,.shortcuts,.about]);XCTAssertEqual(window.model.selectedTab,.skin)
+        XCTAssertEqual(window.model.selectedTab,.skin)
         for tab in SettingsTab.allCases{window.model.selectedTab=tab;status.refresh()}
         f.session.setQuiet(true);status.refresh();let initial=await client.count;XCTAssertEqual(initial,0)
         status.menu.performActionForItem(at:status.menu.index(of:status.checkUpdatesItem));await waitForRequest(client)

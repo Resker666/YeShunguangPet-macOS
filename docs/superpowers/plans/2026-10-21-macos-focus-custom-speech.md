@@ -55,15 +55,15 @@
 - `PetPreferences`新增focusMinutes、breakMinutes及speechOverrides，默认25、5、[:]；保留全部已有字段。
 - `FocusPhase`为focus/rest；`FocusStatus`为ready/running/paused/completed。`FocusTimer`提供phase/status、`remaining(at:Duration)->Duration`、`deadline:Duration?`、`configure(focusMinutes:Int,breakMinutes:Int)throws`、`startOrResume(at:Duration)->FocusPhase?`、`pause(at:Duration)->FocusPhase?`、`advance(at:Duration)->FocusPhase?`、`reset()`。所有完成返回只出现一次，开始时发现原running已过期只能返回完成，不能启动下一段。
 
-- [ ] Step 1: 添加并注册三套Core测试。先用现有SettingsStore写入schema10新字段，再读取必须失败（当前旧实现）；添加纯状态/台词API测试，产品类型尚无时分别记录编译缺失，不混称断言RED。
+- [x] Step 1: 添加并注册三套Core测试。先用现有SettingsStore写入schema10新字段，再读取必须失败（当前旧实现）；添加纯状态/台词API测试，产品类型尚无时分别记录编译缺失，不混称断言RED。
   - `testVersionNineMigrationPreservesAllPreferencesPlacementAndSelection`断言旧字段不变、新25/5/[:]及保存为10。
   - `testVersionTenMissingAndInvalidNewFieldsRemainByteIdentical`覆盖三个字段缺失、0/121/61/true、非法ID/控制字符/超限。
   - `testManualPhasesPauseLateCompletionAndStaleCommands`断言1分钟段在59秒暂停、100秒继续后101秒完成仅一次；旧开始不能启动休息；下一次显式开始才进入rest。
   - `testSpeechPrecedenceExplicitEmptyLimitsAndCompletionCooldown`断言四类默认、个人覆盖、空数组、emoji计数/16角色/8192总量及普通30秒与完成事件区别。
-- [ ] Step 2: 运行`bash scripts/test.sh -only-testing:PetCoreTests`到忽略目录，核对RED原因。
-- [ ] Step 3: 实现上述API。提取ManifestDecoder共用的合法ID判断，不放宽原皮肤校验。为schema9增加旧结构，新schema10必须有三个新字段。现有迁移断言的写出版本更新为10，原v9无效字段用真实v9结构验证，不让缺新字段掩盖原测试目标。
-- [ ] Step 4: 同命令验证GREEN，检查新配置容量、所有旧Core回归；`git diff --check`。
-- [ ] Step 5: 提交`feat: add personal speech and manual focus timer models`，task-done运行完整`bash scripts/test.sh`，读结果并记入本计划ledger。
+- [x] Step 2: 运行`bash scripts/test.sh -only-testing:PetCoreTests`到忽略目录，核对RED原因。
+- [x] Step 3: 实现上述API。提取ManifestDecoder共用的合法ID判断，不放宽原皮肤校验。为schema9增加旧结构，新schema10必须有三个新字段。现有迁移断言的写出版本更新为10，原v9无效字段用真实v9结构验证，不让缺新字段掩盖原测试目标。
+- [x] Step 4: 同命令验证GREEN，检查新配置容量、所有旧Core回归；`git diff --check`。
+- [x] Step 5: 提交`feat: add personal speech and manual focus timer models`，task-done运行完整`bash scripts/test.sh`，读结果并记入本计划ledger。
 
 ### Task 2: 共享计时、角色暂停和安全提交
 
@@ -74,11 +74,11 @@
 - `PetSession.setFocusQuiet(_ enabled:Bool)`、`presentFocusCompletion(_ phase:FocusPhase)`；手动isQuiet不变，被动逻辑使用`isQuiet || focusQuiet`。
 - `FocusController(session:PetSession)`有可观察phase/status/remainingSeconds、`startOrResume()`、`pause()`、`reset()`、`refreshConfiguration()`、`applyDurations(focusMinutes:Int,breakMinutes:Int)throws`、`setDisplayVisible(_:Bool,source:String)`、`setSleeping(_:Bool)`、`setTerminating(_:Bool)`、`refreshTime()`、`dispose()`及onChange回调。idle/paused/completed无调度，运行且无可见消费者仅截止一个调度。
 
-- [ ] Step 1: 写并注册FocusCompanionTests，先在原生对象上复现专注不抑制/新提交未生效；缺API分别标编译RED。覆盖独立时钟隐藏继续、重复/晚到到期、手动安静原值、锁定/换肤/快捷键保留、保存失败、普通setPreferences不能绕过、终止取消及显示消费者销毁。
-- [ ] Step 2: 运行`bash scripts/test.sh -only-testing:PetMacTests/FocusCompanionTests`核对RED。
-- [ ] Step 3: 实现Controller与Session桥接。Controller由Status持有并在session.start之后同步配置；FrameScheduler单独实例只负责计时。状态/展示回调不能每秒调用全量SettingsModel.refresh。机器睡眠/退出取消唤醒，唤醒/取消退出一次结算；真实睡眠仍不由这些注入测试宣称。
-- [ ] Step 4: 同命令GREEN；增加四类气泡的实际被动窗口验证，确定普通冷却不吞完成台词、被挡完成不补播。
-- [ ] Step 5: 提交`feat: run focus sessions independently of pet visibility`，task-done完整`bash scripts/test.sh`。
+- [x] Step 1: 写并注册FocusCompanionTests，先在原生对象上复现专注不抑制/新提交未生效；缺API分别标编译RED。覆盖独立时钟隐藏继续、重复/晚到到期、手动安静原值、锁定/换肤/快捷键保留、保存失败、普通setPreferences不能绕过、终止取消及显示消费者销毁。
+- [x] Step 2: 运行`bash scripts/test.sh -only-testing:PetMacTests/FocusCompanionTests`核对RED。
+- [x] Step 3: 实现Controller与Session桥接。Controller由Status持有并在session.start之后同步配置；FrameScheduler单独实例只负责计时。状态/展示回调不能每秒调用全量SettingsModel.refresh。机器睡眠/退出取消唤醒，唤醒/取消退出一次结算；真实睡眠仍不由这些注入测试宣称。
+- [x] Step 4: 同命令GREEN；增加四类气泡的实际被动窗口验证，确定普通冷却不吞完成台词、被挡完成不补播。
+- [x] Step 5: 提交`feat: run focus sessions independently of pet visibility`，task-done完整`bash scripts/test.sh`。
 
 ### Task 3: 专注菜单、设置与个人台词编辑
 
@@ -86,11 +86,11 @@
 
 **Produces:** 两个独立FocusMenus子菜单；新增SettingsTab.focus；PersonalSpeechEditor捕获当前manifest ID和编辑代次，关闭/切页/换肤丢弃未应用草稿。
 
-- [ ] Step 1: 在FocusCompanionTests增加原生菜单和六Tab测试。断言两个子菜单不同对象、状态/按钮同步、父子菜单全部关闭才恢复、模态/退出拒收、关窗计时继续、设置未首开即可操作。保存草稿捕获ID：A→B旧草稿拒绝提交；关闭/切页编辑代次改变；失败仍使用旧覆盖。
-- [ ] Step 2: 运行`bash scripts/test.sh -only-testing:PetMacTests/FocusCompanionTests`确认旧菜单/Tab及模型断言失败。
-- [ ] Step 3: 实现FocusMenus、专注页、互动页个人台词编辑、SettingsModel编辑代次和管理已保存覆盖入口。只有活动专注页/跟踪菜单登记倒计时显示消费者，关窗/最小化/切页释放。按钮展示remaining按ceil秒，禁用非法时长与退出操作，应用失败保留草稿提示原因。
-- [ ] Step 4: 更新版本0.1.15/build16、README、AGENTS、TODO、皮肤兼容矩阵及release-notes/0.1.15.md；写focus-speech-validation.md记录实际边界。目标测试GREEN、离线发版`python3 -m unittest discover -s Tests/Release -v`13项、`git diff --check`。
-- [ ] Step 5: 提交`feat: expose focus sessions and personal speech in native controls`，task-done完整`bash scripts/test.sh`。
+- [x] Step 1: 在FocusCompanionTests增加原生菜单和六Tab测试。断言两个子菜单不同对象、状态/按钮同步、父子菜单全部关闭才恢复、模态/退出拒收、关窗计时继续、设置未首开即可操作。保存草稿捕获ID：A→B旧草稿拒绝提交；关闭/切页编辑代次改变；失败仍使用旧覆盖。
+- [x] Step 2: 运行`bash scripts/test.sh -only-testing:PetMacTests/FocusCompanionTests`确认旧菜单/Tab及模型断言失败。
+- [x] Step 3: 实现FocusMenus、专注页、互动页个人台词编辑、SettingsModel编辑代次和管理已保存覆盖入口。只有活动专注页/跟踪菜单登记倒计时显示消费者，关窗/最小化/切页释放。按钮展示remaining按ceil秒，禁用非法时长与退出操作，应用失败保留草稿提示原因。
+- [x] Step 4: 更新版本0.1.15/build16、README、AGENTS、TODO、皮肤兼容矩阵及release-notes/0.1.15.md；写focus-speech-validation.md记录实际边界。目标测试GREEN、离线发版`python3 -m unittest discover -s Tests/Release -v`13项、`git diff --check`。
+- [x] Step 5: 提交`feat: expose focus sessions and personal speech in native controls`，task-done完整`bash scripts/test.sh`。
 
 ## Final review and local delivery
 

@@ -1031,6 +1031,9 @@
 				<string>02BE67A9A268B1C6188A0CD9</string>
 				<string>FCFB5E4C43B2F7A57AC12484</string>
 				<string>3D041A45497E80866C0505F2</string>
+				<string>BCDCE69210F4FB24F31691A3</string>
+				<string>E3957299C956B1814B47D226</string>
+				<string>ED3BC652A487AC3834565392</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1441,6 +1444,9 @@
 				<string>E379A352D0F2FE4D03436EF1</string>
 				<string>026EFB0D571EB7BD65C21B78</string>
 				<string>EF5FFCF89F2C40505BAFEDD5</string>
+				<string>1B96F5BFD5B488FA72BB1C2F</string>
+				<string>2A4F39EF99975CBE187A2B98</string>
+				<string>52D5446E601913A20E39804D</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1746,6 +1752,9 @@
 				<string>5AA2E7ADE3F5DD003C133AC7</string>
 				<string>51C16EF927202CE98BBE1FD4</string>
 				<string>60B16426C5F81EDD281AC04E</string>
+				<string>DAEEBFE4279E2EAEA424FA91</string>
+				<string>770327560AA0FA5164FD02C4</string>
+				<string>583FF3F9BB277C64BB8840B5</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -2935,6 +2944,81 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>60B16426C5F81EDD281AC04E</string>
+		</dict>
+		<key>DAEEBFE4279E2EAEA424FA91</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/FocusMenus.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>BCDCE69210F4FB24F31691A3</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>DAEEBFE4279E2EAEA424FA91</string>
+		</dict>
+		<key>1B96F5BFD5B488FA72BB1C2F</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>DAEEBFE4279E2EAEA424FA91</string>
+		</dict>
+		<key>770327560AA0FA5164FD02C4</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Settings/FocusSettingsView.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>E3957299C956B1814B47D226</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>770327560AA0FA5164FD02C4</string>
+		</dict>
+		<key>2A4F39EF99975CBE187A2B98</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>770327560AA0FA5164FD02C4</string>
+		</dict>
+		<key>583FF3F9BB277C64BB8840B5</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Settings/PersonalSpeechEditor.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>ED3BC652A487AC3834565392</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>583FF3F9BB277C64BB8840B5</string>
+		</dict>
+		<key>52D5446E601913A20E39804D</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>583FF3F9BB277C64BB8840B5</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

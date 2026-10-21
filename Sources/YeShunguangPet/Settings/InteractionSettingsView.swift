@@ -13,9 +13,10 @@ struct InteractionSettingsView:View {
             Section("互动台词") {
                 Toggle("显示互动台词",isOn:Binding(get:{model.preferences.speechEnabled},set:{model.setSpeechEnabled($0)}))
                     .accessibilityIdentifier("pet-speech-enabled")
-                Text("默认关闭。单击或拖动结束时回应，约6秒后收起，至少间隔30秒。优先使用皮肤台词；未提供时使用默认文案。安静模式下暂停显示。")
+                Text("默认关闭。单击或拖动结束时回应，约6秒后收起，至少间隔30秒；计时完成可单独提醒。个人台词优先，其次皮肤台词和默认文案。安静或专注运行时暂停互动台词。")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            Section("个人台词") {PersonalSpeechEditor(model:model).id(model.speechEditGeneration)}
             Section("自动小动作") {
                 Toggle("空闲时自动做动作",isOn:Binding(get:{model.preferences.automaticActions},set:{model.setAutomaticActions($0)}))
                     .accessibilityIdentifier("pet-automatic-actions")

@@ -52,6 +52,10 @@ import UniformTypeIdentifiers
         let window=NSWindow(contentRect:CGRect(x:0,y:0,width:520,height:640),styleMask:[.titled,.closable,.miniaturizable,.resizable],backing:.buffered,defer:false)
         window.minSize=CGSize(width:520,height:480); window.title="叶瞬光桌宠设置"; window.isReleasedWhenClosed=false
         super.init(window:window)
+        self.model.onSettingsPresentationChange={[weak self] in self?.updateFocusVisibility()}
+        for name in [NSApplication.didHideNotification,NSApplication.didUnhideNotification] {
+            NotificationCenter.default.addObserver(self,selector:#selector(appVisibilityChanged),name:name,object:nil)
+        }
         let view=SkinDropHostingView(rootView:AnyView(SettingsTabsView(model:self.model,updates:updates,shortcuts:shortcuts,login:self.model.loginItem,onChooseSkin:{ [weak self] in self?.chooseSkin() })))
         view.canAccept={ [weak self] in self?.canAcceptSkinDrop==true }
         view.onDrop={ [weak self] board in self?.acceptSkinDrop(from:board) != nil }
@@ -65,6 +69,7 @@ import UniformTypeIdentifiers
         session?.cancelInput(); session?.setSettingsOpen(true); model.refresh()
         showWindow(nil); window?.deminiaturize(nil); window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps:true)
+        updateFocusVisibility()
         Task { [weak self] in
             guard let self,self.previewTask==nil,self.canPreviewSkin else { return }
             await self.model.reloadLibrary()
@@ -109,6 +114,10 @@ import UniformTypeIdentifiers
             _=self.startSkinPreview(at:selected)
         }
     }
-    func windowWillClose(_ notification: Notification) { updates.cancel();model.resetShortcutEdits(); previewTask?.cancel(); filePanel?.cancel(nil); model.isDropTargeted=false; model.cancelSkinSelection(); session?.setSettingsOpen(false) }
-    func beginTermination() { updates.cancel();model.resetShortcutEdits();previewTask?.cancel(); filePanel?.cancel(nil); model.isDropTargeted=false; model.beginTermination() }
+    private func updateFocusVisibility(){model.focus.setDisplayVisible(window?.isVisible==true && window?.isMiniaturized==false && model.selectedTab == .focus && !NSApp.isHidden,source:"settings")}
+    @objc private func appVisibilityChanged(_ notification:Notification){updateFocusVisibility()}
+    func windowDidMiniaturize(_ notification:Notification){updateFocusVisibility()}
+    func windowDidDeminiaturize(_ notification:Notification){updateFocusVisibility()}
+    func windowWillClose(_ notification: Notification) {model.focus.setDisplayVisible(false,source:"settings");updates.cancel();model.resetShortcutEdits();model.resetSpeechEdits(); previewTask?.cancel(); filePanel?.cancel(nil); model.isDropTargeted=false; model.cancelSkinSelection(); session?.setSettingsOpen(false) }
+    func beginTermination() {model.focus.setDisplayVisible(false,source:"settings");updates.cancel();model.resetShortcutEdits();model.resetSpeechEdits();previewTask?.cancel(); filePanel?.cancel(nil); model.isDropTargeted=false; model.beginTermination() }
 }

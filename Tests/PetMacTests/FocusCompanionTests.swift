@@ -118,4 +118,115 @@ import PetCore
         f.focus.refreshTime();XCTAssertEqual(f.focus.remainingSeconds,50);XCTAssertTrue(f.session.focusQuiet)
         XCTAssertTrue(f.session.preferences.positionLocked);XCTAssertEqual(f.session.preferences.speechOverrides.count,1)
     }
+    func testBothNativeFocusMenusAndDedicatedSettingsTabExistWithoutOpeningSettings()throws {
+        let f=try fixture();defer{f.close()}
+        let status=StatusBarController(session:f.session,registry:FakeHotKeyRegistry(),onQuit:{});defer{status.dispose()}
+        let bar=try XCTUnwrap(status.menu.items.first{$0.title=="专注计时"}?.submenu)
+        let right=try XCTUnwrap(f.session.view.contextMenu?()?.items.first{$0.title=="专注计时"}?.submenu)
+        XCTAssertFalse(bar === right);XCTAssertEqual(SettingsTab.allCases.count,6)
+        XCTAssertNotNil(bar.items.first{$0.title=="开始专注"});XCTAssertNotNil(right.items.first{$0.title=="专注设置…"})
+        XCTAssertNil(status.settingsController)
+    }
+    func testMenusShareTimerAndClosingSettingsKeepsItRunning()throws {
+        let f=try fixture();defer{f.close()}
+        let status=StatusBarController(session:f.session,registry:FakeHotKeyRegistry(),onQuit:{});defer{status.dispose()}
+        let focus=try XCTUnwrap(status.focus),bar=try XCTUnwrap(status.menu.items.first{$0.title=="专注计时"}?.submenu)
+        let right=try XCTUnwrap(f.session.view.contextMenu?()?.items.first{$0.title=="专注计时"}?.submenu)
+        status.menuWillOpen(status.menu);status.menuWillOpen(bar)
+        XCTAssertEqual(focus.scheduler.pendingCount,0)
+        status.menuDidClose(bar);status.menuDidClose(status.menu)
+        bar.performActionForItem(at:try XCTUnwrap(bar.items.firstIndex{$0.title=="开始专注"}))
+        XCTAssertEqual(focus.status,.running);XCTAssertTrue(f.session.focusQuiet)
+        XCTAssertTrue(right.items.contains{$0.title=="暂停专注"})
+        status.menuWillOpen(status.menu);status.menuWillOpen(bar)
+        XCTAssertEqual(focus.scheduler.scheduledDeadline,.seconds(1))
+        status.menuDidClose(status.menu);XCTAssertEqual(focus.scheduler.scheduledDeadline,.seconds(1))
+        status.menuDidClose(bar);XCTAssertEqual(focus.scheduler.scheduledDeadline,.seconds(60))
+        bar.performActionForItem(at:try XCTUnwrap(bar.items.firstIndex{$0.title=="专注设置…"}))
+        let window=try XCTUnwrap(status.settingsController)
+        XCTAssertTrue(window.model.focus === focus);XCTAssertEqual(window.model.selectedTab,.focus)
+        XCTAssertEqual(focus.scheduler.scheduledDeadline,.seconds(1));window.close()
+        XCTAssertEqual(focus.status,.running);XCTAssertEqual(focus.scheduler.scheduledDeadline,.seconds(60))
+        f.input.time = .seconds(60);focus.refreshTime();XCTAssertEqual(focus.status,.completed)
+        status.beginTermination();let item=try XCTUnwrap(bar.items.first{$0.title=="开始休息"})
+        XCTAssertFalse(item.isEnabled);bar.performActionForItem(at:bar.index(of:item));XCTAssertEqual(focus.status,.completed)
+        status.cancelTermination();XCTAssertTrue(item.isEnabled)
+    }
+    func testPersonalDraftTargetGenerationAndFailuresCannotChangeAnotherRole()throws {
+        let f=try fixture();defer{f.close()};let model=SettingsModel(session:f.session)
+        let id=f.session.skin.manifest.id,original=model.speechEditGeneration
+        let lines=SpeechLines(click:["个人"],drag:[],focusCompleted:["结束"],breakCompleted:[])
+        f.input.failWrites=true
+        XCTAssertThrowsError(try model.applyPersonalSpeech(lines,for:id,generation:original));XCTAssertTrue(f.session.preferences.speechOverrides.isEmpty)
+        f.input.failWrites=false;try model.applyPersonalSpeech(lines,for:id,generation:original)
+        XCTAssertEqual(f.session.preferences.speechOverrides[id],lines)
+        let savedGeneration=model.speechEditGeneration;model.selectedTab = .interaction;model.selectedTab = .focus
+        XCTAssertGreaterThan(model.speechEditGeneration,savedGeneration)
+        XCTAssertThrowsError(try model.applyPersonalSpeech(.defaults,for:id,generation:savedGeneration))
+        let other=try SkinFixtures.writePackage(in:f.directory.appendingPathComponent("other"))
+        try SkinFixtures.manifest(["id":"other-role","name":"Other role"]).write(to:other)
+        let imported=try f.session.library.install(SkinLoader.readPackage(manifestURL:other))
+        let oldGeneration=model.speechEditGeneration
+        try f.session.useImportedSkin(imported);model.refresh()
+        XCTAssertThrowsError(try model.applyPersonalSpeech(.defaults,for:id,generation:oldGeneration))
+        XCTAssertNil(f.session.preferences.speechOverrides["other-role"])
+        try model.removePersonalSpeech(for:id);XCTAssertTrue(f.session.preferences.speechOverrides.isEmpty)
+    }
+    func testClosingWindowInvalidatesSpeechDraftAndTerminationBlocksCommit()throws {
+        let f=try fixture();defer{f.close()}
+        let status=StatusBarController(session:f.session,registry:FakeHotKeyRegistry(),onQuit:{});defer{status.dispose()}
+        let bar=try XCTUnwrap(status.menu.items.first{$0.title=="专注计时"}?.submenu)
+        bar.performActionForItem(at:try XCTUnwrap(bar.items.firstIndex{$0.title=="专注设置…"}))
+        let window=try XCTUnwrap(status.settingsController),model=window.model
+        model.selectedTab = .interaction;let generation=model.speechEditGeneration
+        window.close();XCTAssertGreaterThan(model.speechEditGeneration,generation)
+        XCTAssertThrowsError(try model.applyPersonalSpeech(.defaults,for:f.session.skin.manifest.id,generation:generation))
+        model.beginTermination()
+        XCTAssertThrowsError(try model.removePersonalSpeech(for:f.session.skin.manifest.id))
+    }
+    func testPendingSkinPreviewRejectsPersonalSpeechChanges()async throws {
+        let f=try fixture();defer{f.close()}
+        let started=expectation(description:"preview held"),release=DispatchSemaphore(value:0);defer{release.signal()}
+        let model=SettingsModel(session:f.session,previewPackage:{url in
+            let package=try SkinLoader.readPackage(manifestURL:url);started.fulfill();release.wait();return package
+        })
+        let generation=model.speechEditGeneration,id=f.session.skin.manifest.id
+        let task=Task {await model.previewSkin(at:f.session.skin.directory.appendingPathComponent("pet.json"))}
+        let wait=await XCTWaiter.fulfillment(of:[started],timeout:5);XCTAssertEqual(wait,.completed)
+        XCTAssertTrue(model.isBusy);XCTAssertThrowsError(try model.applyPersonalSpeech(.defaults,for:id,generation:generation))
+        XCTAssertThrowsError(try model.removePersonalSpeech(for:id));XCTAssertTrue(f.session.preferences.speechOverrides.isEmpty)
+        model.cancelSkinSelection();release.signal();await task.value
+    }
+    func testFocusModalBlocksEvenDirectMenuAction()throws {
+        let f=try fixture();defer{f.close()}
+        let status=StatusBarController(session:f.session,registry:FakeHotKeyRegistry(),onQuit:{});defer{status.dispose()}
+        let bar=try XCTUnwrap(status.menu.items.first{$0.title=="专注计时"}?.submenu)
+        bar.performActionForItem(at:try XCTUnwrap(bar.items.firstIndex{$0.title=="专注设置…"}))
+        let window=try XCTUnwrap(status.settingsController?.window)
+        let sheet=NSWindow(contentRect:CGRect(x:0,y:0,width:200,height:100),styleMask:.titled,backing:.buffered,defer:false)
+        window.beginSheet(sheet,completionHandler:{_ in});defer{window.endSheet(sheet);sheet.orderOut(nil)}
+        status.menuWillOpen(bar)
+        let item=try XCTUnwrap(bar.items.first{$0.title=="开始专注"});XCTAssertFalse(item.isEnabled)
+        _=NSApp.sendAction(try XCTUnwrap(item.action),to:item.target,from:item)
+        XCTAssertEqual(status.focus?.status,.ready);status.menuDidClose(bar)
+    }
+    func testFocusSubmenuSuppressesShortcutsUntilLastParentCloses()throws {
+        let f=try ShortcutFixture();defer{f.close()}
+        let status=StatusBarController(session:f.session,registry:f.registry,onQuit:{});defer{status.dispose()};status.startShortcuts()
+        status.shortcuts?.apply(ShortcutFixture.a,to:.toggleQuiet)
+        let id=try XCTUnwrap(f.registry.registered.first?.key),bar=try XCTUnwrap(status.menu.items.first{$0.title=="专注计时"}?.submenu)
+        status.menuWillOpen(status.menu);status.menuWillOpen(bar);status.menuDidClose(status.menu)
+        f.registry.emit(id);XCTAssertFalse(f.session.isQuiet);status.menuDidClose(bar)
+        f.registry.emit(id,down:false);f.registry.emit(id);XCTAssertTrue(f.session.isQuiet)
+    }
+    func testProtectedConfigurationStillAllowsDefaultTimerButNeverPersistsNewValues()throws {
+        let f=try fixture();defer{f.close()}
+        let url=f.directory.appendingPathComponent("protected.json"),bad=Data("{broken".utf8);try bad.write(to:url)
+        let session=PetSession(skin:f.session.skin,now:{f.input.time},settings:SettingsStore(url:url),screens:f.session.screens)
+        session.start();let focus=FocusController(session:session);defer{focus.dispose();session.prepareToExit()}
+        XCTAssertTrue(session.protectedSettings);focus.startOrResume();XCTAssertEqual(focus.remainingSeconds,1500)
+        focus.reset();XCTAssertThrowsError(try focus.applyDurations(focusMinutes:1,breakMinutes:1))
+        XCTAssertThrowsError(try session.saveSpeechOverrides([session.skin.manifest.id:.defaults]))
+        XCTAssertEqual(try Data(contentsOf:url),bad)
+    }
 }

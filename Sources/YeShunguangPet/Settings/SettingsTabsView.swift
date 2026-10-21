@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-enum SettingsTab:String,CaseIterable {case skin,general,interaction,shortcuts,about}
+enum SettingsTab:String,CaseIterable {case skin,general,interaction,focus,shortcuts,about}
 struct SettingsTabsView:View {
     @ObservedObject var model:SettingsModel
     @ObservedObject var updates:ReleaseUpdateModel
@@ -14,6 +14,7 @@ struct SettingsTabsView:View {
                 SkinSettingsView(model:model,onChooseSkin:onChooseSkin).tabItem{Label("皮肤",systemImage:"pawprint")}.tag(SettingsTab.skin)
                 GeneralSettingsView(model:model,login:login).tabItem{Label("通用",systemImage:"gearshape")}.tag(SettingsTab.general)
                 InteractionSettingsView(model:model).tabItem{Label("互动",systemImage:"hand.wave")}.tag(SettingsTab.interaction)
+                FocusSettingsView(focus:model.focus).tabItem{Label("专注",systemImage:"timer")}.tag(SettingsTab.focus)
                 ShortcutSettingsView(controller:shortcuts,onApplied:{model.refresh()}).id(model.shortcutEditGeneration).tabItem{Label("快捷键",systemImage:"keyboard")}.tag(SettingsTab.shortcuts)
                 AboutSettingsView(updates:updates).tabItem{Label("关于",systemImage:"info.circle")}.tag(SettingsTab.about)
             }

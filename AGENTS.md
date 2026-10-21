@@ -2,7 +2,7 @@
 适用于本仓库。先读 docs/superpowers/specs/2026-10-20-macos-first-playable-design.md 和对应 plans 文件，检查 git status。
 - Swift 6、AppKit、macOS 15+；arm64优先日用，x86_64为用户同意增加的实验交叉构建。使用现有Xcode，不引入外部依赖。
 - 测试：bash scripts/test.sh；构建：bash scripts/build-app.sh；打包：bash scripts/package-app.sh。独立启动回归：python3 scripts/smoke-app.py。
-- 分发：0.1.14 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
+- 分发：0.1.15 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
 - 独立进程验证设置 YSGPET_SETTINGS_PATH 使用临时配置；不带该变量才使用个人 Application Support。
 - 用户已确认真实拖动、单击/双击、菜单隐藏/显示和召回正常。GUI 工具首次超时，后续可读取实际角色画面；焦点、Spaces、锁屏和真实睡眠仍未验证，不能以属性或模拟事件当作通过。
 - 真实皮肤 JSON/PNG 字节保持不变；源码 MIT 与第三方素材声明分开。
@@ -51,3 +51,7 @@
 - 0.1.14评审边界已修复：菜单useSkin传cancelWithPreview:false，关闭设置不取消已确认选择；Task取消/isTerminating/session退出仍阻止提交，原设置预览/导入取消规则不变。可控加载先复现失败，修复后完整240项原生（110Core/130Mac）通过；实际枚举期间暂时禁用缓存项是已接受的共享模型取舍。
 - 0.1.14最终本地交付：13项离线发版、10项分发、八附件离线核验通过，评审48dcca9..ce49cdd及同一评审复核ce49cdd..70f29e9无剩余Critical/Important/Minor。最终干净来源70f29e9的双架构包、签名/原素材/库存/摘要与ARM搬移重开通过；三套真实素材、原生子菜单跟踪、状态/重开/失败渲染通过，物理鼠标/焦点/系统/Intel/外机/Gatekeeper仍未验证。/Applications已安装并运行0.1.14/build15，schema9→9原偏好/皮肤/更新时位置/快捷键保留，旧App/配置已备份，正式登录项未改。用户整体验收待确认，仅本地codex/macos-quick-skin-switching，未推送、打标签或发布；证据见docs/quick-skin-validation.md与忽略目录.build/quick-skin-validation。
 - 用户随后反馈“验证通过，推送，下一版做什么”：确认0.1.14菜单快捷换肤版本的本机整体体验，授权按既有流程同步main和codex/macos-quick-skin-switching，普通push；不触发prepare_release，不打标签或创建/发布Release。反馈不扩展为所有菜单、失败、取消、重开或物理输入场景均逐项实测，也不代表焦点/系统/Intel/外机通过。下一版先讨论候选方向，尚未授权产品实施。
+- 0.1.14已按授权推送d837afb；main云端39627456930与开发分支39627457098成功，240项原生/13项离线发版/10项分发及双架构Artifacts上传通过，草稿job跳过。核对日志和附件元数据，未另下载，未打标签或发布。
+- 0.1.15用户选择D＋F并确认手动衔接，继而明确“设计好，你就执行，我睡觉了”，授权设计/计划自审后直接本会话实施，不再逐阶段等待；保留原地独立Mac仓库、单次独立最终评审、真实验证与本地交付。新版本push/tag/Release未获授权。
+- 0.1.15个人台词按manifest.id，四类整组覆盖，优先个人→皮肤→默认；显式空不回退。最多16角色/每类8句/每句80UTF-16/总8192UTF-16，设置64KiB；新schema10读取1–9迁移25/5/空覆盖并保留旧字段。专用提交先存后生效，普通setPreferences不能绕过；编辑捕获ID/代次，换角色/切页/关窗丢弃草稿，清除需确认且不改原素材。
+- 0.1.15专注状态由独立FocusController持有，不依赖角色隐藏或设置首开。25/5分钟、范围1–120/1–60，手动衔接、暂停/继续/重置，退出不恢复当前段。ContinuousClock计入睡眠，截止结算一次；无显示消费者仅截止唤醒，专注页/菜单跟踪最多1Hz。手动isQuiet与focusQuiet分开；解除专注暂停不取消正在进行的手动输入。完成被菜单/设置/鼠标/隐藏/睡眠/手动安静挡住时仅保留完成状态，不积压补播；台词显示开关仍控制四类气泡。无系统通知、声音、历史、联网或防睡眠断言。完整交付结果见docs/focus-speech-validation.md，不从阶段回归推定已交付。

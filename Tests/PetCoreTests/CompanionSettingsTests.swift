@@ -10,7 +10,8 @@ final class CompanionSettingsTests:XCTestCase {
     }
     override func tearDownWithError()throws {try FileManager.default.removeItem(at:directory)}
     private func configuration()throws->[String:Any] {
-        try SettingsStore(url:url).save(.init(placement:nil,preferences:.init(scale:1.5,alwaysOnTop:false,lookAtMouse:false,speechEnabled:true,snapToEdges:true,positionLocked:true),selectedSkinID:UUID().uuidString))
+        let shortcuts=[ShortcutBinding(action:.recall,combination:.init(keyCode:0,modifiers:[.control,.option]))]
+        try SettingsStore(url:url).save(.init(placement:nil,preferences:.init(scale:1.5,alwaysOnTop:false,lookAtMouse:false,speechEnabled:true,keyboardShortcuts:shortcuts,snapToEdges:true,positionLocked:true),selectedSkinID:UUID().uuidString))
         var object=try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:url)) as? [String:Any])
         object["schemaVersion"]=10
         var p=try XCTUnwrap(object["preferences"] as? [String:Any])

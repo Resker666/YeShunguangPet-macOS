@@ -8,6 +8,7 @@ import PetCore
     let skinModel:SettingsModel?
     let focus:FocusController?
     private var quickSkins:QuickSkinMenus?
+    private var focusMenus:FocusMenus?
     private var openMenus=Set<ObjectIdentifier>(),terminating=false
     private var menuOpen:Bool { !openMenus.isEmpty }
     let checkUpdatesItem=NSMenuItem(title:"检查更新…",action:#selector(checkUpdates),keyEquivalent:"")
@@ -38,10 +39,11 @@ import PetCore
         #else
         let architecture=ReleaseArchitecture.x86_64
         #endif
-        self.updates=updates ?? ReleaseUpdateModel(currentVersion:ReleaseVersion(tag:Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") ?? ReleaseVersion(tag:"0.1.14")!,architecture:architecture,client:ReleaseUpdateClient())
+        self.updates=updates ?? ReleaseUpdateModel(currentVersion:ReleaseVersion(tag:Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") ?? ReleaseVersion(tag:"0.1.15")!,architecture:architecture,client:ReleaseUpdateClient())
         self.loginItem=loginItem
-        self.focus=session.map{FocusController(session:$0)}
-        self.skinModel=session.map{SettingsModel(session:$0,loginItem:loginItem)}
+        let focus=session.map{FocusController(session:$0)}
+        self.focus=focus
+        self.skinModel=session.map{SettingsModel(session:$0,loginItem:loginItem,focus:focus)}
         self.session=session; self.onQuit=onQuit; item=NSStatusBar.system.statusItem(withLength:NSStatusItem.squareLength)
         super.init()
         if let session {
@@ -79,6 +81,16 @@ import PetCore
                 let entry=NSMenuItem(title:"切换皮肤",action:nil,keyEquivalent:"");entry.submenu=child;parent.insertItem(entry,at:0);child.delegate=self
             }
         }
+        if let focus {
+            let menus=FocusMenus(focus:focus,canDispatch:{[weak self] in
+                guard let self else{return false}
+                return !self.terminating && self.session?.gate.exiting==false && self.settingsController?.hasBlockingSheet != true && NSApp.modalWindow==nil
+            },onSettings:{[weak self] in self?.presentSettings(tab:.focus)})
+            focusMenus=menus
+            for (parent,child) in zip([menu,contextMenu],menus.menus) {
+                let entry=NSMenuItem(title:"专注计时",action:nil,keyEquivalent:"");entry.submenu=child;parent.insertItem(entry,at:1);child.delegate=self
+            }
+        }
         session?.view.contextMenu = { [weak self] in
             guard let self,!self.terminating,self.session?.gate.shouldRunFrames==true,self.settingsController?.hasBlockingSheet != true,NSApp.modalWindow==nil else{return nil}
             self.refresh();return self.contextMenu
@@ -99,16 +111,19 @@ import PetCore
         retryItem.isHidden=message==nil || session?.protectedSettings == true
         resetItem.isHidden=session?.protectedSettings != true
         quickSkins?.refresh()
+        focusMenus?.refresh()
     }
     @objc private func retry() { session?.retrySave(); refresh() }
     @objc private func reset() { session?.resetProtectedSettings(); refresh() }
     func menuWillOpen(_ menu: NSMenu) {
-        guard menu === self.menu || menu === contextMenu || quickSkins?.menus.contains(where:{$0 === menu})==true else{return}
+        guard menu === self.menu || menu === contextMenu || quickSkins?.menus.contains(where:{$0 === menu})==true || focusMenus?.menus.contains(where:{$0 === menu})==true else{return}
         openMenus.insert(ObjectIdentifier(menu));session?.setMenuOpen(true);refresh()
+        focus?.setDisplayVisible(true,source:"menus")
         quickSkins?.reload()
     }
     func menuDidClose(_ menu: NSMenu) {
         openMenus.remove(ObjectIdentifier(menu));session?.setMenuOpen(menuOpen)
+        focus?.setDisplayVisible(menuOpen,source:"menus")
     }
     @objc private func wave() {guard !terminating else{return};session?.play(.waving)}
     @objc private func jump() {guard !terminating else{return};session?.play(.jumping)}
@@ -130,5 +145,5 @@ import PetCore
     func beginTermination(){terminating=true;focus?.setTerminating(true);contextMenu.cancelTracking();updates.cancel();quickSkins?.cancel();if let settingsController{settingsController.beginTermination()}else{skinModel?.beginTermination()};refresh()}
     func cancelTermination(){terminating=false;focus?.setTerminating(false);skinModel?.cancelTermination();refresh()}
     @objc private func quit() { onQuit() }
-    func dispose() { terminating=true;focus?.dispose();contextMenu.cancelTracking();quickSkins?.dispose();quickSkins=nil;session?.view.contextMenu=nil;contextMenu.delegate=nil;openMenus.removeAll();updates.cancel();shortcuts?.dispose();settingsController?.close(); settingsController=nil; session?.setMenuOpen(false); item.menu=nil; menu.delegate=nil; NSStatusBar.system.removeStatusItem(item) }
+    func dispose() { terminating=true;focus?.dispose();focusMenus?.dispose();focusMenus=nil;contextMenu.cancelTracking();quickSkins?.dispose();quickSkins=nil;session?.view.contextMenu=nil;contextMenu.delegate=nil;openMenus.removeAll();updates.cancel();shortcuts?.dispose();settingsController?.close(); settingsController=nil; session?.setMenuOpen(false); item.menu=nil; menu.delegate=nil; NSStatusBar.system.removeStatusItem(item) }
 }
