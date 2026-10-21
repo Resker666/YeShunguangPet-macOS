@@ -1029,6 +1029,8 @@
 				<string>2ACB708180B5C29D797725CA</string>
 				<string>1C95BE7A72AC571A38329DFA</string>
 				<string>02BE67A9A268B1C6188A0CD9</string>
+				<string>FCFB5E4C43B2F7A57AC12484</string>
+				<string>3D041A45497E80866C0505F2</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1436,6 +1438,9 @@
 				<string>8CF9B5611F0F2A616D6BD0E2</string>
 				<string>E8E5AFC18090988E076A24C7</string>
 				<string>C4F784CF11B574B5892F8DEF</string>
+				<string>E379A352D0F2FE4D03436EF1</string>
+				<string>026EFB0D571EB7BD65C21B78</string>
+				<string>EF5FFCF89F2C40505BAFEDD5</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1738,6 +1743,9 @@
 				<string>F1D2015068F0DDD14B8D35FF</string>
 				<string>73E8FFF581CF6F9C74EF9672</string>
 				<string>1AD6279A2BFABF0D6CF232F9</string>
+				<string>5AA2E7ADE3F5DD003C133AC7</string>
+				<string>51C16EF927202CE98BBE1FD4</string>
+				<string>60B16426C5F81EDD281AC04E</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -2859,6 +2867,74 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>1AD6279A2BFABF0D6CF232F9</string>
+		</dict>
+		<key>5AA2E7ADE3F5DD003C133AC7</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/FocusCompanionTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>E379A352D0F2FE4D03436EF1</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>5AA2E7ADE3F5DD003C133AC7</string>
+		</dict>
+		<key>51C16EF927202CE98BBE1FD4</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/PetSession+Companion.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>FCFB5E4C43B2F7A57AC12484</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>51C16EF927202CE98BBE1FD4</string>
+		</dict>
+		<key>026EFB0D571EB7BD65C21B78</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>51C16EF927202CE98BBE1FD4</string>
+		</dict>
+		<key>60B16426C5F81EDD281AC04E</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/FocusController.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>3D041A45497E80866C0505F2</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>60B16426C5F81EDD281AC04E</string>
+		</dict>
+		<key>EF5FFCF89F2C40505BAFEDD5</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>60B16426C5F81EDD281AC04E</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

@@ -26,6 +26,8 @@ import PetCore
     var onStatusChange: (() -> Void)?
     var isVisible: Bool { gate.visible }
     private(set) var isQuiet=false
+    private(set) var focusQuiet=false
+    var effectiveQuiet:Bool {isQuiet || focusQuiet}
     private var gaze=MouseGaze()
     private var nextGazeSample: Duration?
     private var gazeSamples=0
@@ -46,9 +48,16 @@ import PetCore
     var gazeDirection: Int? { gaze.direction }
     var supportsGaze: Bool { skin.manifest.lookDirections.count==16 }
     var supportsRoaming: Bool { skin.manifest.animations[.runningLeft]?.loop==true && skin.manifest.animations[.runningRight]?.loop==true }
-    private var canSampleGaze: Bool { gate.shouldRunFrames && !isQuiet && preferences.lookAtMouse && supportsGaze && action == .idle && !roaming.isWalking && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
-    private var canRunAutomatic: Bool { gate.shouldRunFrames && !isQuiet && action == .idle && !roaming.isWalking && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
-    private var canRoam: Bool { gate.shouldRunFrames && !isQuiet && !preferences.positionLocked && !interaction.isPointerBusy && !menuOpen && !settingsOpen && (action == .idle || roaming.isWalking) }
+    private var canSampleGaze: Bool { gate.shouldRunFrames && !effectiveQuiet && preferences.lookAtMouse && supportsGaze && action == .idle && !roaming.isWalking && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
+    private var canRunAutomatic: Bool { gate.shouldRunFrames && !effectiveQuiet && action == .idle && !roaming.isWalking && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
+    private var canRoam: Bool { gate.shouldRunFrames && !effectiveQuiet && !preferences.positionLocked && !interaction.isPointerBusy && !menuOpen && !settingsOpen && (action == .idle || roaming.isWalking) }
+    var canPresentFocusCompletion:Bool {gate.shouldRunFrames && !effectiveQuiet && !menuOpen && !settingsOpen && !interaction.isPointerBusy && action == .idle}
+    func setFocusQuiet(_ enabled:Bool) {
+        guard !gate.exiting,focusQuiet != enabled else{return}
+        focusQuiet=enabled
+        if enabled{cancelInput()}else{reschedule()}
+        onStatusChange?()
+    }
     func setQuiet(_ quiet:Bool) {
         guard !gate.exiting,quiet != isQuiet else{return}
         isQuiet=quiet;cancelInput();onStatusChange?()
@@ -135,7 +144,7 @@ import PetCore
         applyWindowPreferences(); applyPlacement(nextPlacement); synchronize(); onStatusChange?()
     }
     func setPreferences(_ value: PetPreferences) {
-        guard !gate.exiting,value.isValid,value.keyboardShortcuts==preferences.keyboardShortcuts,value != preferences else { return }
+        guard !gate.exiting,value.isValid,value.keyboardShortcuts==preferences.keyboardShortcuts,value.focusMinutes==preferences.focusMinutes,value.breakMinutes==preferences.breakMinutes,value.speechOverrides==preferences.speechOverrides,value != preferences else { return }
         cancelInput()
         preferences=value; applyWindowPreferences()
         applyPlacement(WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()))
@@ -146,6 +155,14 @@ import PetCore
         guard !gate.exiting,!protectedSettings else{throw SkinError("配置受保护或正在退出，快捷键未更改。")}
         try KeyboardShortcuts.validate(bindings)
         var candidate=preferences;candidate.keyboardShortcuts=bindings
+        let current=WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()) ?? placement
+        do {
+            try settings.save(PetSettings(placement:current,preferences:candidate,selectedSkinID:selectedSkinID))
+            preferences=candidate;placement=current;persistenceError=nil;onStatusChange?()
+        }catch{persistenceError=error.localizedDescription;onStatusChange?();throw error}
+    }
+    func commitCompanionPreferences(_ candidate:PetPreferences)throws {
+        guard !gate.exiting,!protectedSettings,candidate.isValid,candidate.keyboardShortcuts==preferences.keyboardShortcuts else{throw SkinError("配置受保护、内容无效或正在退出，未保存。")}
         let current=WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()) ?? placement
         do {
             try settings.save(PetSettings(placement:current,preferences:candidate,selectedSkinID:selectedSkinID))
@@ -292,10 +309,10 @@ import PetCore
         applyPlacement(WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens(),snapToEdges:snapping))
         _=savePosition()
     }
-    private func requestSpeech(_ event:SpeechEvent) {
+    func requestSpeech(_ event:SpeechEvent) {
         var candidate=speech
-        guard gate.shouldRunFrames,preferences.speechEnabled,!isQuiet,!menuOpen,!settingsOpen,!interaction.isPointerBusy,
-              let text=candidate.select(lines:skin.manifest.speech,event:event,at:now()),
+        guard gate.shouldRunFrames,preferences.speechEnabled,!effectiveQuiet,!menuOpen,!settingsOpen,!interaction.isPointerBusy,
+              let text=candidate.select(lines:PersonalSpeech.resolve(id:skin.manifest.id,skin:skin.manifest.speech,overrides:preferences.speechOverrides),event:event,at:now()),
               let area=WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens())?.visibleFrame else{return}
         if speechBubble==nil {speechBubble=SpeechBubble()}
         if speechBubble?.show(text,owner:panel,area:area)==true {speech=candidate;speechDeadline=now() + .seconds(6);speechShownCount += 1}
