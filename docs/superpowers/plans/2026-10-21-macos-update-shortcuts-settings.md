@@ -8,7 +8,7 @@
 
 **Tech Stack:** Swift 6、AppKit、SwiftUI、Foundation URLSession、公开Carbon/HIToolbox、XCTest、现有Python/构建脚本；不增加外部依赖。
 
-**Spec:** [已批准的0.1.12设计](../specs/2026-10-21-macos-update-shortcuts-settings-design.md)。用户已选择本会话直接实施，复用独立Mac仓库，不创建额外工作树。本计划待书面评审。
+**Spec:** [已批准的0.1.12设计](../specs/2026-10-21-macos-update-shortcuts-settings-design.md)。用户已选择本会话直接实施，复用独立Mac仓库，不创建额外工作树。本计划已获用户“开始执行”批准。
 
 ## Global Constraints
 
@@ -59,7 +59,7 @@
 - 产生`ReleaseArchitecture: String, Sendable`（`arm64`、`x86_64`）、`ReleaseComparison`（`newer`、`current`、`ahead`）。
 - 产生`ReleaseInfo: Equatable, Sendable`，含`version: ReleaseVersion`、`tag: String`、`pageURL: URL`、`notes: String`、`downloadURL: URL?`；`static parse(_ data: Data, architecture: ReleaseArchitecture) throws -> ReleaseInfo`和`comparison(to current: ReleaseVersion) -> ReleaseComparison`。
 
-- [ ] **Step 1: 写失败用例。** `testNumericVersionOrderAndDevelopmentAhead`精确断言：
+- [x] **Step 1: 写失败用例。** `testNumericVersionOrderAndDevelopmentAhead`精确断言：
   ```swift
   XCTAssertGreaterThan(try XCTUnwrap(ReleaseVersion(tag:"v0.1.10")), try XCTUnwrap(ReleaseVersion(tag:"0.1.9")))
   XCTAssertEqual(try info(tag:"v0.1.9").comparison(to:XCTUnwrap(ReleaseVersion(tag:"0.1.12"))), .ahead)
@@ -67,10 +67,10 @@
   XCTAssertNil(ReleaseVersion(tag:"4294967296.1.0"))
   ```
   用本测试文件中的`info(tag:)`构造官方JSON并调用真实parse。`testStableOfficialLinksAndMissingArchitecture`断言完整ARM附件被接受、只有Intel时ARM的downloadURL为nil且pageURL保留；说明8001字符截为8000。`testUntrustedAndNonPublicReleasesAreRejected`覆盖draft/prerelease、坏JSON、缺字段、外站/凭据/端口/query/fragment、不同仓库/tag/附件名与路径不匹配。
-- [ ] **Step 2: 验证RED。** `bash scripts/test.sh -only-testing:PetCoreTests/ReleaseInfoTests`。Expected: 新类型缺失；登记完成后须能进入测试，不把工程配置错误当功能RED。
-- [ ] **Step 3: 实现接口。** 数值比较不用字符串顺序；保留原tag用于精确路径验证。只接受本仓库HTTPS发布页及`YeShunguangPet-<tag去v>-macOS-<架构>.dmg`官方Release附件路径。坏附件不变成可点的URL，缺附件不阻止可信发布页；说明只作String纯文本。
-- [ ] **Step 4: 验证GREEN。** 同Step 2命令。Expected: 本类全部通过，包括newer/current/ahead三种断言及版本边界0、UInt32.max、非法段数/Unicode数字/负号。
-- [ ] **Step 5: 本地提交。** 暂存本任务精确文件，提交`feat: validate public release versions and download links`。
+- [x] **Step 2: 验证RED。** `bash scripts/test.sh -only-testing:PetCoreTests/ReleaseInfoTests`。Expected: 新类型缺失；登记完成后须能进入测试，不把工程配置错误当功能RED。
+- [x] **Step 3: 实现接口。** 数值比较不用字符串顺序；保留原tag用于精确路径验证。只接受本仓库HTTPS发布页及`YeShunguangPet-<tag去v>-macOS-<架构>.dmg`官方Release附件路径。坏附件不变成可点的URL，缺附件不阻止可信发布页；说明只作String纯文本。
+- [x] **Step 4: 验证GREEN。** 同Step 2命令。Expected: 本类全部通过，包括newer/current/ahead三种断言及版本边界0、UInt32.max、非法段数/Unicode数字/负号。
+- [x] **Step 5: 本地提交。** 暂存本任务精确文件，提交`feat: validate public release versions and download links`。
 
 ### Task 2: 有界手动更新查询与取消
 
