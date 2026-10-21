@@ -1004,6 +1004,7 @@
 				<string>A9C3FBAE9AFE8547CF97D249</string>
 				<string>5C60D23B19848E378F377E34</string>
 				<string>335FA44CC4C028B18FCAEC70</string>
+				<string>EE4A6040D066D21E4D255065</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1388,6 +1389,8 @@
 				<string>9015B2D4DA916E4052942BBC</string>
 				<string>3C822CF77830F88780653AA7</string>
 				<string>DA08D6CA0144256A5942502A</string>
+				<string>9641A97952F0EF9F444D9C95</string>
+				<string>20D446C04DC1D193F25CEE57</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1656,6 +1659,8 @@
 				<string>DB8CC5B23753BF35E9ECA82A</string>
 				<string>FB5A891ED228B27E3F4042DD</string>
 				<string>62EB7AF77548EE6DE0AF59FA</string>
+				<string>20E6EA63570F6AB77453D3CD</string>
+				<string>C5D32DA13E522FD4EEDEDF37</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -2067,6 +2072,49 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>62EB7AF77548EE6DE0AF59FA</string>
+		</dict>
+		<key>20E6EA63570F6AB77453D3CD</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/LoginItemController.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>EE4A6040D066D21E4D255065</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>20E6EA63570F6AB77453D3CD</string>
+		</dict>
+		<key>9641A97952F0EF9F444D9C95</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>20E6EA63570F6AB77453D3CD</string>
+		</dict>
+		<key>C5D32DA13E522FD4EEDEDF37</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/LoginItemTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>20D446C04DC1D193F25CEE57</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>C5D32DA13E522FD4EEDEDF37</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

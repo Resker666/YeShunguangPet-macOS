@@ -2,8 +2,10 @@ import AppKit
 import SwiftUI
 import PetCore
 import UniformTypeIdentifiers
+import ServiceManagement
 
 @MainActor final class SettingsModel: ObservableObject {
+    let loginItem:LoginItemController
     @Published private(set) var preferences: PetPreferences
     @Published private(set) var saveError: String?
     @Published private(set) var candidate: SkinPackage?
@@ -134,13 +136,15 @@ import UniformTypeIdentifiers
         catch { skinError=error.localizedDescription; refresh() }
     }
     private weak var session: PetSession?
-    init(session: PetSession,installPackage: @escaping @Sendable (SkinLibrary,SkinPackage) throws -> ImportedSkin = { try $0.install($1) }) {
+    init(session: PetSession,loginItem:LoginItemController?=nil,installPackage: @escaping @Sendable (SkinLibrary,SkinPackage) throws -> ImportedSkin = { try $0.install($1) }) {
+        self.loginItem=loginItem ?? LoginItemController()
         self.installPackage=installPackage
         self.session=session; preferences=session.preferences; saveError=session.persistenceError; skinName=session.skin.manifest.name
         refresh()
     }
     func refresh() {
         guard let session else { return }
+        loginItem.refresh()
         preferences=session.preferences; saveError=session.persistenceError
         skinName=session.skin.manifest.name; skinWarning=session.skinWarning
         gazeAvailable=session.supportsGaze
@@ -191,7 +195,7 @@ import UniformTypeIdentifiers
         let window=NSWindow(contentRect:CGRect(x:0,y:0,width:520,height:640),styleMask:[.titled,.closable,.miniaturizable],backing:.buffered,defer:false)
         window.title="叶瞬光桌宠设置"; window.isReleasedWhenClosed=false
         super.init(window:window)
-        window.contentViewController=NSHostingController(rootView:PetSettingsView(model:model,onChooseSkin:{ [weak self] in self?.chooseSkin() }))
+        window.contentViewController=NSHostingController(rootView:PetSettingsView(model:model,login:model.loginItem,onChooseSkin:{ [weak self] in self?.chooseSkin() }))
         window.delegate=self; window.center()
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
@@ -225,6 +229,7 @@ import UniformTypeIdentifiers
 
 private struct PetSettingsView: View {
     @ObservedObject var model: SettingsModel
+    @ObservedObject var login:LoginItemController
     let onChooseSkin: () -> Void
     @State private var skinToDelete: SkinLibraryEntry?
     private var version: String {
@@ -312,6 +317,20 @@ private struct PetSettingsView: View {
                 Text("修改立即生效并自动保存。关闭置顶后，角色可能被其他窗口遮挡，可从菜单栏召回。")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            Section("启动") {
+                Toggle("登录时启动",isOn:Binding(get:{login.isSelected},set:{login.setEnabled($0)}))
+                    .disabled(!login.canEnable && !login.isSelected)
+                    .accessibilityIdentifier("pet-launch-at-login")
+                Text(login.statusText).font(.caption).foregroundStyle(.secondary)
+                if !login.canEnable && !login.isSelected {
+                    Text("请先将 App 安装到“应用程序”，再开启登录时启动。")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                if login.status == .requiresApproval {
+                    Button("打开登录项设置") {login.openSystemSettings()}
+                }
+                if let error=login.lastError {Text(error).font(.caption).foregroundStyle(.red).textSelection(.enabled)}
+            }
             Section("互动台词") {
                 Toggle("显示互动台词",isOn:Binding(get:{model.preferences.speechEnabled},set:{model.setSpeechEnabled($0)}))
                     .accessibilityIdentifier("pet-speech-enabled")
@@ -358,6 +377,7 @@ private struct PetSettingsView: View {
         .formStyle(.grouped)
         .disabled(model.isTerminating)
         .frame(width:520,height:640)
+        .onReceive(NotificationCenter.default.publisher(for:NSApplication.didBecomeActiveNotification)) {_ in login.refresh()}
         .alert(item:$skinToDelete) { entry in
             Alert(title:Text("删除皮肤？"),message:Text("将删除“\(entry.name)”的已导入副本，原始文件不受影响。"),primaryButton:.destructive(Text("删除")) {
                 Task { await model.deleteSkin(id:entry.id) }
