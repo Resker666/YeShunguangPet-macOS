@@ -2,7 +2,10 @@ import AppKit
 import XCTest
 import PetCore
 
-@MainActor private final class SpeechInput {var time=Duration.zero}
+@MainActor private final class SpeechInput {
+    var time=Duration.zero
+    var screens=[ScreenArea(id:"test",visibleFrame:CGRect(x:0,y:0,width:1000,height:700),isPrimary:true)]
+}
 @MainActor final class SpeechSessionTests:XCTestCase {
     @MainActor private struct Fixture {
         let directory:URL,session:PetSession,input:SpeechInput
@@ -17,7 +20,7 @@ import PetCore
         try SkinFixtures.manifest(fields).write(to:manifest)
         let store=SettingsStore(url:directory.appendingPathComponent("settings.json"))
         try store.save(.init(placement:nil,preferences:.init(alwaysOnTop:false,lookAtMouse:false,speechEnabled:enabled)))
-        let session=PetSession(skin:try SkinLoader.load(manifestURL:manifest),now:{input.time},settings:store,screens:{[.init(id:"test",visibleFrame:CGRect(x:0,y:0,width:1000,height:700),isPrimary:true)]})
+        let session=PetSession(skin:try SkinLoader.load(manifestURL:manifest),now:{input.time},settings:store,screens:{input.screens})
         session.start();session.panel.setFrameOrigin(CGPoint(x:100,y:100))
         return .init(directory:directory,session:session,input:input)
     }
@@ -80,5 +83,13 @@ import PetCore
         let f=try fixture();defer{f.close()};f.session.setQuiet(true);click(f)
         XCTAssertEqual(f.session.action,.waving);XCTAssertNil(bubble(f))
         f.session.setQuiet(false);click(f);XCTAssertNotNil(bubble(f))
+    }
+    func testFailedPlacementDoesNotConsumeSpeechCooldown() throws {
+        let f=try fixture();defer{f.close()}
+        f.input.screens=[.init(id:"test",visibleFrame:CGRect(x:0,y:0,width:80,height:80),isPrimary:true)]
+        f.session.panel.setFrameOrigin(CGPoint(x:20,y:20));click(f);XCTAssertNil(bubble(f))
+        f.input.screens=[.init(id:"test",visibleFrame:CGRect(x:0,y:0,width:1000,height:700),isPrimary:true)]
+        f.session.screensChanged();click(f)
+        XCTAssertEqual(text(try XCTUnwrap(bubble(f))),"你好")
     }
 }

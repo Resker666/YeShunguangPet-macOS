@@ -276,11 +276,12 @@ import PetCore
         _=savePosition()
     }
     private func requestSpeech(_ event:SpeechEvent) {
+        var candidate=speech
         guard gate.shouldRunFrames,preferences.speechEnabled,!isQuiet,!menuOpen,!settingsOpen,!interaction.isPointerBusy,
-              let text=speech.select(lines:skin.manifest.speech,event:event,at:now()),
+              let text=candidate.select(lines:skin.manifest.speech,event:event,at:now()),
               let area=WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens())?.visibleFrame else{return}
         if speechBubble==nil {speechBubble=SpeechBubble()}
-        if speechBubble?.show(text,owner:panel,area:area)==true {speechDeadline=now() + .seconds(6);speechShownCount += 1}
+        if speechBubble?.show(text,owner:panel,area:area)==true {speech=candidate;speechDeadline=now() + .seconds(6);speechShownCount += 1}
     }
     private func dismissSpeech() {speechDeadline=nil;speechBubble?.dismiss()}
     private func render() {
