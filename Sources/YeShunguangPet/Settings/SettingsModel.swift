@@ -27,6 +27,7 @@ import PetCore
     private(set) var terminationCleanupError: String?
     private let previewPackage:@Sendable (URL)throws->SkinPackage
     private let installPackage: @Sendable (SkinLibrary,SkinPackage) throws -> ImportedSkin
+    private let loadSkin:@Sendable (SkinLibrary,String)throws->LoadedSkin
     private var mutationWaiters=[CheckedContinuation<Void,Never>]()
     func beginTermination() {
         isTerminating=true; cancelSkinSelection()
@@ -53,15 +54,15 @@ import PetCore
             libraryEntries=entries
         } catch { if generation==selectionGeneration { libraryError=error.localizedDescription } }
     }
-    func useSkin(id: String) async {
+    func useSkin(id: String,cancelWithPreview:Bool=true) async {
         guard let session,!session.gate.exiting,!isTerminating,!isBusy else { return }
         cancelSkinSelection()
-        let generation=selectionGeneration,library=session.library
+        let generation=selectionGeneration,library=session.library,loadSkin=loadSkin
         isBusy=true; hasPendingMutation=true
         defer { finishMutation() }
         do {
-            let skin=try await Task.detached(priority:.userInitiated) { try library.load(id:id) }.value
-            if generation==selectionGeneration,!Task.isCancelled,!session.gate.exiting {
+            let skin=try await Task.detached(priority:.userInitiated) { try loadSkin(library,id) }.value
+            if (!cancelWithPreview || generation==selectionGeneration),!Task.isCancelled,!isTerminating,!session.gate.exiting {
                 try session.useImportedSkin(ImportedSkin(id:id,skin:skin))
             }
         } catch { skinError=error.localizedDescription }
@@ -147,9 +148,10 @@ import PetCore
             throw NSError(domain:"SkinDrop",code:1,userInfo:[NSLocalizedDescriptionKey:"请选择一套皮肤的 ZIP、皮肤文件夹或 pet.json。"])
         }
         return try SkinLoader.readPackage(manifestURL:isDirectory ? url.appendingPathComponent("pet.json") : url)
-    },installPackage: @escaping @Sendable (SkinLibrary,SkinPackage) throws -> ImportedSkin = { try $0.install($1) }) {
+    },installPackage: @escaping @Sendable (SkinLibrary,SkinPackage) throws -> ImportedSkin = { try $0.install($1) },loadSkin:@escaping @Sendable (SkinLibrary,String)throws->LoadedSkin = {try $0.load(id:$1)}) {
         self.loginItem=loginItem ?? LoginItemController()
         self.installPackage=installPackage
+        self.loadSkin=loadSkin
         self.previewPackage=previewPackage
         self.session=session; preferences=session.preferences; saveError=session.persistenceError; skinName=session.skin.manifest.name
         refresh()

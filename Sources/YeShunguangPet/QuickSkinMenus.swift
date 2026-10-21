@@ -65,7 +65,7 @@ import PetCore
             defer{self.switchTask=nil;self.refresh()}
             guard !Task.isCancelled,!self.disposed,!self.model.isTerminating,self.canDispatch() else{return}
             if id=="default" {self.model.restoreDefaultSkin()}
-            else {await self.model.useSkin(id:id)}
+            else {await self.model.useSkin(id:id,cancelWithPreview:false)}
         }
         refresh()
     }

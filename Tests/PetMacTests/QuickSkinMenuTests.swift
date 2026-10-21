@@ -169,4 +169,25 @@ import PetCore
         XCTAssertTrue(entry.isEnabled);invoke(entry,in:menu)
         await wait{f.session.selectedSkinID==imported.id}
     }
+    private func confirmedChoiceClosingSettings(terminating:Bool)async throws {
+        let f=try ShortcutFixture();defer{f.close()};let imported=try install(f,name:"Other")
+        let started=expectation(description:"confirmed menu skin load held"),release=DispatchSemaphore(value:0);defer{release.signal()}
+        let model=SettingsModel(session:f.session,loadSkin:{library,id in
+            let skin=try library.load(id:id);started.fulfill();release.wait();return skin
+        })
+        let menus=QuickSkinMenus(session:f.session,model:model,canDispatch:{true},onManage:{});defer{menus.dispose()}
+        let updates=ReleaseUpdateModel(currentVersion:ReleaseVersion(tag:"0.1.14")!,architecture:.arm64,client:NoReleaseRequests())
+        let window=SettingsWindowController(session:f.session,updates:updates,shortcuts:f.controller,model:model);defer{window.close()}
+        window.present(tab:.general)
+        let menu=menus.menus[0]
+        await wait{menu.items.contains{$0.representedObject as? String==imported.id && $0.isEnabled}}
+        invoke(try XCTUnwrap(menu.items.first{$0.representedObject as? String==imported.id}),in:menu)
+        let result=await XCTWaiter.fulfillment(of:[started],timeout:5);XCTAssertEqual(result,.completed)
+        window.close();XCTAssertTrue(model.hasPendingMutation)
+        if terminating{model.beginTermination();menus.cancel()}
+        release.signal();await model.waitForPendingMutations()
+        XCTAssertEqual(f.session.selectedSkinID,terminating ? nil : imported.id)
+    }
+    func testConfirmedMenuChoiceSurvivesSettingsClosing()async throws {try await confirmedChoiceClosingSettings(terminating:false)}
+    func testConfirmedMenuChoiceStillCancelsOnTermination()async throws {try await confirmedChoiceClosingSettings(terminating:true)}
 }
