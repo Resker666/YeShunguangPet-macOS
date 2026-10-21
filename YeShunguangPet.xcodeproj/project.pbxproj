@@ -1014,6 +1014,8 @@
 				<string>EE4A6040D066D21E4D255065</string>
 				<string>D4E02BD92A740C84E4CC1476</string>
 				<string>60BC3DF5EC1B4C0E1AB4D0FD</string>
+				<string>48F2F3C96F1146BAD7E0FB00</string>
+				<string>A782A57FAE34559A63A6E4BD</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1404,6 +1406,11 @@
 				<string>8FF0370D1EB0BDD8BA6891BD</string>
 				<string>BAB31B1797D2B117B4779616</string>
 				<string>6B2C5ACE6F9E2D49BDEFEF39</string>
+				<string>EB2DFD5682AF398CCAD825A0</string>
+				<string>2C901B42A15B26D984644ECE</string>
+				<string>9E46F530A088ABCBE66FAC8D</string>
+				<string>966C53CCE4DFD2E10BD4813D</string>
+				<string>7620F143E182D5A57E959C99</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1684,6 +1691,11 @@
 				<string>A4670D3A91695B7B5956A47E</string>
 				<string>84F440700422EDACCA71C56F</string>
 				<string>5A8DAFD2B62DEF5228D765AA</string>
+				<string>708C2D4D7BBD7AEDD51EDB93</string>
+				<string>C79AA04A6C498AD01D9CEB5F</string>
+				<string>A17DB53241DBC5268116D466</string>
+				<string>F3E2C1DE108775BD18010FD4</string>
+				<string>DBDCAAC663AF5351B992A07B</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -2339,6 +2351,110 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>5A8DAFD2B62DEF5228D765AA</string>
+		</dict>
+		<key>708C2D4D7BBD7AEDD51EDB93</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Tests/Support/ShortcutFixtures.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>EB2DFD5682AF398CCAD825A0</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>708C2D4D7BBD7AEDD51EDB93</string>
+		</dict>
+		<key>C79AA04A6C498AD01D9CEB5F</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/ShortcutControllerTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>2C901B42A15B26D984644ECE</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>C79AA04A6C498AD01D9CEB5F</string>
+		</dict>
+		<key>A17DB53241DBC5268116D466</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Shortcuts/ShortcutController.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>48F2F3C96F1146BAD7E0FB00</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>A17DB53241DBC5268116D466</string>
+		</dict>
+		<key>9E46F530A088ABCBE66FAC8D</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>A17DB53241DBC5268116D466</string>
+		</dict>
+		<key>F3E2C1DE108775BD18010FD4</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Shortcuts/CarbonHotKeyRegistry.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>A782A57FAE34559A63A6E4BD</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>F3E2C1DE108775BD18010FD4</string>
+		</dict>
+		<key>966C53CCE4DFD2E10BD4813D</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>F3E2C1DE108775BD18010FD4</string>
+		</dict>
+		<key>DBDCAAC663AF5351B992A07B</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/CarbonHotKeyRegistryTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>7620F143E182D5A57E959C99</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>DBDCAAC663AF5351B992A07B</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

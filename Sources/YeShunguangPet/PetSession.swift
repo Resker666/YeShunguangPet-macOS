@@ -128,12 +128,22 @@ import PetCore
         applyWindowPreferences(); applyPlacement(nextPlacement); synchronize(); onStatusChange?()
     }
     func setPreferences(_ value: PetPreferences) {
-        guard !gate.exiting,value.isValid,value != preferences else { return }
+        guard !gate.exiting,value.isValid,value.keyboardShortcuts==preferences.keyboardShortcuts,value != preferences else { return }
         cancelInput()
         preferences=value; applyWindowPreferences()
         applyPlacement(WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()))
         synchronize()
         _=savePosition()
+    }
+    func saveKeyboardShortcuts(_ bindings:[ShortcutBinding])throws {
+        guard !gate.exiting,!protectedSettings else{throw SkinError("配置受保护或正在退出，快捷键未更改。")}
+        try KeyboardShortcuts.validate(bindings)
+        var candidate=preferences;candidate.keyboardShortcuts=bindings
+        let current=WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()) ?? placement
+        do {
+            try settings.save(PetSettings(placement:current,preferences:candidate,selectedSkinID:selectedSkinID))
+            preferences=candidate;placement=current;persistenceError=nil;onStatusChange?()
+        }catch{persistenceError=error.localizedDescription;onStatusChange?();throw error}
     }
     private func applyWindowPreferences() {
         let size=CGSize(width:Double(skin.manifest.cellWidth)*preferences.scale,height:Double(skin.manifest.cellHeight)*preferences.scale)
