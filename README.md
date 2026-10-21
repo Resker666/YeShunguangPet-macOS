@@ -1,6 +1,6 @@
 # YeShunguangPet macOS
 
-为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前开发体验版为 0.1.10，ZIP皮肤导入尚未公开发布；最新已发布版为0.1.9。
+为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前开发体验版为 0.1.11，增加拖拽导入与发版草稿流程，尚未公开发布；最新已发布版为0.1.9。
 
 延后验证事项与后续候选路线见 [项目待办](TODO.md)。日用设置见 [设置验证记录](docs/settings-validation.md)；皮肤导入与切换见 [皮肤导入记录](docs/skin-import-validation.md)，已有副本管理见 [皮肤库验证记录](docs/skin-library-validation.md)，注视与资源采样见 [注视验证记录](docs/gaze-validation.md)，自动小动作见 [验证记录](docs/automatic-actions-validation.md)，小范围走动见 [走动验证](docs/roaming-validation.md)。
 
@@ -48,6 +48,8 @@ App 不显示 Dock 图标；请从菜单栏退出。首次启动会在主屏右�
 
 在设置的“皮肤”区域点“选择皮肤…”，选择包含一套皮肤的ZIP（0.1.10新增）、皮肤文件夹或`pet.json`，查看名称与待机首帧预览，再点“导入并使用”。清单与对应PNG会按原字节复制到`~/Library/Application Support/YeShunguangPet-macOS/Skins/`，不依赖下载目录中的原文件；再次启动恢复所选皮肤。校验、复制或保存失败时继续使用当前角色，显示具体原因。“恢复默认皮肤”切回随附叶瞬光。取消预览不会导入；关闭设置窗口会取消尚未确认的操作。
 
+0.1.11也可将单个ZIP、皮肤文件夹或`pet.json`从Finder拖到设置窗口，窗口高亮后松开，仍先预览、再确认。一次只接受一个本地文件或文件夹；处理期间、文件面板/确认对话框打开时不接收新拖入。拖动角色本身仍用于移动桌宠。
+
 设置中的“已导入皮肤”自动识别之前保存的副本，显示名称、待机缩略图与使用状态；点“使用”即可切换，不必重新选择原文件，也不增加副本。可以确认删除未使用的副本，原始文件保持不变；当前使用、配置仍记住的皮肤或原配置受保护时不可删除。损坏的副本单独显示错误，可以删除，不影响其他皮肤。“刷新皮肤列表”重新读取受管理目录。
 
 重复导入仍会保存独立副本；只想换回旧角色时请使用列表。正常退出会等待当前导入完成，再清理本次未使用的副本；强制结束或断电没有此保证，也不会自动清空历史副本。
@@ -88,7 +90,7 @@ python3 scripts/smoke-app.py --app /绝对路径/YeShunguangPet.app --check-rest
 
 构建需要 Xcode；使用 App 不需要。默认ARM App在`dist/YeShunguangPet.app`，Intel App在`dist/x86_64/YeShunguangPet.app`。两者主程序和嵌入框架架构必须一致；打包时会核对所选架构，拒绝错误标签或混合框架。
 
-打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.10-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.9已按用户指令发布；0.1.10已获本机体验通过及推送授权，本版标签和Release仍需新的明确指令。
+打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.11-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.9已按用户指令发布；0.1.10已体验通过并推送。0.1.11先本地交付，推送、标签和Release仍需本版明确指令。
 
 App 图标由原仓库 ICO 转换，原图256×256；大尺寸仅作缩放，不新增绘制细节。需要重新生成时运行 `bash tools/make-icon.sh`，使用系统 sips/iconutil，无外部图像工具依赖。
 
@@ -99,6 +101,8 @@ GitHub Actions 的 [macOS App 流水线](.github/workflows/macos-build.yml)在�
 原生测试、双架构Release构建及完整分发回归通过后，上传ARM与Intel两份安装产物，名称包含版本、架构、运行编号和重试次数。每份含DMG、ZIP及各自SHA-256；App、安装说明和许可已封装在安装包内，避免直接上传App目录丢失执行权限或链接。另保留环境、构建/测试日志和XCTest结果，失败时也尝试上传诊断产物。产物保留14天，流水线不创建GitHub Release。
 
 推送工作流后，打开[仓库Actions页面](https://github.com/Resker666/YeShunguangPet-macOS/actions)，选择`macOS App`的一次成功运行，在摘要的下载链接或底部`Artifacts`下载对应架构；需登录GitHub。下载的外层ZIP先解压，再按上文安装其中的DMG或备用ZIP。手动运行时选择`macOS App → Run workflow`；该入口需工作流先进入默认分支。具体流程、排错及验证边界见[CI说明](docs/ci.md)。
+
+0.1.11提供可选的Release草稿流程：手动运行时选择`main`并勾选`prepare_release`。完整测试与打包通过后，流程按本次运行的产物ID下载两架构附件，核对来源、版本及SHA-256，创建未发布草稿并上传八份附件与版本说明。普通推送保持只生成Artifacts；最后在GitHub检查草稿并手动发布。详见[发版操作与重试说明](docs/ci.md#准备release草稿)。
 
 ## 项目与素材
 

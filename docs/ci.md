@@ -10,13 +10,13 @@
 
 工作流文件为`.github/workflows/macos-build.yml`，使用标准`macos-26` Apple Silicon runner，明确选择`/Applications/Xcode_26.6.app/Contents/Developer`。GitHub官方镜像清单在实施时列出此版本；若镜像以后移除该路径，应先核对官方清单再更新，不能静默换成另一工具链。运行日志记录macOS、架构、Xcode、Swift、Python与完整构建提交。
 
-Token只申请`contents: read`，checkout不持久化凭据；不需要个人PAT、SSH私钥、Apple开发者证书或公证凭据。没有自动提交、推送、打标签、发布或修改应用个人设置的步骤。同一分支的新运行取消仍在执行的旧运行，单次任务上限30分钟。`main`和开发分支同时推送会各触发一次运行。
+构建job的Token只申请`contents: read`，checkout不持久化凭据；不需要个人PAT、SSH私钥、Apple开发者证书或公证凭据。普通推送没有自动提交、推送、打标签、发布或修改应用个人设置的步骤。0.1.11新增的可选草稿job仅在明确手动选择后申请`contents: write`，详见下文。同一分支的新运行取消仍在执行的旧运行，构建任务上限30分钟。`main`和开发分支同时推送会各触发一次运行。
 
 ## 验证与安装包
 
 步骤依次执行，任一检查失败就停止后续安装包上传，不用`continue-on-error`掩盖失败：
 
-1. `bash scripts/test.sh -resultBundlePath .build/ci-logs/native-tests.xcresult`。
+1. 运行离线发版脚本测试`python3 -m unittest discover -s Tests/Release -v`，随后`bash scripts/test.sh -resultBundlePath .build/ci-logs/native-tests.xcresult`。
 2. `bash scripts/build-app.sh arm64`及`bash scripts/build-app.sh x86_64`，执行Release构建及ad-hoc签名。
 3. `python3 -m unittest discover -s Tests/Distribution -v`，在ARM runner上检查打包、架构拒绝、素材/签名、中文路径搬移与独立ARM进程重开等已有回归。
 4. `bash scripts/package-app.sh arm64`及`bash scripts/package-app.sh x86_64`，生成两套DMG/ZIP和校验文件。
@@ -93,3 +93,15 @@ shasum -a 256 -c YeShunguangPet-0.1.8-macOS-arm64.dmg.sha256
 - [macOS 26 ARM镜像与Xcode清单](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md)。
 - [上传产物、保留期限及权限说明](https://github.com/actions/upload-artifact)。
 - [手动运行工作流](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)。
+
+## 准备Release草稿
+
+0.1.11新增，工作流需先按用户指令进入main。准备发版时打开Actions → macOS App → Run workflow，选择main，勾选`prepare_release`。版本取App的Info.plist，说明取`docs/release-notes/<版本>.md`；选择其他分支或缺少对应说明会在构建前失败。普通push/PR和未勾选的手动运行不会创建草稿。
+
+完整离线发版测试、原生/分发测试、双架构构建/打包、来源检查和Artifacts上传通过后，独立的`release-draft` job才获得`contents: write`。它固定本次完整提交，按两个产物ID下载同一运行的八份安装/校验文件，再校验文件集合、SHA-256和ZIP内来源/版本。由Python标准库调用官方API创建`v<版本>`的未发布草稿，上传后核对API返回的附件digest、大小和完整集合。最后的摘要链接用于打开草稿，维护者核对后手动点击发布；脚本不创建/移动Git ref、不自动发布或更改Latest。
+
+如果同版本已发布、已有标签指向其他提交、草稿来源/说明不同或附件内容不同，流程明确失败，不覆盖或删除既有内容。上传中断会保留未发布草稿：优先对原运行选择“Re-run failed jobs”，沿用原来产物，补传缺失附件。GitHub留下`starter`等未完成附件或人工改过草稿时，先人工检查并清理冲突；脚本不自行删附件。不要在流程尚未成功时发布草稿。
+
+重新运行所有job会产生新安装包，时间戳/签名等可能改变摘要；即使源码相同，也可能与已有草稿附件冲突。此时不要强行替换，可继续原构建的草稿job，或在核对后人工删除未发布草稿重新准备。14天Artifacts过期后须重新完整构建；公开Release附件与Artifacts保留期不同。
+
+本地可离线运行`python3 scripts/prepare-release.py --assets /八份附件所在目录 --version 0.1.11 --commit <完整SHA> --check-only`，不会读取Token或联系GitHub。离线测试用`python3 -m unittest discover -s Tests/Release -v`；它们不等于真实GitHub创建草稿和上传通过。当前0.1.11仍先本地交付，云端功能待明确推送及运行授权后实测。

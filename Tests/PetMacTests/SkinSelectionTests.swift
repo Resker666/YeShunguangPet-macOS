@@ -17,6 +17,103 @@ import XCTest
     private func makeSession(settings: SettingsStore? = nil) -> PetSession {
         PetSession(skin:skin,now:{.zero},settings:settings ?? SettingsStore(url:settingsURL),screens:{[ScreenArea(id:"test",visibleFrame:CGRect(x:0,y:0,width:300,height:200),isPrimary:true)]})
     }
+    func testSettingsRegistersNativeFileDropDestination() throws {
+        let session=makeSession(); defer { session.prepareToExit() }
+        let controller=SettingsWindowController(session:session)
+        let view=try XCTUnwrap(controller.window?.contentView)
+        XCTAssertTrue(view.registeredDraggedTypes.contains(.fileURL),"settings must accept native Finder file drops")
+        XCTAssertFalse(session.view.registeredDraggedTypes.contains(.fileURL),"pet dragging must keep moving the character")
+    }
+    func testNativeDropCallbacksHighlightAndRouteToSharedPreview() throws {
+        let session=makeSession(); session.start()
+        let controller=SettingsWindowController(session:session); controller.present()
+        defer { controller.window?.close(); session.prepareToExit() }
+        let board=pasteboard([directory.appendingPathComponent("source/pet.json")]); defer { board.releaseGlobally() }
+        let view=try XCTUnwrap(controller.window?.contentView), info=SkinDraggingInfo(board:board,window:controller.window)
+        XCTAssertEqual(view.draggingEntered(info),.copy)
+        XCTAssertTrue(controller.model.isDropTargeted)
+        XCTAssertTrue(view.performDragOperation(info),"native view must invoke the real controller drop handler")
+        XCTAssertFalse(controller.model.isDropTargeted)
+        XCTAssertEqual(view.draggingUpdated(info),[] ,"a queued preview already owns the import entry")
+        view.draggingExited(info)
+        XCTAssertFalse(controller.model.isDropTargeted)
+    }
+    private func pasteboard(_ urls:[URL]) -> NSPasteboard {
+        let board=NSPasteboard.withUniqueName()
+        board.writeObjects(urls.map { $0 as NSURL })
+        return board
+    }
+    func testDroppedZIPFolderAndJSONPreviewBeforeImportAndKeepSourceBytes() async throws {
+        let session=makeSession(); session.start()
+        let controller=SettingsWindowController(session:session); controller.present()
+        defer { controller.window?.close(); session.prepareToExit() }
+        let manifest=directory.appendingPathComponent("source/pet.json"), png=manifest.deletingLastPathComponent().appendingPathComponent("spritesheet.png")
+        let json=try Data(contentsOf:manifest), image=try Data(contentsOf:png)
+        let archive=directory.appendingPathComponent("角色.zip")
+        try ZIPFixtures.archive([.init("下载/角色/pet.json",json),.init("下载/角色/spritesheet.png",image)]).write(to:archive)
+        let before=try FileManager.default.contentsOfDirectory(atPath:session.library.directory.path)
+        for url in [manifest,manifest.deletingLastPathComponent(),archive] {
+            let board=pasteboard([url]); defer { board.releaseGlobally() }
+            let task=try XCTUnwrap(controller.acceptSkinDrop(from:board)); await task.value
+            XCTAssertEqual(controller.model.candidate?.skin.manifest.id,"alternate")
+            XCTAssertEqual(session.skin.manifest.id,"my-pet")
+            XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:session.library.directory.path),before)
+            if url != archive { controller.model.cancelSkinSelection() }
+        }
+        try FileManager.default.removeItem(at:archive)
+        await controller.model.confirmImport()
+        XCTAssertNil(controller.model.skinError); XCTAssertEqual(session.skin.manifest.id,"alternate")
+        XCTAssertEqual(try Data(contentsOf:session.skin.directory.appendingPathComponent("pet.json")),json)
+        XCTAssertEqual(try Data(contentsOf:session.skin.directory.appendingPathComponent("spritesheet.png")),image)
+    }
+    func testDropRejectsMultipleRemoteAndTextWithoutChangingExistingPreview() async throws {
+        let session=makeSession(); session.start()
+        let controller=SettingsWindowController(session:session); controller.present()
+        defer { controller.window?.close(); session.prepareToExit() }
+        let source=directory.appendingPathComponent("source/pet.json")
+        await controller.model.previewSkin(at:source)
+        for urls in [[source,source], [URL(string:"https://example.invalid/skin.zip")!], []] {
+            let board=pasteboard(urls); defer { board.releaseGlobally() }
+            XCTAssertNil(controller.acceptSkinDrop(from:board))
+            XCTAssertNotNil(controller.model.skinError)
+            XCTAssertEqual(controller.model.candidate?.skin.manifest.id,"alternate")
+            XCTAssertEqual(session.skin.manifest.id,"my-pet")
+        }
+        let board=NSPasteboard.withUniqueName(); defer { board.releaseGlobally() }
+        board.setString("file:///untrusted.zip",forType:.string)
+        XCTAssertNil(controller.acceptSkinDrop(from:board))
+        XCTAssertEqual(controller.model.candidate?.skin.manifest.id,"alternate")
+    }
+    func testPendingDropBlocksSecondDropAndCloseCancelsQueuedPreview() async throws {
+        let session=makeSession(); session.start()
+        let controller=SettingsWindowController(session:session); controller.present()
+        defer { controller.window?.close(); session.prepareToExit() }
+        let board=pasteboard([directory.appendingPathComponent("source/pet.json")]); defer { board.releaseGlobally() }
+        let task=try XCTUnwrap(controller.acceptSkinDrop(from:board))
+        XCTAssertNil(controller.acceptSkinDrop(from:board))
+        controller.window?.close(); await task.value
+        XCTAssertNil(controller.model.candidate); XCTAssertFalse(controller.model.hasPendingMutation)
+        XCTAssertEqual(session.skin.manifest.id,"my-pet")
+        controller.present(); controller.beginTermination()
+        XCTAssertNil(controller.acceptSkinDrop(from:board))
+    }
+    func testDropIsBlockedWithSheetOrClosedWindowAndBadFileKeepsCurrentSkin() async throws {
+        let session=makeSession(); session.start()
+        let controller=SettingsWindowController(session:session)
+        defer { controller.window?.close(); session.prepareToExit() }
+        let source=directory.appendingPathComponent("source/pet.json"), board=pasteboard([source]); defer { board.releaseGlobally() }
+        XCTAssertNil(controller.acceptSkinDrop(from:board))
+        controller.present()
+        let sheet=NSWindow(contentRect:CGRect(x:0,y:0,width:200,height:100),styleMask:.titled,backing:.buffered,defer:false)
+        controller.window?.beginSheet(sheet,completionHandler:{_ in})
+        XCTAssertNil(controller.acceptSkinDrop(from:board))
+        controller.window?.endSheet(sheet); sheet.orderOut(nil)
+        let bad=directory.appendingPathComponent("unsupported.txt"); try SkinFixtures.manifest([:]).write(to:bad)
+        let unsupported=pasteboard([bad]); defer { unsupported.releaseGlobally() }
+        let task=try XCTUnwrap(controller.acceptSkinDrop(from:unsupported)); await task.value
+        XCTAssertNotNil(controller.model.skinError); XCTAssertNil(controller.model.candidate)
+        XCTAssertEqual(session.skin.manifest.id,"my-pet")
+    }
     func testRestartLoadsCopiedSkinWithPreferencesAndClampsLargerWindow() throws {
         try SettingsStore(url:settingsURL).save(PetSettings(placement:.init(screenID:"test",origin:CGPoint(x:250,y:150),visibleFrame:CGRect(x:0,y:0,width:300,height:200)),preferences:.init(scale:2,alwaysOnTop:false),selectedSkinID:imported.id))
         try FileManager.default.removeItem(at:directory.appendingPathComponent("source"))
@@ -438,4 +535,23 @@ import XCTest
         model.cancelTermination(); model.beginTermination()
         XCTAssertNotNil(model.terminationCleanupError)
     }
+}
+
+@MainActor private final class SkinDraggingInfo: NSObject,NSDraggingInfo {
+    let draggingPasteboard:NSPasteboard
+    let draggingDestinationWindow:NSWindow?
+    var draggingSourceOperationMask:NSDragOperation = .copy
+    var draggingLocation:NSPoint { .zero }
+    var draggedImageLocation:NSPoint { .zero }
+    nonisolated var draggedImage:NSImage? { nil }
+    var draggingSource:Any? { nil }
+    var draggingSequenceNumber:Int { 1 }
+    var draggingFormation:NSDraggingFormation = .none
+    var animatesToDestination=false
+    var numberOfValidItemsForDrop=1
+    var springLoadingHighlight:NSSpringLoadingHighlight { .none }
+    init(board:NSPasteboard,window:NSWindow?) { draggingPasteboard=board; draggingDestinationWindow=window }
+    func slideDraggedImage(to screenPoint:NSPoint) {}
+    func resetSpringLoading() {}
+    func enumerateDraggingItems(options:NSDraggingItemEnumerationOptions,for view:NSView?,classes:[AnyClass],searchOptions:[NSPasteboard.ReadingOptionKey:Any],using block:(NSDraggingItem,Int,UnsafeMutablePointer<ObjCBool>)->Void) {}
 }

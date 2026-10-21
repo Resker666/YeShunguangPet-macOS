@@ -2,7 +2,7 @@
 适用于本仓库。先读 docs/superpowers/specs/2026-10-20-macos-first-playable-design.md 和对应 plans 文件，检查 git status。
 - Swift 6、AppKit、macOS 15+；arm64优先日用，x86_64为用户同意增加的实验交叉构建。使用现有Xcode，不引入外部依赖。
 - 测试：bash scripts/test.sh；构建：bash scripts/build-app.sh；打包：bash scripts/package-app.sh。独立启动回归：python3 scripts/smoke-app.py。
-- 分发：0.1.10 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
+- 分发：0.1.11 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
 - 独立进程验证设置 YSGPET_SETTINGS_PATH 使用临时配置；不带该变量才使用个人 Application Support。
 - 用户已确认真实拖动、单击/双击、菜单隐藏/显示和召回正常。GUI 工具首次超时，后续可读取实际角色画面；焦点、Spaces、锁屏和真实睡眠仍未验证，不能以属性或模拟事件当作通过。
 - 真实皮肤 JSON/PNG 字节保持不变；源码 MIT 与第三方素材声明分开。
@@ -26,3 +26,6 @@
 - 0.1.10评审修复：预览也纳入hasPendingMutation及正常退出等待，取消后仍保留临时清理失败；合法./根目录占位符验证目录类型/空载荷后接受，本地Unicodeextra有效路径须与中央一致。181项原生回归通过；原生窗口读取曾被自动审批额度中断并再次超时，不能记作文件面板或真实鼠标操作通过。
 - 0.1.10已完成本地交付：10项分发、四个真实工具ZIP、原生视图渲染、双架构包和ARM搬移重开通过；修复来源d91d2af，评审复核无新增问题。/Applications日用App已更新0.1.10且原schema7偏好/皮肤/位置保留，包括已开启的台词。交付时文件面板与用户整体验收待确认，详见docs/zip-import-validation.md。
 - 0.1.10用户随后在本会话反馈“验证通过，推送”，确认本机ZIP导入整体体验并明确授权按既有流程同步main与codex/macos-zip-skin-import。该反馈不扩展为逐项操作、系统登录/睡眠/Spaces、外机或Intel实机通过，也不把曾中断的文件面板自动化记为通过；未授权本版标签或Release。
+- 0.1.10已按授权推送a5c3fd6，main云端39554507226及开发分支39554507295成功，云端181项原生/10项分发通过，两架构Artifacts已上传；该轮未另行下载附件，未打标签或发布。
+- 0.1.11用户选择B+C，扩展现有流程：手动main的prepare_release输入默认关闭，仅完整CI通过后独立草稿job有contents:write，按本次两份Artifact ID下载八份附件；核对来源/版本/摘要，固定完整SHA，仅建未发布草稿。既有版本/来源/附件冲突拒绝覆盖，同一构建可补传缺失项。python3 -m unittest discover -s Tests/Release -v；--check-only完全离线，不用正式Token写入GitHub，不因开发工作自动触发草稿或发布。
+- 0.1.11设置窗口接受单个本地fileURL复制拖放，ZIP/文件夹/JSON后台读取并复用预览确认，配置仍schema7；不在角色窗口注册。排队即阻止重复，文件面板/确认sheet、处理或退出期间拒收，关闭及退出取消未确认任务。设置首开刷新不得抢占已接受的预览。原生Pasteboard/协议回调测试不等于Finder物理拖放或焦点实测，详见docs/release-drop-validation.md。仅本地交付，推送、标签、草稿创建及公开发布均等待用户明确指令。

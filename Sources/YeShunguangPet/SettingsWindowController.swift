@@ -20,6 +20,7 @@ import ServiceManagement
     @Published private(set) var isTerminating=false
     @Published private(set) var gazeAvailable=false
     @Published private(set) var roamingAvailable=false
+    @Published var isDropTargeted=false
     private(set) var hasPendingMutation=false
     private(set) var terminationCleanupError: String?
     private let previewPackage:@Sendable (URL)throws->SkinPackage
@@ -131,6 +132,7 @@ import ServiceManagement
         finishMutation(); await reloadLibrary()
     }
     func cancelSkinSelection() { selectionGeneration += 1; candidate=nil; candidateImage=nil; skinError=nil }
+    func reportSkinDropError(_ message:String) { skinError=message }
     func restoreDefaultSkin() {
         guard let session,!isTerminating,!isBusy else { return }
         do { try session.restoreDefaultSkin(); cancelSkinSelection(); refresh() }
@@ -139,6 +141,9 @@ import ServiceManagement
     private weak var session: PetSession?
     init(session: PetSession,loginItem:LoginItemController?=nil,previewPackage:@escaping @Sendable (URL)throws->SkinPackage={url in
         let isDirectory=try url.resourceValues(forKeys:[.isDirectoryKey]).isDirectory == true
+        guard isDirectory || ["zip","json"].contains(url.pathExtension.lowercased()) else {
+            throw NSError(domain:"SkinDrop",code:1,userInfo:[NSLocalizedDescriptionKey:"请选择一套皮肤的 ZIP、皮肤文件夹或 pet.json。"])
+        }
         return try SkinLoader.readPackage(manifestURL:isDirectory ? url.appendingPathComponent("pet.json") : url)
     },installPackage: @escaping @Sendable (SkinLibrary,SkinPackage) throws -> ImportedSkin = { try $0.install($1) }) {
         self.loginItem=loginItem ?? LoginItemController()
@@ -191,16 +196,56 @@ import ServiceManagement
     }
 }
 
+@MainActor private enum SkinDropSource {
+    static func url(from pasteboard:NSPasteboard) -> URL? {
+        guard pasteboard.pasteboardItems?.count==1,
+              let urls=pasteboard.readObjects(forClasses:[NSURL.self],options:[.urlReadingFileURLsOnly:true]) as? [NSURL],
+              urls.count==1,let url=urls.first,url.isFileURL else { return nil }
+        return url as URL
+    }
+}
+
+@MainActor private final class SkinDropHostingView: NSHostingView<AnyView> {
+    var canAccept:()->Bool={false}
+    var onDrop:(NSPasteboard)->Bool={_ in false}
+    var onTargetChanged:(Bool)->Void={_ in}
+    required init(rootView:AnyView) {
+        super.init(rootView:rootView)
+        registerForDraggedTypes([.fileURL])
+    }
+    required init?(coder:NSCoder) { fatalError("init(coder:) is not supported") }
+    override func draggingEntered(_ sender:any NSDraggingInfo) -> NSDragOperation { operation(for:sender) }
+    override func draggingUpdated(_ sender:any NSDraggingInfo) -> NSDragOperation { operation(for:sender) }
+    private func operation(for sender:any NSDraggingInfo) -> NSDragOperation {
+        let accepted=canAccept() && sender.draggingSourceOperationMask.contains(.copy) && SkinDropSource.url(from:sender.draggingPasteboard) != nil
+        onTargetChanged(accepted)
+        return accepted ? .copy : []
+    }
+    override func draggingExited(_ sender:(any NSDraggingInfo)?) { onTargetChanged(false) }
+    override func draggingEnded(_ sender:any NSDraggingInfo) { onTargetChanged(false) }
+    override func prepareForDragOperation(_ sender:any NSDraggingInfo) -> Bool { operation(for:sender) == .copy }
+    override func performDragOperation(_ sender:any NSDraggingInfo) -> Bool {
+        defer { onTargetChanged(false) }
+        guard operation(for:sender) == .copy else { return false }
+        return onDrop(sender.draggingPasteboard)
+    }
+}
+
 @MainActor final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     let model: SettingsModel
     private weak var session: PetSession?
     private var filePanel: NSOpenPanel?
+    private var previewTask:Task<Void,Never>?
     init(session: PetSession) {
         self.session=session; model=SettingsModel(session:session)
         let window=NSWindow(contentRect:CGRect(x:0,y:0,width:520,height:640),styleMask:[.titled,.closable,.miniaturizable],backing:.buffered,defer:false)
         window.title="叶瞬光桌宠设置"; window.isReleasedWhenClosed=false
         super.init(window:window)
-        window.contentViewController=NSHostingController(rootView:PetSettingsView(model:model,login:model.loginItem,onChooseSkin:{ [weak self] in self?.chooseSkin() }))
+        let view=SkinDropHostingView(rootView:AnyView(PetSettingsView(model:model,login:model.loginItem,onChooseSkin:{ [weak self] in self?.chooseSkin() })))
+        view.canAccept={ [weak self] in self?.canAcceptSkinDrop==true }
+        view.onDrop={ [weak self] board in self?.acceptSkinDrop(from:board) != nil }
+        view.onTargetChanged={ [weak self] targeted in self?.model.isDropTargeted=targeted }
+        window.contentView=view
         window.delegate=self; window.center()
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
@@ -208,10 +253,37 @@ import ServiceManagement
         session?.cancelInput(); session?.setSettingsOpen(true); model.refresh()
         showWindow(nil); window?.deminiaturize(nil); window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps:true)
-        Task { [model] in await model.reloadLibrary() }
+        Task { [weak self] in
+            guard let self,self.previewTask==nil,self.canPreviewSkin else { return }
+            await self.model.reloadLibrary()
+        }
+    }
+    private var canPreviewSkin:Bool {
+        window?.isVisible==true && !model.isTerminating && !model.isBusy && session?.gate.exiting==false
+    }
+    private var canAcceptSkinDrop:Bool { canPreviewSkin && previewTask==nil && filePanel==nil && window?.attachedSheet==nil }
+    func acceptSkinDrop(from pasteboard:NSPasteboard) -> Task<Void,Never>? {
+        guard canAcceptSkinDrop else { return nil }
+        guard let url=SkinDropSource.url(from:pasteboard) else {
+            model.reportSkinDropError("一次请拖入一个本地 ZIP、皮肤文件夹或 pet.json。"); return nil
+        }
+        return startSkinPreview(at:url)
+    }
+    private func startSkinPreview(at selected:URL) -> Task<Void,Never>? {
+        guard canPreviewSkin,previewTask==nil else { return nil }
+        let task=Task { [weak self] in
+            guard let self else { return }
+            defer { self.previewTask=nil }
+            guard !Task.isCancelled,self.canPreviewSkin else { return }
+            let scoped=selected.startAccessingSecurityScopedResource()
+            defer { if scoped { selected.stopAccessingSecurityScopedResource() } }
+            await self.model.previewSkin(at:selected)
+            if !Task.isCancelled,self.window?.isVisible==true { await self.model.reloadLibrary() }
+        }
+        previewTask=task; return task
     }
     private func chooseSkin() {
-        guard let window,!model.isTerminating,!model.isBusy,filePanel==nil else { return }
+        guard let window,canAcceptSkinDrop else { return }
         let panel=NSOpenPanel()
         panel.title="选择皮肤"; panel.message="选择包含一套皮肤的 ZIP、皮肤文件夹或其中的 pet.json。"
         panel.prompt="预览"; panel.canChooseFiles=true; panel.canChooseDirectories=true
@@ -221,15 +293,11 @@ import ServiceManagement
             guard let self else { return }
             self.filePanel=nil
             guard response == .OK,let selected=panel.url else { return }
-            Task { [weak self] in
-                let scoped=selected.startAccessingSecurityScopedResource()
-                defer { if scoped { selected.stopAccessingSecurityScopedResource() } }
-                await self?.model.previewSkin(at:selected)
-            }
+            _=self.startSkinPreview(at:selected)
         }
     }
-    func windowWillClose(_ notification: Notification) { filePanel?.cancel(nil); model.cancelSkinSelection(); session?.setSettingsOpen(false) }
-    func beginTermination() { filePanel?.cancel(nil); model.beginTermination() }
+    func windowWillClose(_ notification: Notification) { previewTask?.cancel(); filePanel?.cancel(nil); model.isDropTargeted=false; model.cancelSkinSelection(); session?.setSettingsOpen(false) }
+    func beginTermination() { previewTask?.cancel(); filePanel?.cancel(nil); model.isDropTargeted=false; model.beginTermination() }
 }
 
 private struct PetSettingsView: View {
@@ -279,7 +347,7 @@ private struct PetSettingsView: View {
                 if model.isBusy { HStack { ProgressView().controlSize(.small); Text("正在处理皮肤…") } }
                 if let error=model.skinError { Text(error).font(.caption).foregroundStyle(.red).textSelection(.enabled) }
                 if let warning=model.skinWarning { Text(warning).font(.caption).foregroundStyle(.secondary).textSelection(.enabled) }
-                Text("支持 ZIP、文件夹和 pet.json。预览后确认才保存素材副本，原文件保持不变。")
+                Text("可将单个 ZIP、皮肤文件夹或 pet.json 拖到此窗口，也可点“选择皮肤…”。预览后确认才保存素材副本，原文件保持不变。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("已导入皮肤") {
@@ -382,6 +450,10 @@ private struct PetSettingsView: View {
         .formStyle(.grouped)
         .disabled(model.isTerminating)
         .frame(width:520,height:640)
+        .overlay {
+            RoundedRectangle(cornerRadius:10).stroke(model.isDropTargeted ? Color.accentColor : .clear,lineWidth:3)
+                .padding(3).allowsHitTesting(false)
+        }
         .onReceive(NotificationCenter.default.publisher(for:NSApplication.didBecomeActiveNotification)) {_ in login.refresh()}
         .alert(item:$skinToDelete) { entry in
             Alert(title:Text("删除皮肤？"),message:Text("将删除“\(entry.name)”的已导入副本，原始文件不受影响。"),primaryButton:.destructive(Text("删除")) {

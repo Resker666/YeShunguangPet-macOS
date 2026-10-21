@@ -9,6 +9,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      prepare_release:
+        description: Prepare an unpublished Release draft after all checks (main only)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -23,6 +28,11 @@ jobs:
     timeout-minutes: 30
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    outputs:
+      version: ${{ steps.metadata.outputs.version }}
+      commit: ${{ steps.metadata.outputs.commit }}
+      arm64_artifact: ${{ steps.arm64.outputs.artifact-id }}
+      intel_artifact: ${{ steps.intel.outputs.artifact-id }}
     defaults:
       run:
         shell: bash
@@ -34,6 +44,8 @@ jobs:
 
       - name: Record build environment
         id: metadata
+        env:
+          PREPARE_RELEASE: ${{ inputs.prepare_release || false }}
         run: |
           set -euo pipefail
           mkdir -p .build/ci-logs
@@ -47,9 +59,18 @@ jobs:
             git rev-parse HEAD
           } | tee .build/ci-logs/environment.log
           version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Sources/YeShunguangPet/Info.plist)
+          if [ "$PREPARE_RELEASE" = true ]; then
+            test "$GITHUB_EVENT_NAME" = workflow_dispatch
+            test "$GITHUB_REF" = refs/heads/main
+            test -s "docs/release-notes/$version.md"
+          fi
           revision=$(git rev-parse --short=12 HEAD)
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "revision=$revision" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Run release preparation tests
+        run: python3 -m unittest discover -s Tests/Release -v 2>&1 | tee .build/ci-logs/release-tests.log
 
       - name: Run native tests
         run: bash scripts/test.sh -resultBundlePath .build/ci-logs/native-tests.xcresult 2>&1 | tee .build/ci-logs/native-tests.log
@@ -146,3 +167,45 @@ jobs:
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 14
+
+  release-draft:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.prepare_release && github.ref == 'refs/heads/main' }}
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: release-draft-${{ github.repository }}
+      cancel-in-progress: false
+    steps:
+      - name: Check out the verified source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.build.outputs.commit }}
+          persist-credentials: false
+
+      - name: Download this run's two verified package artifacts
+        uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ needs.build.outputs.arm64_artifact }},${{ needs.build.outputs.intel_artifact }}
+          merge-multiple: true
+          path: .build/release-assets
+
+      - name: Prepare unpublished draft and verify uploaded assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+          SOURCE_COMMIT: ${{ needs.build.outputs.commit }}
+        run: |
+          set -euo pipefail
+          python3 scripts/prepare-release.py --assets .build/release-assets --version "$VERSION" \
+            --commit "$SOURCE_COMMIT" --notes "docs/release-notes/$VERSION.md" > .build/release-draft.json
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          result = json.loads(Path('.build/release-draft.json').read_text())
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as stream:
+              stream.write('[查看未发布的 Release 草稿](' + result['url'] + ')\n\n')
+              stream.write('八份附件的名称、大小及 SHA-256 已核对。请核对说明与安装体验后手动发布。\n')
+          PY
