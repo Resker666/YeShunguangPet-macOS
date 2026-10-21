@@ -14,6 +14,7 @@ import PetCore
     let recallItem=NSMenuItem(title:"召回角色",action:#selector(recall),keyEquivalent:"")
     let settingsItem=NSMenuItem(title:"设置…",action:#selector(openSettings),keyEquivalent:",")
     let quietItem=NSMenuItem(title:"安静模式",action:#selector(toggleQuiet),keyEquivalent:"")
+    private let lockItem=NSMenuItem(title:"锁定位置",action:#selector(toggleLock),keyEquivalent:"")
     private(set) var settingsController: SettingsWindowController?
     let menu=NSMenu()
     private let contextMenu=NSMenu()
@@ -22,6 +23,7 @@ import PetCore
     private let contextHideItem=NSMenuItem(title:"隐藏角色",action:#selector(toggle),keyEquivalent:"")
     private let waveItem=NSMenuItem(title:"挥手",action:#selector(wave),keyEquivalent:"")
     private let jumpItem=NSMenuItem(title:"跳跃",action:#selector(jump),keyEquivalent:"")
+    private let contextLockItem=NSMenuItem(title:"锁定位置",action:#selector(toggleLock),keyEquivalent:"")
     private let persistenceItem=NSMenuItem(title:"",action:nil,keyEquivalent:"")
     private let retryItem=NSMenuItem(title:"重试保存设置",action:#selector(retry),keyEquivalent:"")
     private let resetItem=NSMenuItem(title:"备份原配置并重置",action:#selector(reset),keyEquivalent:"")
@@ -33,7 +35,7 @@ import PetCore
         #else
         let architecture=ReleaseArchitecture.x86_64
         #endif
-        self.updates=updates ?? ReleaseUpdateModel(currentVersion:ReleaseVersion(tag:Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") ?? ReleaseVersion(tag:"0.1.12")!,architecture:architecture,client:ReleaseUpdateClient())
+        self.updates=updates ?? ReleaseUpdateModel(currentVersion:ReleaseVersion(tag:Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") ?? ReleaseVersion(tag:"0.1.13")!,architecture:architecture,client:ReleaseUpdateClient())
         self.loginItem=loginItem
         self.session=session; self.onQuit=onQuit; item=NSStatusBar.system.statusItem(withLength:NSStatusItem.squareLength)
         super.init()
@@ -47,7 +49,8 @@ import PetCore
         item.button?.toolTip="叶瞬光桌宠"; item.button?.setAccessibilityLabel("叶瞬光桌宠")
         menu.autoenablesItems=false
         if let error { let label=NSMenuItem(title:"加载失败：\(error)",action:nil,keyEquivalent:""); label.isEnabled=false; menu.addItem(label); menu.addItem(.separator()) }
-        for entry in [visibilityItem,recallItem,quietItem] { entry.target=self; menu.addItem(entry) }
+        for entry in [visibilityItem,recallItem,quietItem,lockItem] { entry.target=self; menu.addItem(entry) }
+        lockItem.toolTip="暂停拖动和自动走动，保留点击、召回及屏幕变化时的位置修正。"
         quietItem.toolTip="本次运行暂时暂停注视、自动动作和走动，保留待机与手动互动；重开恢复正常。"
         settingsItem.target=self; menu.addItem(settingsItem)
         checkUpdatesItem.target=self;menu.addItem(checkUpdatesItem)
@@ -58,8 +61,9 @@ import PetCore
         let quit=NSMenuItem(title:"退出",action:#selector(quit),keyEquivalent:""); quit.target=self; menu.addItem(quit)
         menu.delegate=self; item.menu=menu
         contextMenu.autoenablesItems=false;contextMenu.delegate=self
-        for entry in [contextSettingsItem,contextQuietItem,contextHideItem,waveItem,jumpItem] {entry.target=self;contextMenu.addItem(entry)}
+        for entry in [contextSettingsItem,contextQuietItem,contextLockItem,contextHideItem,waveItem,jumpItem] {entry.target=self;contextMenu.addItem(entry)}
         contextQuietItem.toolTip=quietItem.toolTip
+        contextLockItem.toolTip=lockItem.toolTip
         session?.view.contextMenu = { [weak self] in
             guard let self,!self.terminating,self.session?.gate.shouldRunFrames==true,self.settingsController?.hasBlockingSheet != true,NSApp.modalWindow==nil else{return nil}
             self.refresh();return self.contextMenu
@@ -72,6 +76,7 @@ import PetCore
         settingsItem.isEnabled=session != nil; settingsController?.model.refresh()
         quietItem.isEnabled=session != nil;quietItem.state=session?.isQuiet == true ? .on : .off
         contextQuietItem.state=quietItem.state
+        lockItem.isEnabled=session != nil && !terminating;lockItem.state=session?.preferences.positionLocked==true ? .on : .off;contextLockItem.state=lockItem.state
         for entry in contextMenu.items {entry.isEnabled=session != nil && !terminating && session?.gate.exiting != true}
         skinWarningItem.isHidden=session?.skinWarning==nil; skinWarningItem.toolTip=session?.skinWarning
         let message=session?.persistenceError
@@ -93,6 +98,10 @@ import PetCore
     @objc private func toggle() { if let session { session.setVisible(!session.isVisible) }; refresh() }
     @objc private func recall() { session?.recall(); refresh() }
     @objc private func toggleQuiet() { if let session {session.setQuiet(!session.isQuiet)};refresh() }
+    @objc private func toggleLock() {
+        guard !terminating,let session else{return}
+        var prefs=session.preferences;prefs.positionLocked.toggle();session.setPreferences(prefs);refresh()
+    }
     @objc private func openSettings() {presentSettings()}
     private func presentSettings(tab:SettingsTab?=nil) {
         guard let session,let shortcuts else { return }

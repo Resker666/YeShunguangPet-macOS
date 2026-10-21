@@ -171,6 +171,14 @@ import PetCore
         guard !isTerminating else { return }
         var value=preferences; value.alwaysOnTop=enabled; session?.setPreferences(value); refresh()
     }
+    func setSnapToEdges(_ enabled:Bool) {
+        guard !isTerminating else{return}
+        var value=preferences;value.snapToEdges=enabled;session?.setPreferences(value);refresh()
+    }
+    func setPositionLocked(_ enabled:Bool) {
+        guard !isTerminating else{return}
+        var value=preferences;value.positionLocked=enabled;session?.setPreferences(value);refresh()
+    }
     func setLookAtMouse(_ enabled: Bool) {
         guard !isTerminating else { return }
         var value=preferences; value.lookAtMouse=enabled; session?.setPreferences(value); refresh()

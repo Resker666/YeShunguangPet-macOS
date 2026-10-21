@@ -58,4 +58,20 @@ import PetCore
         window.endSheet(sheet);sheet.orderOut(nil);XCTAssertNotNil(f.session.view.menu(for:event))
         status.dispose();XCTAssertNil(f.session.view.menu(for:event))
     }
+    func testPositionLockCommandsStayInSyncAndPreserveHotKeysOnSaveFailure()throws {
+        let f=try ShortcutFixture(bindings:[.init(action:.recall,combination:ShortcutFixture.a)]);defer{f.close()}
+        let status=status(f);defer{status.dispose()}
+        let menu=try XCTUnwrap(f.session.view.menu(for:event(f)))
+        let original=f.session.preferences.keyboardShortcuts
+        try invoke("锁定位置",in:menu);XCTAssertTrue(f.session.preferences.positionLocked)
+        let barLock=try XCTUnwrap(status.menu.items.first{$0.title=="锁定位置"});XCTAssertEqual(barLock.state,.on)
+        try invoke("设置…",in:menu);let model=try XCTUnwrap(status.settingsController?.model);XCTAssertTrue(model.preferences.positionLocked)
+        f.input.writeFails=true;try invoke("锁定位置",in:status.menu)
+        XCTAssertFalse(f.session.preferences.positionLocked);XCTAssertNotNil(model.saveError)
+        XCTAssertEqual(menu.items.first{$0.title=="锁定位置"}?.state,.off)
+        XCTAssertEqual(f.session.preferences.keyboardShortcuts,original)
+        f.input.writeFails=false;f.session.retrySave()
+        guard case .loaded(let saved)=SettingsStore(url:f.settingsURL).load() else{return XCTFail("saved")}
+        XCTAssertFalse(saved.preferences.positionLocked);XCTAssertEqual(saved.preferences.keyboardShortcuts,original)
+    }
 }

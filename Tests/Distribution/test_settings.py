@@ -56,16 +56,18 @@ class StandaloneSettingsTests(unittest.TestCase):
             settings.write_text(json.dumps({"schemaVersion": 1, "placement": position}))
             migrated_metrics = SMOKE.run_once(binary, work, 2)
             migrated = json.loads(settings.read_text())
-            self.assertEqual(migrated["schemaVersion"], 8)
+            self.assertEqual(migrated["schemaVersion"], 9)
             self.assertEqual(migrated["preferences"], {"scale": 1, "alwaysOnTop": True, "lookAtMouse": True,
                                                       "automaticActions": False, "automaticActionIntervalSeconds": 60,
-                                                      "desktopRoaming": False, "roamIntervalSeconds": 75, "speechEnabled": False, "keyboardShortcuts": []})
+                                                      "desktopRoaming": False, "roamIntervalSeconds": 75, "speechEnabled": False, "keyboardShortcuts": [],
+                                                      "snapToEdges": False, "positionLocked": False})
             self.assertTrue(migrated_metrics["lookAtMouseEnabled"])
             self.assertGreater(migrated_metrics["gazeSamples"], 0)
             self.assertEqual(migrated["placement"], position)
             preferences = {"scale": 1.5, "alwaysOnTop": False, "lookAtMouse": False,
                            "automaticActions": True, "automaticActionIntervalSeconds": 15,
-                           "desktopRoaming": True, "roamIntervalSeconds": 20, "speechEnabled": True, "keyboardShortcuts": []}
+                           "desktopRoaming": True, "roamIntervalSeconds": 20, "speechEnabled": True, "keyboardShortcuts": [],
+                           "snapToEdges": True, "positionLocked": True}
             migrated["preferences"] = preferences
             settings.write_text(json.dumps(migrated))
             for sequence in [3, 4]:

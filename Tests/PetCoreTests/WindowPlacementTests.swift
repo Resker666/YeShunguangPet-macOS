@@ -28,4 +28,14 @@ final class WindowPlacementTests: XCTestCase {
         XCTAssertNil(WindowPlacement.capture(origin:CGPoint(x:Double.nan,y:0),size:size,screens:[screen]))
         XCTAssertNil(WindowPlacement.restore(nil,size:.zero,screens:[screen]))
     }
+    func testSnapThresholdIsInclusiveInLogicalPointsAndChoosesNearestEdge() {
+        XCTAssertEqual(WindowPlacement.capture(origin:CGPoint(x:12,y:52),size:size,screens:[screen],snapToEdges:true)?.origin,CGPoint(x:0,y:40))
+        let beyond=CGPoint(x:12.01,y:52.01)
+        XCTAssertEqual(WindowPlacement.capture(origin:beyond,size:size,screens:[screen],snapToEdges:true)?.origin,beyond)
+        let narrow=ScreenArea(id:"narrow",visibleFrame:CGRect(x:-100,y:-100,width:212,height:228),isPrimary:true)
+        XCTAssertEqual(WindowPlacement.capture(origin:CGPoint(x:-89,y:-89),size:size,screens:[narrow],snapToEdges:true)?.origin,CGPoint(x:-80,y:-80))
+        XCTAssertEqual(WindowPlacement.capture(origin:CGPoint(x:-90,y:-90),size:size,screens:[narrow],snapToEdges:true)?.origin,CGPoint(x:-100,y:-100))
+        XCTAssertNil(WindowPlacement.capture(origin:.zero,size:size,screens:[],snapToEdges:true))
+        XCTAssertNil(WindowPlacement.capture(origin:CGPoint(x:Double.nan,y:0),size:size,screens:[screen],snapToEdges:true))
+    }
 }

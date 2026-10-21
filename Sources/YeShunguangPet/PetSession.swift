@@ -48,7 +48,7 @@ import PetCore
     var supportsRoaming: Bool { skin.manifest.animations[.runningLeft]?.loop==true && skin.manifest.animations[.runningRight]?.loop==true }
     private var canSampleGaze: Bool { gate.shouldRunFrames && !isQuiet && preferences.lookAtMouse && supportsGaze && action == .idle && !roaming.isWalking && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
     private var canRunAutomatic: Bool { gate.shouldRunFrames && !isQuiet && action == .idle && !roaming.isWalking && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
-    private var canRoam: Bool { gate.shouldRunFrames && !isQuiet && !interaction.isPointerBusy && !menuOpen && !settingsOpen && (action == .idle || roaming.isWalking) }
+    private var canRoam: Bool { gate.shouldRunFrames && !isQuiet && !preferences.positionLocked && !interaction.isPointerBusy && !menuOpen && !settingsOpen && (action == .idle || roaming.isWalking) }
     func setQuiet(_ quiet:Bool) {
         guard !gate.exiting,quiet != isQuiet else{return}
         isQuiet=quiet;cancelInput();onStatusChange?()
@@ -73,7 +73,14 @@ import PetCore
         super.init(); gate.loaded=true; panel.contentView=view
         playback.start(skin.manifest.animations[.idle]!)
         view.onDown = { [weak self] point,count in guard let self,self.gate.shouldRunFrames else { return }; self.dismissSpeech(); self.stopRoaming(); self.cancelAutomaticAction(); self.interaction.pointerDown(at:point,clickCount:count); self.reschedule() }
-        view.onMove = { [weak self] point in guard let self else { return }; self.apply(self.interaction.pointerMoved(to:point)); self.reschedule() }
+        view.onMove = { [weak self] point in
+            guard let self else{return}
+            let effects=self.interaction.pointerMoved(to:point)
+            // A locked drag is cancelled, so its mouse-up cannot become a click.
+            if self.preferences.positionLocked && !effects.isEmpty {self.interaction.cancel()}
+            else {self.apply(effects)}
+            self.reschedule()
+        }
         view.onUp = { [weak self] point in guard let self else { return }; self.apply(self.interaction.pointerUp(at:point)); self.reschedule() }
         NotificationCenter.default.addObserver(self,selector:#selector(screenNotification),name:NSApplication.didChangeScreenParametersNotification,object:nil)
         let center=NSWorkspace.shared.notificationCenter
@@ -239,7 +246,7 @@ import PetCore
         return current
     }
     private func updateRoaming() {
-        let enabled=preferences.desktopRoaming && supportsRoaming
+        let enabled=preferences.desktopRoaming && supportsRoaming && !preferences.positionLocked
         if roaming.isWalking && (!enabled || !canRoam) { stopRoaming() }
         roaming.update(enabled:enabled,intervalSeconds:preferences.roamIntervalSeconds,available:canRoam,at:now())
     }
@@ -276,13 +283,13 @@ import PetCore
                 let requested: PetAction=dx>0 ? .runningRight : dx<0 ? .runningLeft : .idle
                 let resolved=skin.manifest.resolve(requested)
                 if resolved != action { play(resolved) }
-            case .finishDrag: finishDrag(); play(.idle);requestSpeech(.drag)
+            case .finishDrag: finishDrag(snapping:preferences.snapToEdges); play(.idle);requestSpeech(.drag)
             case .play(let requested): play(requested);if requested == .waving {requestSpeech(.click)}
             }
         }
     }
-    func finishDrag() {
-        applyPlacement(WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()))
+    func finishDrag(snapping:Bool=false) {
+        applyPlacement(WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens(),snapToEdges:snapping))
         _=savePosition()
     }
     private func requestSpeech(_ event:SpeechEvent) {

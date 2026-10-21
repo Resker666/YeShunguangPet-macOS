@@ -39,6 +39,10 @@ struct InteractionSettingsView:View {
                 .accessibilityIdentifier("pet-roam-interval")
                 Text(model.roamingAvailable ? "默认关闭，间隔有 ±25% 浮动，每次约60–120点。鼠标靠近时停下；点击、拖动、菜单和设置会结束本次走动。走完自动保存位置。" : "此皮肤缺少左右循环行走动画；偏好会保留，换到支持的皮肤后生效。")
                     .font(.caption).foregroundStyle(.secondary)
+                if model.preferences.positionLocked {
+                    Text("位置已锁定，自动走动暂停；解除锁定后按原间隔重新等待。")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
         }.formStyle(.grouped)
     }

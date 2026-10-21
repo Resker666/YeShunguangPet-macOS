@@ -1427,6 +1427,7 @@
 				<string>D556D874D489F774087E6CF3</string>
 				<string>668E6E369B9ED89D3A109878</string>
 				<string>22E9026FAD5215905C5D52B5</string>
+				<string>8CF9B5611F0F2A616D6BD0E2</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1721,6 +1722,7 @@
 				<string>9BC5A4A03A5B7381E1BDDE63</string>
 				<string>9251C199A0288BF1E4587CB4</string>
 				<string>9B2D728F40C843D8DB79FCB9</string>
+				<string>3A9211111D1A886EC3371C53</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -2691,6 +2693,24 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>9B2D728F40C843D8DB79FCB9</string>
+		</dict>
+		<key>3A9211111D1A886EC3371C53</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/PlacementInteractionTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>8CF9B5611F0F2A616D6BD0E2</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>3A9211111D1A886EC3371C53</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>
