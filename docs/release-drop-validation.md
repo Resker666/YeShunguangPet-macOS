@@ -22,4 +22,16 @@ prepare-release.py使用Python标准库，先核对目录恰好八份普通文�
 
 ## 验证与交付状态
 
-当前先记录实施证据，最终原生/分发测试、评审、双架构包及本机安装结果在完成后补充。日志与探针均置于忽略的`.build/release-drop-validation/`。真实Finder拖入、GitHub草稿创建/上传、Intel实机、其他Mac及网络下载Gatekeeper首开不从本地回归推定通过。
+最终干净来源提交为`660a79e98fba178e7df026cabbdd5ac61789020b`；两架构build-info均记录该SHA与trackedChanges=false。后续仅补交付记录，产品/构建代码保持该提交一致。完整187项原生（98 Core + 89 Mac）通过，日志native-final.log；13项离线发版测试通过，日志release-final.log；actionlint退出0。原生输出仍有本机linkd/Workspace诊断，未写作“没有系统告警”。
+
+本地执行实际CI的八个run步骤，全部退出0：环境、发版离线测试、ARM与Intel构建、10项分发（约54.6秒）、双架构打包、来源/校验拦截。原生套件已独立通过，没有在排练中再跑；没有执行云端上传或Release写入。实际metadata步骤还验证四种事件/分支/勾选组合，普通push勾选、非main手动勾选均失败，合法main手动勾选和普通push不勾选通过；见dispatch-gates.json。八份真实包另由prepare-release.py --check-only通过，不读取Token、不联系GitHub。
+
+独立只读评审范围a5c3fd6..660a79e，Critical 0、Important 0、Minor 0，准予本地交付；评审独立重跑13项离线测试，查阅原生及静态检查证据，并核对官方API/action源码。未判断的真实Finder/焦点、云端草稿/发布、Intel/外机/Gatekeeper、登录/睡眠/Spaces/外屏以及强退/断电清理，均按既有合同或本轮未授权的外部操作保留为限制，没有静默删去。
+
+用独立测试Bundle、隔离配置与真实NSPasteboard/控制器路径，依次预览并确认知更鸟、胡桃、叶瞬光ZIP。确认前当前角色不变，确认后原JSON/PNG哈希与参考相同；实际设置视图渲染为PNG并查看，预览图、说明、按钮及高亮无裁切。见real-drops.json、drop-preview-render.png。该探针不是Finder物理鼠标操作，未用界面工具超时的旧证据冒充本轮实测。
+
+最终两份App与八份安装/校验文件分别核对签名、架构、依赖、许可、素材哈希和来源；DMG只读挂载后弹出，DMG与ZIP内逐文件/符号链接清单和构建App一致。ARM从DMG复制到项目外中文目录，剥离开发环境后独立启动、保存、正常退出和重开恢复通过。系统hdiutil弃用提示及测试刻意改依赖造成的签名提示保留在日志，分发断言零失败；没有宣称Intel实机、另一台Mac或网络下载Gatekeeper首开通过。
+
+准确路径的个人0.1.10进程正常退出并备份，ARM0.1.11安装到`/Applications/YeShunguangPet.app`；实际启动/正常退出后再次启动留供体验。schema7、全部偏好（含已开启台词）、皮肤选择和更新时位置核对保留，没有登记/撤销正式登录项。根dist的两个App和八份文件均与最终导出构建一致；旧App与个人配置备份留在忽略的验证目录，旧版安装包继续保留。可见的`dist/皮肤示例/知更鸟.zip`与此前真实ZIP逐字节相同，便于用户从Finder体验。
+
+完整证据位于忽略的`.build/release-drop-validation/`：native-final.log、release-final.log、dispatch-gates.json、rehearsal.json、real-drops.json、渲染PNG、final-delivery.json、release-assets-check.json及local-install.json。当前仍仅本地提交，未推送、打标签、创建远端草稿或发布。本轮用户整体验收、真实Finder拖入和云端草稿写入继续待明确反馈/指令。

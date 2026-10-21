@@ -105,3 +105,5 @@ shasum -a 256 -c YeShunguangPet-0.1.8-macOS-arm64.dmg.sha256
 重新运行所有job会产生新安装包，时间戳/签名等可能改变摘要；即使源码相同，也可能与已有草稿附件冲突。此时不要强行替换，可继续原构建的草稿job，或在核对后人工删除未发布草稿重新准备。14天Artifacts过期后须重新完整构建；公开Release附件与Artifacts保留期不同。
 
 本地可离线运行`python3 scripts/prepare-release.py --assets /八份附件所在目录 --version 0.1.11 --commit <完整SHA> --check-only`，不会读取Token或联系GitHub。离线测试用`python3 -m unittest discover -s Tests/Release -v`；它们不等于真实GitHub创建草稿和上传通过。当前0.1.11仍先本地交付，云端功能待明确推送及运行授权后实测。
+
+0.1.11本地证据：13项离线脚本测试、actionlint、实际metadata的四种触发门控、187项原生与10项分发、干净来源的双架构构建/打包及真实八份附件离线核对通过。独立只读评审无可行动问题；未执行新的云端job、GitHub草稿创建或上传。详见[本轮验证记录](release-drop-validation.md)。上一轮0.1.10已推送，main运行39554507226的181项原生/10项分发和Artifacts上传通过，与本轮本地结果分开记录。
