@@ -79,6 +79,7 @@ public enum SkinLoader {
         try readPackage(manifestURL:manifestURL).skin
     }
     public static func readPackage(manifestURL: URL) throws -> SkinPackage {
+        if manifestURL.isFileURL,manifestURL.pathExtension.lowercased()=="zip" {return try SkinArchive.readPackage(at:manifestURL)}
         guard manifestURL.isFileURL, manifestURL.lastPathComponent.lowercased()=="pet.json" else { throw SkinError("请选择本地皮肤目录中的 pet.json") }
         let directory=manifestURL.deletingLastPathComponent()
         let fd=try directoryHandle(directory); defer { close(fd) }

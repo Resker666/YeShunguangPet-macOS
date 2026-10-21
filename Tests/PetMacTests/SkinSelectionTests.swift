@@ -141,6 +141,36 @@ import PetCore
         XCTAssertNil(model.skinError)
         XCTAssertEqual(model.candidate?.skin.manifest.id,"alternate")
     }
+    func testZIPPreviewConfirmationAndRestartUseTheValidatedSnapshot() async throws {
+        let json=try Data(contentsOf:directory.appendingPathComponent("source/pet.json")),png=try Data(contentsOf:directory.appendingPathComponent("source/spritesheet.png"))
+        let archive=try ZIPFixtures.write([.init("下载/角色/pet.json",json,method:8),.init("下载/角色/spritesheet.png",png,method:8)],to:directory.appendingPathComponent("角色.zip"))
+        let session=makeSession();defer{session.prepareToExit()};session.start()
+        let model=SettingsModel(session:session),panel=session.panel,before=try FileManager.default.contentsOfDirectory(atPath:session.library.directory.path)
+        await model.previewSkin(at:archive)
+        XCTAssertNil(model.skinError);XCTAssertEqual(model.candidate?.skin.manifest.id,"alternate")
+        XCTAssertEqual(session.skin.manifest.id,"my-pet");XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:session.library.directory.path),before)
+        if let source=model.candidate?.skin.directory {XCTAssertFalse(FileManager.default.fileExists(atPath:source.path))}
+        try FileManager.default.removeItem(at:archive)
+        await model.confirmImport()
+        XCTAssertNil(model.skinError);XCTAssertNil(model.candidate);XCTAssertTrue(session.panel === panel)
+        XCTAssertEqual(session.skin.manifest.id,"alternate");XCTAssertEqual(session.scheduler.pendingCount,1)
+        XCTAssertEqual(try Data(contentsOf:session.skin.directory.appendingPathComponent("pet.json")),json)
+        XCTAssertEqual(try Data(contentsOf:session.skin.directory.appendingPathComponent("spritesheet.png")),png)
+        XCTAssertTrue(session.requestExit());session.prepareToExit()
+        let reopened=makeSession();defer{reopened.prepareToExit()};reopened.start();XCTAssertEqual(reopened.skin.manifest.id,"alternate")
+    }
+    func testAmbiguousZIPAndCancelledPreviewLeaveCurrentCharacterAndSettingsUntouched() async throws {
+        let json=try Data(contentsOf:directory.appendingPathComponent("source/pet.json")),png=try Data(contentsOf:directory.appendingPathComponent("source/spritesheet.png"))
+        let valid=try ZIPFixtures.write([.init("pet.json",json),.init("spritesheet.png",png)],to:directory.appendingPathComponent("valid.zip"))
+        let ambiguous=try ZIPFixtures.write([.init("a/pet.json",json),.init("b/pet.json",json)],to:directory.appendingPathComponent("ambiguous.zip"))
+        let session=makeSession();defer{session.prepareToExit()};session.start();XCTAssertTrue(session.requestExit())
+        let original=try Data(contentsOf:settingsURL),before=try FileManager.default.contentsOfDirectory(atPath:session.library.directory.path),model=SettingsModel(session:session)
+        await model.previewSkin(at:valid);XCTAssertNotNil(model.candidate)
+        await model.previewSkin(at:ambiguous);XCTAssertNil(model.candidate);XCTAssertNotNil(model.skinError)
+        await model.confirmImport();XCTAssertEqual(session.skin.manifest.id,"my-pet")
+        await model.previewSkin(at:valid);model.cancelSkinSelection();await model.confirmImport()
+        XCTAssertEqual(try Data(contentsOf:settingsURL),original);XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath:session.library.directory.path),before)
+    }
     func testProtectedSettingsRejectImportAndExitRejectsLateConfirmation() async throws {
         let original=Data("{broken".utf8); try original.write(to:settingsURL)
         let session=makeSession(); defer { session.prepareToExit() }

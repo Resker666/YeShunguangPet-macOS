@@ -2,7 +2,7 @@
 适用于本仓库。先读 docs/superpowers/specs/2026-10-20-macos-first-playable-design.md 和对应 plans 文件，检查 git status。
 - Swift 6、AppKit、macOS 15+；arm64优先日用，x86_64为用户同意增加的实验交叉构建。使用现有Xcode，不引入外部依赖。
 - 测试：bash scripts/test.sh；构建：bash scripts/build-app.sh；打包：bash scripts/package-app.sh。独立启动回归：python3 scripts/smoke-app.py。
-- 分发：0.1.9 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
+- 分发：0.1.10 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
 - 独立进程验证设置 YSGPET_SETTINGS_PATH 使用临时配置；不带该变量才使用个人 Application Support。
 - 用户已确认真实拖动、单击/双击、菜单隐藏/显示和召回正常。GUI 工具首次超时，后续可读取实际角色画面；焦点、Spaces、锁屏和真实睡眠仍未验证，不能以属性或模拟事件当作通过。
 - 真实皮肤 JSON/PNG 字节保持不变；源码 MIT 与第三方素材声明分开。
@@ -21,3 +21,5 @@
 - 0.1.9互动台词默认关闭，单击确认及拖动结束触发；皮肤speech优先，省略/null使用原版默认文案，显式空不回退。30秒全局冷却、有备选时避免重复，显示6秒；双击不说。被动子窗口不key/main、不接鼠标，保持屏内且不遮角色；生命周期/菜单/设置/换肤/安静及新动作收起，复用同一调度。schema7读取1–6并默认台词关闭，保留既有偏好/UUID/位置。
 - 0.1.9登录启动使用SMAppService.mainApp，系统status为真源，不在配置伪存自启布尔。仅从系统或用户Applications目录允许新登记；临时路径仍能撤销已有登记。区分enabled/requiresApproval/notFound和失败，回App时刷新；不自动登记或打开系统设置。独立ad-hoc测试Bundle登记/撤销不等于正式App或真实重新登录通过；测试不得改正式登录项。
 - 0.1.9本地交付已完成：159项原生、10项分发，双架构包及ARM搬移重开通过；台词无空间不消耗冷却，评审Minor修复并复核。个人App已迁至/Applications/YeShunguangPet.app且运行，schema6→7保留个人偏好/皮肤/迁移时位置。后续更新需先按准确路径正常退出旧进程；正式登录启动未自动开启，真实重登、0.1.9用户整体验收及Intel实机仍未验证。详见docs/daily-companion-validation.md。
+- 0.1.9随后已按用户明确指令推送并发布v0.1.9，标签固定8ad4355；main云端39537810080的159项原生/10项分发通过，8份Release附件公开下载校验通过。该发布不自动授权下一版推送或发布，也不等于用户系统场景验收。
+- 0.1.10 ZIP导入复用现有预览/确认/原字节副本流程，配置保持schema7。SkinArchive使用已有系统zlib，支持一套皮肤、根目录或外层文件夹、Stored/Deflate、32位数据描述符、UTF-8或Unicode路径extra；拒绝分卷/加密/ZIP64/其他压缩与非UTF-8旧式名称并提示先解压。80 MiB压缩、512条目、16层路径、64 MiB单文件、128 MiB总展开，JSON仍128 KiB；检查中央/本地记录、重叠、重复/冲突路径、链接/特殊文件、CRC和实际展开上限。归档路径从不交给文件系统，仅在0700临时目录验证固定的JSON/PNG后立即清理；SkinPackage已持有预览字节，确认导入不再依赖原ZIP。Windows/旧素材不变，不将失败预览写入皮肤库。

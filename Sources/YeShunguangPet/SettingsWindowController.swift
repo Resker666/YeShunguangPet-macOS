@@ -208,9 +208,9 @@ import ServiceManagement
     private func chooseSkin() {
         guard let window,!model.isTerminating,!model.isBusy,filePanel==nil else { return }
         let panel=NSOpenPanel()
-        panel.title="选择皮肤"; panel.message="选择皮肤文件夹或其中的 pet.json；对应 PNG 需放在同一文件夹。"
+        panel.title="选择皮肤"; panel.message="选择包含一套皮肤的 ZIP、皮肤文件夹或其中的 pet.json。"
         panel.prompt="预览"; panel.canChooseFiles=true; panel.canChooseDirectories=true
-        panel.allowsMultipleSelection=false; panel.allowedContentTypes=[.json]
+        panel.allowsMultipleSelection=false; panel.allowedContentTypes=[.json,.zip]
         filePanel=panel
         panel.beginSheetModal(for:window) { [weak self] response in
             guard let self else { return }
@@ -274,7 +274,7 @@ private struct PetSettingsView: View {
                 if model.isBusy { HStack { ProgressView().controlSize(.small); Text("正在处理皮肤…") } }
                 if let error=model.skinError { Text(error).font(.caption).foregroundStyle(.red).textSelection(.enabled) }
                 if let warning=model.skinWarning { Text(warning).font(.caption).foregroundStyle(.secondary).textSelection(.enabled) }
-                Text("导入会保存素材副本，原文件保持不变。预览为待机首帧。")
+                Text("支持 ZIP、文件夹和 pet.json。预览后确认才保存素材副本，原文件保持不变。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("已导入皮肤") {

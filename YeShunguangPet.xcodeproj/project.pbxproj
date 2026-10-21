@@ -257,6 +257,7 @@
 				<string>B0E56FF5915DA3ACA3767AEA</string>
 				<string>501EA0E4F561B1E4DCDC3BDC</string>
 				<string>BCA692505E41460C20DA83B1</string>
+				<string>FB2098EF77AC53FA5070FDDF</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -600,6 +601,8 @@
 				<string>630549681CCB20040EC4CFE9</string>
 				<string>0BDA2873CD942884D62788FD</string>
 				<string>456185A222D9FF6477263AB0</string>
+				<string>24860D3D996CDAF5B39616D4</string>
+				<string>ECFD3AFA2931BF3B2925B96E</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1391,6 +1394,7 @@
 				<string>DA08D6CA0144256A5942502A</string>
 				<string>9641A97952F0EF9F444D9C95</string>
 				<string>20D446C04DC1D193F25CEE57</string>
+				<string>C1C83F29D22917D135C8449F</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1661,6 +1665,9 @@
 				<string>62EB7AF77548EE6DE0AF59FA</string>
 				<string>20E6EA63570F6AB77453D3CD</string>
 				<string>C5D32DA13E522FD4EEDEDF37</string>
+				<string>0535ECBB7FA11815C53F7170</string>
+				<string>310976EC8BE32FF5E3E1C3F6</string>
+				<string>B11F50091163142C2AA97C59</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -2115,6 +2122,67 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>C5D32DA13E522FD4EEDEDF37</string>
+		</dict>
+		<key>0535ECBB7FA11815C53F7170</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/Support/ZIPFixtures.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>24860D3D996CDAF5B39616D4</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>0535ECBB7FA11815C53F7170</string>
+		</dict>
+		<key>C1C83F29D22917D135C8449F</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>0535ECBB7FA11815C53F7170</string>
+		</dict>
+		<key>310976EC8BE32FF5E3E1C3F6</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetCoreTests/SkinArchiveTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>ECFD3AFA2931BF3B2925B96E</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>310976EC8BE32FF5E3E1C3F6</string>
+		</dict>
+		<key>B11F50091163142C2AA97C59</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/PetCore/Skin/SkinArchive.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>FB2098EF77AC53FA5070FDDF</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>B11F50091163142C2AA97C59</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

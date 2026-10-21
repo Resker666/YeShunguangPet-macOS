@@ -1,10 +1,12 @@
 # YeShunguangPet macOS
 
-为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前为免费分发体验版 0.1.9。
+为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前开发体验版为 0.1.10，ZIP皮肤导入尚未公开发布；最新已发布版为0.1.9。
 
 延后验证事项与后续候选路线见 [项目待办](TODO.md)。日用设置见 [设置验证记录](docs/settings-validation.md)；皮肤导入与切换见 [皮肤导入记录](docs/skin-import-validation.md)，已有副本管理见 [皮肤库验证记录](docs/skin-library-validation.md)，注视与资源采样见 [注视验证记录](docs/gaze-validation.md)，自动小动作见 [验证记录](docs/automatic-actions-validation.md)，小范围走动见 [走动验证](docs/roaming-validation.md)。
 
 ## 安装体验版
+
+普通用户从[最新 Release](https://github.com/Resker666/YeShunguangPet-macOS/releases/latest)下载安装包，无需从源码构建或登录后下载Actions产物。选择`arm64.dmg`用于M系列Mac，`x86_64.dmg`用于Intel实验测试。
 
 使用者不需要安装 Xcode、Swift 或其他依赖。日用包请选择 M 系列 Mac（arm64）；另提供x86_64实验包用于Intel／黑苹果验证。两种包分开，文件名标明架构。部署目标仍为15.0，日用体验在 M4 / macOS 27.0 实测，另有macOS 26.6.2云端自动回归；真实Intel／黑苹果及其他系统的日用体验尚待验证。
 
@@ -44,11 +46,15 @@ App 不显示 Dock 图标；请从菜单栏退出。首次启动会在主屏右�
 
 默认随附未经改写的叶瞬光 JSON/PNG。角色默认以格尺寸对应逻辑点显示，叶瞬光为192×208点。“设置…”提供50%–200%大小调整及置顶开关，立即生效并自动保存；关闭置顶后角色可能被其他窗口遮挡，可从菜单栏召回。
 
-在设置的“皮肤”区域点“选择皮肤…”，选择解压后的皮肤文件夹或`pet.json`，查看名称与待机首帧预览，再点“导入并使用”。清单与对应PNG会按原字节复制到`~/Library/Application Support/YeShunguangPet-macOS/Skins/`，不依赖下载目录中的原文件；再次启动恢复所选皮肤。校验、复制或保存失败时继续使用当前角色，显示具体原因。“恢复默认皮肤”切回随附叶瞬光。取消预览不会导入；关闭设置窗口会取消尚未确认的操作。
+在设置的“皮肤”区域点“选择皮肤…”，选择包含一套皮肤的ZIP（0.1.10新增）、皮肤文件夹或`pet.json`，查看名称与待机首帧预览，再点“导入并使用”。清单与对应PNG会按原字节复制到`~/Library/Application Support/YeShunguangPet-macOS/Skins/`，不依赖下载目录中的原文件；再次启动恢复所选皮肤。校验、复制或保存失败时继续使用当前角色，显示具体原因。“恢复默认皮肤”切回随附叶瞬光。取消预览不会导入；关闭设置窗口会取消尚未确认的操作。
 
 设置中的“已导入皮肤”自动识别之前保存的副本，显示名称、待机缩略图与使用状态；点“使用”即可切换，不必重新选择原文件，也不增加副本。可以确认删除未使用的副本，原始文件保持不变；当前使用、配置仍记住的皮肤或原配置受保护时不可删除。损坏的副本单独显示错误，可以删除，不影响其他皮肤。“刷新皮肤列表”重新读取受管理目录。
 
-重复导入仍会保存独立副本；只想换回旧角色时请使用列表。正常退出会等待当前导入完成，再清理本次未使用的副本；强制结束或断电没有此保证，也不会自动清空历史副本。暂不支持直接选择ZIP，请先解压。也可以从终端指定一个仅用于本次启动的本地皮肤：
+重复导入仍会保存独立副本；只想换回旧角色时请使用列表。正常退出会等待当前导入完成，再清理本次未使用的副本；强制结束或断电没有此保证，也不会自动清空历史副本。
+
+ZIP可直接在根目录放`pet.json`和PNG，也可套常见外层文件夹（最多16层路径）。一次只导入一套；含多套皮肤时请先解压再选其中一套。支持普通Stored/Deflate ZIP及UTF-8/Unicode路径记录；加密、分卷、ZIP64、其他压缩方式或旧式非UTF-8文件名请先解压。包内最多512个条目，ZIP不超过80 MiB、单文件不超过64 MiB、声明展开总量不超过128 MiB，JSON仍限制128 KiB。拒绝路径越界、链接、重复/冲突路径、大小与CRC不符。预览只临时还原所需JSON/PNG并清理，不将包内任意路径写入磁盘。
+
+也可以从终端指定一个仅用于本次启动的本地皮肤：
 
 ```bash
 dist/YeShunguangPet.app/Contents/MacOS/YeShunguangPet --skin /绝对路径/pet.json
@@ -82,7 +88,7 @@ python3 scripts/smoke-app.py --app /绝对路径/YeShunguangPet.app --check-rest
 
 构建需要 Xcode；使用 App 不需要。默认ARM App在`dist/YeShunguangPet.app`，Intel App在`dist/x86_64/YeShunguangPet.app`。两者主程序和嵌入框架架构必须一致；打包时会核对所选架构，拒绝错误标签或混合框架。
 
-打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.9-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名、公证或公开发布，`Contents/Resources/build-info.json`记录构建提交和架构。
+打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.10-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.9已按用户指令发布，0.1.10仍先本地交付，后续推送与发布需明确指令。
 
 App 图标由原仓库 ICO 转换，原图256×256；大尺寸仅作缩放，不新增绘制细节。需要重新生成时运行 `bash tools/make-icon.sh`，使用系统 sips/iconutil，无外部图像工具依赖。
 
