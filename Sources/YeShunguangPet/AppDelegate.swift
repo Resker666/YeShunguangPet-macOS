@@ -30,9 +30,8 @@ import Darwin
     }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         if terminationPending { return .terminateLater }
-        let controller=status?.settingsController
         status?.beginTermination()
-        let model=controller?.model
+        let model=status?.skinModel
         if let model,model.hasPendingMutation {
             terminationPending=true
             Task {

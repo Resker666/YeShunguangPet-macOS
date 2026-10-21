@@ -10,15 +10,16 @@ import PetCore
     @Published private(set) var preferences: PetPreferences
     @Published private(set) var saveError: String?
     @Published private(set) var candidate: SkinPackage?
-    @Published private(set) var skinError: String?
-    @Published private(set) var isBusy=false
+    @Published private(set) var skinError: String? {didSet{onSkinStateChange?()}}
+    @Published private(set) var isBusy=false {didSet{onSkinStateChange?()}}
     @Published private(set) var skinName: String
     @Published private(set) var currentImage: CGImage?
     @Published private(set) var candidateImage: CGImage?
     @Published private(set) var skinWarning: String?
-    @Published private(set) var libraryEntries=[SkinLibraryEntry]()
-    @Published private(set) var libraryError: String?
-    @Published private(set) var isTerminating=false
+    @Published private(set) var libraryEntries=[SkinLibraryEntry]() {didSet{onSkinStateChange?()}}
+    @Published private(set) var libraryError: String? {didSet{onSkinStateChange?()}}
+    @Published private(set) var isTerminating=false {didSet{onSkinStateChange?()}}
+    var onSkinStateChange:(()->Void)?
     @Published private(set) var gazeAvailable=false
     @Published private(set) var roamingAvailable=false
     @Published var isDropTargeted=false

@@ -46,13 +46,13 @@ import UniformTypeIdentifiers
     private weak var session: PetSession?
     private var filePanel: NSOpenPanel?
     private var previewTask:Task<Void,Never>?
-    init(session: PetSession,updates:ReleaseUpdateModel,shortcuts:ShortcutController,loginItem:LoginItemController?=nil) {
+    init(session: PetSession,updates:ReleaseUpdateModel,shortcuts:ShortcutController,loginItem:LoginItemController?=nil,model:SettingsModel?=nil) {
         self.updates=updates;self.shortcuts=shortcuts
-        self.session=session; model=SettingsModel(session:session,loginItem:loginItem)
+        self.session=session; self.model=model ?? SettingsModel(session:session,loginItem:loginItem)
         let window=NSWindow(contentRect:CGRect(x:0,y:0,width:520,height:640),styleMask:[.titled,.closable,.miniaturizable,.resizable],backing:.buffered,defer:false)
         window.minSize=CGSize(width:520,height:480); window.title="叶瞬光桌宠设置"; window.isReleasedWhenClosed=false
         super.init(window:window)
-        let view=SkinDropHostingView(rootView:AnyView(SettingsTabsView(model:model,updates:updates,shortcuts:shortcuts,login:model.loginItem,onChooseSkin:{ [weak self] in self?.chooseSkin() })))
+        let view=SkinDropHostingView(rootView:AnyView(SettingsTabsView(model:self.model,updates:updates,shortcuts:shortcuts,login:self.model.loginItem,onChooseSkin:{ [weak self] in self?.chooseSkin() })))
         view.canAccept={ [weak self] in self?.canAcceptSkinDrop==true }
         view.onDrop={ [weak self] board in self?.acceptSkinDrop(from:board) != nil }
         view.onTargetChanged={ [weak self] targeted in self?.model.isDropTargeted=targeted }

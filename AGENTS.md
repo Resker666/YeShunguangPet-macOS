@@ -2,7 +2,7 @@
 适用于本仓库。先读 docs/superpowers/specs/2026-10-20-macos-first-playable-design.md 和对应 plans 文件，检查 git status。
 - Swift 6、AppKit、macOS 15+；arm64优先日用，x86_64为用户同意增加的实验交叉构建。使用现有Xcode，不引入外部依赖。
 - 测试：bash scripts/test.sh；构建：bash scripts/build-app.sh；打包：bash scripts/package-app.sh。独立启动回归：python3 scripts/smoke-app.py。
-- 分发：0.1.13 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
+- 分发：0.1.14 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
 - 独立进程验证设置 YSGPET_SETTINGS_PATH 使用临时配置；不带该变量才使用个人 Application Support。
 - 用户已确认真实拖动、单击/双击、菜单隐藏/显示和召回正常。GUI 工具首次超时，后续可读取实际角色画面；焦点、Spaces、锁屏和真实睡眠仍未验证，不能以属性或模拟事件当作通过。
 - 真实皮肤 JSON/PNG 字节保持不变；源码 MIT 与第三方素材声明分开。
@@ -46,3 +46,5 @@
 - 0.1.13本地交付完成：227项原生（110Core/117Mac）、13项离线发版、10项分发及八附件离线核验通过。评审5f84d9d..64123f7无Critical/Important/Minor；干净来源64123f7的双架构包、签名/素材/库存/摘要及ARM搬移重开通过。隔离Bundle真实皮肤/页面渲染、最小窗口滚动及合成右键/Control左键窗口分派通过，均无待点击；不记作物理输入或焦点实测。AppKit窗口会取整坐标，精确12.01阈值由纯几何验证，原生窗口以13点验证阈值外。
 - /Applications日用App已更新并运行0.1.13/build14，schema8→9原偏好/皮肤/迁移时位置/快捷键保留，新开关false；旧App和配置已备份，正式登录项未改。用户整体验收、物理右键/拖动/选中Tab现场显示、系统/Intel/外机/Gatekeeper仍待验证，详见docs/context-placement-validation.md及TODO。只保留本地codex/macos-context-menu-placement，未推送、打标签或发布0.1.13。
 - 用户随后反馈“验证通过，推送，下一版做什么”：确认0.1.13本机整体体验，授权按既有流程同步main和codex/macos-context-menu-placement，普通push；不触发prepare_release，不打标签或创建/发布Release。反馈不扩展为逐项物理输入、选中Tab显示、焦点/系统/Intel/外机验收通过；下一版先给候选方向，尚未授权产品实施。
+- 0.1.13已按授权推送48dcca9；main云端39603903286和开发分支39603903351成功，227项原生/13项离线发版/10项分发及双架构Artifacts上传通过，草稿job跳过。本轮核对日志和附件元数据，未另下载；未打标签或发布。
+- 0.1.14用户选择A并确认菜单快捷换肤短设计，本会话直接实施、不另建工作树。StatusBarController持有共享skinModel，SettingsWindowController复用；AppDelegate退出检查共享模型，覆盖未打开设置时的皮肤任务。QuickSkinMenus拥有两个独立子菜单，背景列表读取使用原reloadLibrary，任务单飞/缓存，选中项勾选、损坏置灰、规范化重名用短UUID区分。缓存选择取消尚未开始的刷新，防止刷新抢先使换肤被忽略。子菜单纳入菜单暂停集合；模态/忙碌/退出拒收，失败保留原角色且菜单可查看设置/列表可重试。配置仍schema9，无新计时器、无额外复制皮肤。验证与本地交付状态见docs/quick-skin-validation.md；0.1.14仍未授权推送或Release。

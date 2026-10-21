@@ -5,6 +5,8 @@ import PetCore
     let updates:ReleaseUpdateModel
     private(set) var shortcuts:ShortcutController?
     private let loginItem:LoginItemController?
+    let skinModel:SettingsModel?
+    private var quickSkins:QuickSkinMenus?
     private var openMenus=Set<ObjectIdentifier>(),terminating=false
     private var menuOpen:Bool { !openMenus.isEmpty }
     let checkUpdatesItem=NSMenuItem(title:"检查更新…",action:#selector(checkUpdates),keyEquivalent:"")
@@ -35,8 +37,9 @@ import PetCore
         #else
         let architecture=ReleaseArchitecture.x86_64
         #endif
-        self.updates=updates ?? ReleaseUpdateModel(currentVersion:ReleaseVersion(tag:Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") ?? ReleaseVersion(tag:"0.1.13")!,architecture:architecture,client:ReleaseUpdateClient())
+        self.updates=updates ?? ReleaseUpdateModel(currentVersion:ReleaseVersion(tag:Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") ?? ReleaseVersion(tag:"0.1.14")!,architecture:architecture,client:ReleaseUpdateClient())
         self.loginItem=loginItem
+        self.skinModel=session.map{SettingsModel(session:$0,loginItem:loginItem)}
         self.session=session; self.onQuit=onQuit; item=NSStatusBar.system.statusItem(withLength:NSStatusItem.squareLength)
         super.init()
         if let session {
@@ -64,6 +67,16 @@ import PetCore
         for entry in [contextSettingsItem,contextQuietItem,contextLockItem,contextHideItem,waveItem,jumpItem] {entry.target=self;contextMenu.addItem(entry)}
         contextQuietItem.toolTip=quietItem.toolTip
         contextLockItem.toolTip=lockItem.toolTip
+        if let session,let skinModel {
+            let skins=QuickSkinMenus(session:session,model:skinModel,canDispatch:{[weak self] in
+                guard let self else{return false}
+                return !self.terminating && self.session?.gate.exiting==false && self.settingsController?.hasBlockingSheet != true && NSApp.modalWindow==nil
+            },onManage:{[weak self] in self?.presentSettings(tab:.skin)})
+            quickSkins=skins
+            for (parent,child) in zip([menu,contextMenu],skins.menus) {
+                let entry=NSMenuItem(title:"切换皮肤",action:nil,keyEquivalent:"");entry.submenu=child;parent.insertItem(entry,at:0);child.delegate=self
+            }
+        }
         session?.view.contextMenu = { [weak self] in
             guard let self,!self.terminating,self.session?.gate.shouldRunFrames==true,self.settingsController?.hasBlockingSheet != true,NSApp.modalWindow==nil else{return nil}
             self.refresh();return self.contextMenu
@@ -73,7 +86,7 @@ import PetCore
     func refresh() {
         visibilityItem.title=session?.isVisible == true ? "隐藏角色" : "显示角色"; visibilityItem.isEnabled=session != nil; recallItem.isEnabled=session != nil
         checkUpdatesItem.isEnabled=session != nil
-        settingsItem.isEnabled=session != nil; settingsController?.model.refresh()
+        settingsItem.isEnabled=session != nil; skinModel?.refresh()
         quietItem.isEnabled=session != nil;quietItem.state=session?.isQuiet == true ? .on : .off
         contextQuietItem.state=quietItem.state
         lockItem.isEnabled=session != nil && !terminating;lockItem.state=session?.preferences.positionLocked==true ? .on : .off;contextLockItem.state=lockItem.state
@@ -83,12 +96,14 @@ import PetCore
         persistenceItem.isHidden=message==nil; persistenceItem.title=session?.protectedSettings == true ? "原配置受保护，设置暂不保存" : "设置保存失败"; persistenceItem.toolTip=message
         retryItem.isHidden=message==nil || session?.protectedSettings == true
         resetItem.isHidden=session?.protectedSettings != true
+        quickSkins?.refresh()
     }
     @objc private func retry() { session?.retrySave(); refresh() }
     @objc private func reset() { session?.resetProtectedSettings(); refresh() }
     func menuWillOpen(_ menu: NSMenu) {
-        guard menu === self.menu || menu === contextMenu else{return}
+        guard menu === self.menu || menu === contextMenu || quickSkins?.menus.contains(where:{$0 === menu})==true else{return}
         openMenus.insert(ObjectIdentifier(menu));session?.setMenuOpen(true);refresh()
+        quickSkins?.reload()
     }
     func menuDidClose(_ menu: NSMenu) {
         openMenus.remove(ObjectIdentifier(menu));session?.setMenuOpen(menuOpen)
@@ -105,13 +120,13 @@ import PetCore
     @objc private func openSettings() {presentSettings()}
     private func presentSettings(tab:SettingsTab?=nil) {
         guard let session,let shortcuts else { return }
-        if settingsController == nil { settingsController=SettingsWindowController(session:session,updates:updates,shortcuts:shortcuts,loginItem:loginItem) }
+        if settingsController == nil { settingsController=SettingsWindowController(session:session,updates:updates,shortcuts:shortcuts,loginItem:loginItem,model:skinModel) }
         settingsController?.present(tab:tab)
     }
     @objc private func checkUpdates() {guard session != nil else{return};presentSettings(tab:.about);updates.check()}
     func startShortcuts(){shortcuts?.start()}
-    func beginTermination(){terminating=true;contextMenu.cancelTracking();updates.cancel();settingsController?.beginTermination();refresh()}
-    func cancelTermination(){terminating=false;settingsController?.model.cancelTermination();refresh()}
+    func beginTermination(){terminating=true;contextMenu.cancelTracking();updates.cancel();quickSkins?.cancel();if let settingsController{settingsController.beginTermination()}else{skinModel?.beginTermination()};refresh()}
+    func cancelTermination(){terminating=false;skinModel?.cancelTermination();refresh()}
     @objc private func quit() { onQuit() }
-    func dispose() { terminating=true;contextMenu.cancelTracking();session?.view.contextMenu=nil;contextMenu.delegate=nil;openMenus.removeAll();updates.cancel();shortcuts?.dispose();settingsController?.close(); settingsController=nil; session?.setMenuOpen(false); item.menu=nil; menu.delegate=nil; NSStatusBar.system.removeStatusItem(item) }
+    func dispose() { terminating=true;contextMenu.cancelTracking();quickSkins?.dispose();quickSkins=nil;session?.view.contextMenu=nil;contextMenu.delegate=nil;openMenus.removeAll();updates.cancel();shortcuts?.dispose();settingsController?.close(); settingsController=nil; session?.setMenuOpen(false); item.menu=nil; menu.delegate=nil; NSStatusBar.system.removeStatusItem(item) }
 }
