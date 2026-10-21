@@ -81,11 +81,11 @@
 - 网络边界`ReleaseFetching: Sendable`：`func fetchLatest(architecture: ReleaseArchitecture) async throws -> ReleaseInfo`；`ReleaseUpdateClient`为生产实现，允许测试注入URLSessionConfiguration的URLProtocol，仅生产固定官方endpoint。
 - `@MainActor ReleaseUpdateModel: ObservableObject`：`init(currentVersion: ReleaseVersion, architecture: ReleaseArchitecture, client: any ReleaseFetching)`；`state: ReleaseUpdateState`只读发布，状态为idle/checking/success(info,comparison)/failure(message)；`check()`去重，`cancel()`取消并使旧代次失效。
 
-- [ ] **Step 1: 写失败用例。** `testManualOnlyDedupAndStaleCompletion`用可控异步传输替身断言初始化请求计数0、两次check仅1、cancel后重试变2，先完成新请求再送旧成功/失败都不覆盖新state。`testBoundedTransportAndRedirects`用URLProtocol喂真实客户端：声明1048577直接拒绝；声明缺失/较小但实际1048577仍拒绝；合法JSON补空白至1048576接受；302跨站不跟随。`testTransportContractAndFailures`检查GET/固定URL、Accept和API头、无Authorization/Cookie、15/20秒及无持久缓存；覆盖200坏JSON、403/429限流、404无公开版本、500、超时、断网、取消与非HTTP响应。
-- [ ] **Step 2: 验证RED。** `bash scripts/test.sh -only-testing:PetMacTests/ReleaseUpdateTests`。Expected: 新客户端/模型缺失；替身须能完成各请求，不依赖真实网络或睡眠延时。
-- [ ] **Step 3: 实现传输。** 临时session禁用cookie/cache，使用官方Accept与`X-GitHub-Api-Version: 2026-03-10`；固定canonical URL，不跟随重定向。逐块或AsyncBytes累计接收前检查1048576上限，超限立即取消，不能先`data(for:)`完整分配后才检查。取消向底层task传播，资源在请求完成后释放。
-- [ ] **Step 4: 实现模型并验证GREEN。** 单独持有Task和代次；关闭/退出可同步使旧回调失效，正常打开/切页不查询。运行Step 2命令及任务1测试。Expected: 全通过，无测试访问公网。
-- [ ] **Step 5: 本地提交。** 提交`feat: add bounded manual release checks with cancellation`。
+- [x] **Step 1: 写失败用例。** `testManualOnlyDedupAndStaleCompletion`用可控异步传输替身断言初始化请求计数0、两次check仅1、cancel后重试变2，先完成新请求再送旧成功/失败都不覆盖新state。`testBoundedTransportAndRedirects`用URLProtocol喂真实客户端：声明1048577直接拒绝；声明缺失/较小但实际1048577仍拒绝；合法JSON补空白至1048576接受；302跨站不跟随。`testTransportContractAndFailures`检查GET/固定URL、Accept和API头、无Authorization/Cookie、15/20秒及无持久缓存；覆盖200坏JSON、403/429限流、404无公开版本、500、超时、断网、取消与非HTTP响应。
+- [x] **Step 2: 验证RED。** `bash scripts/test.sh -only-testing:PetMacTests/ReleaseUpdateTests`。Expected: 新客户端/模型缺失；替身须能完成各请求，不依赖真实网络或睡眠延时。
+- [x] **Step 3: 实现传输。** 临时session禁用cookie/cache，使用官方Accept与`X-GitHub-Api-Version: 2026-03-10`；固定canonical URL，不跟随重定向。逐块或AsyncBytes累计接收前检查1048576上限，超限立即取消，不能先`data(for:)`完整分配后才检查。取消向底层task传播，资源在请求完成后释放。
+- [x] **Step 4: 实现模型并验证GREEN。** 单独持有Task和代次；关闭/退出可同步使旧回调失效，正常打开/切页不查询。运行Step 2命令及任务1测试。Expected: 全通过，无测试访问公网。
+- [x] **Step 5: 本地提交。** 提交`feat: add bounded manual release checks with cancellation`。
 
 ### Task 3: 快捷键值类型与schema8兼容
 
