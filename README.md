@@ -1,6 +1,6 @@
 # YeShunguangPet macOS
 
-为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前 0.1.20 / build21 已完成本地交付，提供手动使用帮助与复制诊断信息，用户整体体验待验收；尚未推送或发布。公开最新版为 [0.1.19](https://github.com/Resker666/YeShunguangPet-macOS/releases/tag/v0.1.19)，最低系统为 macOS 14.0。
+为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前 0.1.20 / build21 已完成本地交付，提供手动使用帮助与复制诊断信息；用户反馈本机整体体验通过，已授权普通同步，远端与CI结果待记录。公开最新版为 [0.1.19](https://github.com/Resker666/YeShunguangPet-macOS/releases/tag/v0.1.19)，最低系统为 macOS 14.0。
 
 延后验证事项与后续候选路线见 [项目待办](TODO.md)。0.1.12更新、快捷键和设置分组的证据与限制见[验证记录](docs/update-shortcuts-settings-validation.md)。日用设置见 [设置验证记录](docs/settings-validation.md)；皮肤导入与切换见 [皮肤导入记录](docs/skin-import-validation.md)，已有副本管理见 [皮肤库验证记录](docs/skin-library-validation.md)，注视与资源采样见 [注视验证记录](docs/gaze-validation.md)，自动小动作见 [验证记录](docs/automatic-actions-validation.md)，小范围走动见 [走动验证](docs/roaming-validation.md)。
 
@@ -122,7 +122,7 @@ python3 scripts/smoke-app.py --app /绝对路径/YeShunguangPet.app --check-rest
 
 构建需要 Xcode；使用 App 不需要。默认ARM App在`dist/YeShunguangPet.app`，Intel App在`dist/x86_64/YeShunguangPet.app`。两者主程序和嵌入框架架构必须一致；打包核对所选架构、Info.plist声明和两个Mach-O的实际macOS 14.0最低版本，拒绝错误标签、混合框架或最低版本不符的包。
 
-打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.20-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.19已公开发布八份附件，标签及云端包来源为`37a73f0cd163dbb172300d0df269a4b7575180b5`，两路CI通过并获本台黑苹果整体体验通过反馈；本地历史交付包来源仍为`5164ba9`。0.1.20已从干净来源`e15b7399248385a95eabcb309f098f446c0cf31a`本地交付；未推送、合并main、打标签或发布，远端操作未获授权。
+打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.20-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.19已公开发布八份附件，标签及云端包来源为`37a73f0cd163dbb172300d0df269a4b7575180b5`，两路CI通过并获本台黑苹果整体体验通过反馈；本地历史交付包来源仍为`5164ba9`。0.1.20已从干净来源`e15b7399248385a95eabcb309f098f446c0cf31a`本地交付，用户已授权按既有流程普通同步；远端与CI结果待记录。
 
 App 图标由原仓库 ICO 转换，原图256×256；大尺寸仅作缩放，不新增绘制细节。需要重新生成时运行 `bash tools/make-icon.sh`，使用系统 sips/iconutil，无外部图像工具依赖。
 
