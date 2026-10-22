@@ -44,3 +44,9 @@ App：/Applications/YeShunguangPet.app；安装包：dist/YeShunguangPet-0.1.17-
 保留本地codex/macos-focus-reminders-compact，未合并main、推送、打标签或发布；云端未构建本版。
 
 真实键鼠、跨应用焦点、系统睡眠/Spaces/登录/热插拔、Intel/黑苹果、外机与Gatekeeper首开仍未测；不使用程序化回调、窗口属性或交叉构建代替。声音实际可闻和个人整体体验留给用户验收。未改正式登录项、Windows仓库或Minimal Sleep。
+
+## 用户验收与推送授权
+
+用户随后在本会话反馈“验证通过推送”，确认0.1.17完成提醒与紧凑计时窗的本机整体体验，并授权按既有流程同步main与codex/macos-focus-reminders-compact。只做普通push，不触发prepare_release、不打标签或创建/发布Release。
+
+该反馈不扩展为每段声音、每项模态/睡眠/取消退出抑制、全部拖动/重开或物理输入场景均逐项实测，也不代表系统、Intel/外机/Gatekeeper通过。前述“待验收”“未推送”为本地交付时状态，远端及CI结果以本轮实际检查另记；未授权下一版功能实施。
