@@ -1,6 +1,6 @@
 # YeShunguangPet macOS
 
-为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前开发体验版为 0.1.18，增加快捷专注和今日统计，本版尚未公开发布；此前0.1.12查询的公开最新版为0.1.11。
+为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前开发体验版为 0.1.19，最低系统调整为 macOS 14.0；本版尚未公开发布。此前0.1.12查询的公开最新版为0.1.11，该旧包仍要求macOS 15.0。
 
 延后验证事项与后续候选路线见 [项目待办](TODO.md)。0.1.12更新、快捷键和设置分组的证据与限制见[验证记录](docs/update-shortcuts-settings-validation.md)。日用设置见 [设置验证记录](docs/settings-validation.md)；皮肤导入与切换见 [皮肤导入记录](docs/skin-import-validation.md)，已有副本管理见 [皮肤库验证记录](docs/skin-library-validation.md)，注视与资源采样见 [注视验证记录](docs/gaze-validation.md)，自动小动作见 [验证记录](docs/automatic-actions-validation.md)，小范围走动见 [走动验证](docs/roaming-validation.md)。
 
@@ -8,7 +8,7 @@
 
 普通用户从[最新 Release](https://github.com/Resker666/YeShunguangPet-macOS/releases/latest)下载安装包，无需从源码构建或登录后下载Actions产物。选择`arm64.dmg`用于M系列Mac，`x86_64.dmg`用于Intel实验测试。
 
-使用者不需要安装 Xcode、Swift 或其他依赖。日用包请选择 M 系列 Mac（arm64）；另提供x86_64实验包用于Intel／黑苹果验证。两种包分开，文件名标明架构。部署目标仍为15.0，日用体验在 M4 / macOS 27.0 实测，另有macOS 26.6.2云端自动回归；真实Intel／黑苹果及其他系统的日用体验尚待验证。
+使用者不需要安装 Xcode、Swift 或其他依赖。日用包请选择 M 系列 Mac（arm64）；另提供x86_64实验包用于Intel／黑苹果验证。两种包分开，文件名标明架构。从0.1.19起部署目标为14.0，0.1.18及更早的现有包仍要求15.0。日用体验在 M4 / macOS 27.0 实测，此前另有macOS 26.6.2云端自动回归；Sonoma、真实Intel／黑苹果及其他系统的日用体验仍待验证，见[兼容记录](docs/sonoma-compatibility-validation.md)。
 
 1. M 系列打开 `YeShunguangPet-0.1.11-macOS-arm64.dmg`；Intel测试机选择文件名以`x86_64.dmg`结尾的实验包。将 App 拖到旁边的 Applications。
 2. 弹出 DMG，从“应用程序”打开 App；菜单栏爪印提供操作和退出入口。
@@ -66,7 +66,7 @@ open dist/YeShunguangPet.app
 
 App 不显示 Dock 图标；请从菜单栏退出。首次启动会在主屏右下角显示角色，后续恢复位置、大小和置顶偏好。关闭设置窗口不会退出桌宠。基础桌宠不需要录屏、辅助功能或麦克风权限。
 
-支持目标为 macOS 15+ / arm64，本机日用构建和验证环境为 Mac mini M4、macOS 27.0、Xcode 27.0；macOS 26.6.2 / Xcode 26.6云端自动检查见[CI记录](docs/ci.md#首次云端验证记录)，其他系统真实交互及Intel Mac仍未测。角色窗口采用非激活 NSPanel，默认浮动置顶；设置窗口可以正常获得键盘焦点。Spaces、全屏、Stage Manager 和真实睡眠恢复的当前证据见 [验证记录](docs/validation.md)，不能保证覆盖所有系统窗口。
+支持目标为 macOS 14+ / arm64，x86_64为实验交叉构建；本机日用构建和验证环境为 Mac mini M4、macOS 27.0、Xcode 27.0。此前macOS 26.6.2 / Xcode 26.6云端自动检查见[CI记录](docs/ci.md#首次云端验证记录)，macOS 14运行与Intel Mac仍待实测。角色窗口采用非激活 NSPanel，默认浮动置顶；设置窗口可以正常获得键盘焦点。Spaces、全屏、Stage Manager 和真实睡眠恢复的当前证据见 [验证记录](docs/validation.md)，不能保证覆盖所有系统窗口。
 
 ## 皮肤与配置
 
@@ -114,9 +114,9 @@ python3 scripts/smoke-app.py --app /绝对路径/YeShunguangPet.app --check-rest
 
 也可在 Xcode 打开 `YeShunguangPet.xcodeproj`，选择共享 scheme `YeShunguangPet`。测试使用临时目录，不修改个人配置。`.build/` 和 `dist/` 不进入 Git。
 
-构建需要 Xcode；使用 App 不需要。默认ARM App在`dist/YeShunguangPet.app`，Intel App在`dist/x86_64/YeShunguangPet.app`。两者主程序和嵌入框架架构必须一致；打包时会核对所选架构，拒绝错误标签或混合框架。
+构建需要 Xcode；使用 App 不需要。默认ARM App在`dist/YeShunguangPet.app`，Intel App在`dist/x86_64/YeShunguangPet.app`。两者主程序和嵌入框架架构必须一致；打包核对所选架构、Info.plist声明和两个Mach-O的实际macOS 14.0最低版本，拒绝错误标签、混合框架或最低版本不符的包。
 
-打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.18-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.9已按用户指令发布；0.1.10已体验通过并推送。0.1.11已获本机拖拽体验通过并推送；本轮查询发现公开最新版已为0.1.11，此为既有远端状态。0.1.17已验收并普通推送；0.1.18先本地交付，推送、标签及Release仍按用户明确指令执行。
+打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.19-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.9已按用户指令发布；0.1.10已体验通过并推送。0.1.11已获本机拖拽体验通过并推送；本轮查询发现公开最新版已为0.1.11，此为既有远端状态。0.1.17已验收并普通推送；0.1.18已验收并普通推送；0.1.19仅本地交付，推送、标签及Release仍按用户明确指令执行。
 
 App 图标由原仓库 ICO 转换，原图256×256；大尺寸仅作缩放，不新增绘制细节。需要重新生成时运行 `bash tools/make-icon.sh`，使用系统 sips/iconutil，无外部图像工具依赖。
 

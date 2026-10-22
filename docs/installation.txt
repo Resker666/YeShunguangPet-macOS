@@ -5,7 +5,8 @@
 arm64：Apple Silicon（M 系列）Mac。
 x86_64：Intel兼容测试版，真实Intel／黑苹果运行尚未验证。
 两种包不能在另一种处理器上原生运行；M系列用户请选择arm64包。
-部署目标为 macOS 15.0；目前只在 Mac mini M4 / macOS 27.0 实测。
+从0.1.19起部署目标为 macOS 14.0；旧版安装包仍要求15.0。
+目前只在 Mac mini M4 / macOS 27.0 实测，macOS 14尚待实机验证。
 其他系统、真实Intel／黑苹果及未安装 Xcode 的另一台 Mac 尚待验证。
 使用本软件不需要安装 Xcode、Swift、Python 或其他依赖。
 
@@ -46,7 +47,8 @@ Apple 官方说明：https://support.apple.com/zh-cn/102445
 关闭设置窗口不会退出桌宠；关闭置顶后角色可被其他窗口遮挡。
 App 不显示 Dock 图标；关闭 DMG 不会退出已安装的 App。
 若角色不见了，请从菜单栏选择“召回角色”。
-本版不要求录屏、辅助功能或麦克风权限，不联网、不自动上传日志。
+本版不要求录屏、辅助功能或麦克风权限。只在手动检查更新时
+查询公开GitHub版本信息，不自动下载更新或上传日志。
 
 更新与卸载
 更新前先从菜单栏退出，再用新版 App 替换“应用程序”中的旧版。
@@ -56,7 +58,7 @@ App 不显示 Dock 图标；关闭 DMG 不会退出已安装的 App。
 ~/Library/Application Support/YeShunguangPet-macOS/settings.json
 这允许重新安装后恢复位置与偏好；卸载 App 不会自动删除个人配置。
 导入素材保存在上述目录同级的Skins文件夹；卸载App也会保留。
-新版兼容schemaVersion 1–6配置，保存后升级到7；旧版App不能读取
+新版兼容schemaVersion 1–12配置，保存后升级到13；旧版App不能读取
 新版配置，会保留原文件并提示，避免静默覆盖。
 
 版本、来源与校验

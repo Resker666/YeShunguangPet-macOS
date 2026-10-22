@@ -1,8 +1,8 @@
 # Mac 开发约定
 适用于本仓库。先读 docs/superpowers/specs/2026-10-20-macos-first-playable-design.md 和对应 plans 文件，检查 git status。
-- Swift 6、AppKit、macOS 15+；arm64优先日用，x86_64为用户同意增加的实验交叉构建。使用现有Xcode，不引入外部依赖。
+- Swift 6、AppKit、macOS 14+（从0.1.19起，用户批准降低原15+目标）；arm64优先日用，x86_64为用户同意增加的实验交叉构建。使用现有Xcode，不引入外部依赖。
 - 测试：bash scripts/test.sh；构建：bash scripts/build-app.sh；打包：bash scripts/package-app.sh。独立启动回归：python3 scripts/smoke-app.py。
-- 分发：0.1.18 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
+- 分发：0.1.19 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
 - 独立进程验证设置 YSGPET_SETTINGS_PATH 使用临时配置；不带该变量才使用个人 Application Support。
 - 用户已确认真实拖动、单击/双击、菜单隐藏/显示和召回正常。GUI 工具首次超时，后续可读取实际角色画面；焦点、Spaces、锁屏和真实睡眠仍未验证，不能以属性或模拟事件当作通过。
 - 真实皮肤 JSON/PNG 字节保持不变；源码 MIT 与第三方素材声明分开。
@@ -75,3 +75,6 @@
 - 0.1.18本地交付完成：单次只读评审4a824d5..a71193f无Critical/Important，一项Minor旧说明已在a63be62修正；修正后完整323项原生（130Core/193Mac）和13项离线发版通过，没有独立二次评审。最终干净来源a63be62的双架构App/包、10项分发、八附件离线核验、签名/原素材/库存/摘要及ARM搬移重开通过。隔离原生菜单/设置渲染、520×380内容区原生滚动、失败保留/重试与最终实际60.076829秒计时通过，累计1次/1计划分钟并由新控制器读取；Focus调度器60次唤醒，不等于全进程唤醒数。透明缓存首次异常经探针补背景/current drawingAppearance后可读，不将缓存当真实窗口截图。
 - /Applications已安装并运行0.1.18/build19，schema12→13保留全部旧偏好/皮肤/迁移时位置/快捷键/时长/台词/计时窗状态，新增零值统计；旧App与配置已备份，正式登录项未改。按自身PID确认计时窗几何和保存显示偏好一致。用户整体体验、实际键鼠/焦点/系统睡眠和跨日通知/Intel/外机/Gatekeeper/强制结束未保存增量耐久仍待确认。仅本地codex/macos-focus-presets-statistics，未合并main、推送、打标签或发布；后续交付文档不改变a63be62的App来源。详见docs/focus-presets-statistics-validation.md及忽略目录.build/focus-presets-statistics-validation。
 - 用户随后反馈“验证通过，推送”：确认0.1.18快捷计时与今日统计版本的本机整体体验，授权按既有流程同步main和codex/macos-focus-presets-statistics，普通push；不触发prepare_release，不打标签或创建/发布Release。该反馈不扩展为四种预设、全部计数/跨日/睡眠结算、失败/取消/重开、物理输入及系统/Intel/外机场景逐项通过。原自动化边界保留；远端与云端结果按实际日志另记，下一版产品实施尚未授权。
+
+- 0.1.18已按授权推送1e8dee0，main云端39736531652及开发分支39736531681成功，323项原生/13项离线发版/10项分发及双架构Artifacts上传通过，草稿job跳过；只读日志和附件元数据，未下载二进制、打标签或发布。
+- 0.1.19用户在收到macOS14兼容短方案后明确“修改”，授权本会话原地实施：全部目标及App声明14.0，重新编译App/PetCore，补真实Mach-O平台/minos门控及分发回归，双架构包与本地交付；不改schema13或运行设计。黑苹果截图为Sonoma14.8.9/Intel Core i5，具体CPU SKU未知；旧0.1.11版本拦截不记为新版运行失败或通过。验收以docs/sonoma-compatibility-validation.md为准，未授权本版push/tag/Release。

@@ -301,7 +301,7 @@
 				<key>SWIFT_VERSION</key>
 				<string>6.0</string>
 				<key>MACOSX_DEPLOYMENT_TARGET</key>
-				<string>15.0</string>
+				<string>14.0</string>
 				<key>SDKROOT</key>
 				<string>macosx</string>
 				<key>ARCHS</key>
@@ -348,7 +348,7 @@
 				<key>SWIFT_VERSION</key>
 				<string>6.0</string>
 				<key>MACOSX_DEPLOYMENT_TARGET</key>
-				<string>15.0</string>
+				<string>14.0</string>
 				<key>SDKROOT</key>
 				<string>macosx</string>
 				<key>ARCHS</key>
@@ -723,7 +723,7 @@
 				<key>SWIFT_VERSION</key>
 				<string>6.0</string>
 				<key>MACOSX_DEPLOYMENT_TARGET</key>
-				<string>15.0</string>
+				<string>14.0</string>
 				<key>SDKROOT</key>
 				<string>macosx</string>
 				<key>ARCHS</key>
@@ -766,7 +766,7 @@
 				<key>SWIFT_VERSION</key>
 				<string>6.0</string>
 				<key>MACOSX_DEPLOYMENT_TARGET</key>
-				<string>15.0</string>
+				<string>14.0</string>
 				<key>SDKROOT</key>
 				<string>macosx</string>
 				<key>ARCHS</key>
@@ -1151,7 +1151,7 @@
 				<key>SWIFT_VERSION</key>
 				<string>6.0</string>
 				<key>MACOSX_DEPLOYMENT_TARGET</key>
-				<string>15.0</string>
+				<string>14.0</string>
 				<key>SDKROOT</key>
 				<string>macosx</string>
 				<key>ARCHS</key>
@@ -1194,7 +1194,7 @@
 				<key>SWIFT_VERSION</key>
 				<string>6.0</string>
 				<key>MACOSX_DEPLOYMENT_TARGET</key>
-				<string>15.0</string>
+				<string>14.0</string>
 				<key>SDKROOT</key>
 				<string>macosx</string>
 				<key>ARCHS</key>
@@ -1532,7 +1532,7 @@
 				<key>SWIFT_VERSION</key>
 				<string>6.0</string>
 				<key>MACOSX_DEPLOYMENT_TARGET</key>
-				<string>15.0</string>
+				<string>14.0</string>
 				<key>SDKROOT</key>
 				<string>macosx</string>
 				<key>ARCHS</key>
@@ -1575,7 +1575,7 @@
 				<key>SWIFT_VERSION</key>
 				<string>6.0</string>
 				<key>MACOSX_DEPLOYMENT_TARGET</key>
-				<string>15.0</string>
+				<string>14.0</string>
 				<key>SDKROOT</key>
 				<string>macosx</string>
 				<key>ARCHS</key>

@@ -40,7 +40,7 @@ import PetCore
         #else
         let architecture=ReleaseArchitecture.x86_64
         #endif
-        self.updates=updates ?? ReleaseUpdateModel(currentVersion:ReleaseVersion(tag:Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") ?? ReleaseVersion(tag:"0.1.18")!,architecture:architecture,client:ReleaseUpdateClient())
+        self.updates=updates ?? ReleaseUpdateModel(currentVersion:ReleaseVersion(tag:Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") ?? ReleaseVersion(tag:"0.1.19")!,architecture:architecture,client:ReleaseUpdateClient())
         self.loginItem=loginItem
         let focus=session.map{FocusController(session:$0)}
         self.focus=focus
