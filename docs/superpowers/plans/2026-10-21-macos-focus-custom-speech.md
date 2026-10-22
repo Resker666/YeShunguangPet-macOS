@@ -94,9 +94,9 @@
 
 ## Final review and local delivery
 
-- [ ] 按executing-plans生成整个分支review-package，从d837afb到最终源代码提交，单次独立只读评审；执行者裁定并用RED→GREEN处理Critical/Important，不把评审当运行验证。
-- [ ] 从干净提交导出并构建两个架构，运行`python3 -m unittest discover -s Tests/Distribution -v`；检查签名、素材哈希、DMG/ZIP库存及八附件`prepare-release.py --check-only`。
-- [ ] 隔离真实Bundle验证三套旧皮肤、四类个人台词、关闭/隐藏/暂停/完成；真实1分钟计时独立运行。原生渲染六Tab、长编辑器与最小窗口；保留图片，逐图检查。机器睡眠、物理键鼠/焦点、Intel/外机仍需真实观察。
-- [ ] ARM从DMG复制到中文/空格路径，弹出后在工程外启动、退出重开，剥离开发环境；不得当作外机验证。
-- [ ] 按准确可执行路径正常退出旧App，备份旧App及退出后配置，更新/Applications/YeShunguangPet.app；核对迁移和旧个人状态，新计时默认ready。保持供用户体验；不触碰正式登录项。
-- [ ] 保存实际验证与来源、提交文档、本地分支保留，工作区干净。不推送、打标签、建草稿或发布。
+- [x] 按executing-plans生成整个分支review-package，单次独立只读评审d837afb..66966cc；两项Important在4430577用RED→GREEN修复，完整270项通过。无独立二次评审，不把评审当运行验证。
+- [x] 从干净4430577导出并构建两个架构，`python3 -m unittest discover -s Tests/Distribution -v`10项通过；签名、素材哈希、DMG/ZIP库存及八附件`prepare-release.py --check-only`通过。
+- [x] 隔离真实Bundle验证三套旧皮肤、四类个人台词、关闭/隐藏/暂停/完成；真实隐藏1分钟计时完成一次。原生渲染专注页、长编辑器与最小窗口并逐图检查；两项评审修复也在最终探针核验。机器睡眠、物理键鼠/焦点、Intel/外机仍未验证。
+- [x] ARM从DMG复制到中文/空格路径，弹出后在工程外启动、退出重开，剥离开发环境；通过，不当作外机验证。
+- [x] 按准确可执行路径正常退出旧App，备份旧App及退出后配置，更新/Applications/YeShunguangPet.app；schema9→10原偏好/皮肤/位置/快捷键保留，新计时默认ready。保持供用户体验；未触碰正式登录项。
+- [x] 保存实际验证与来源、提交最终文档，本地分支保留。未推送、打标签、建草稿或发布；最终提交后的工作区状态见交付证据。
