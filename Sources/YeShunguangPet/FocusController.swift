@@ -23,13 +23,19 @@ struct FocusCommand:Hashable {
     enum Kind:Hashable {case startOrResume,pause}
     let kind:Kind,generation:UInt64
 }
+struct FocusPresetCommand:Hashable {let minutes:Int,generation:UInt64}
 
 @MainActor final class FocusController:NSObject,ObservableObject {
     @Published private(set) var snapshot=FocusSnapshot(phase:.focus,status:.ready,remainingSeconds:1500,durationSeconds:1500)
     @Published private(set) var completionSoundEnabled=false
+    @Published private(set) var todayStatistics=FocusDailyStatistics()
+    @Published private(set) var statisticsSaveError:String?
+    @Published private(set) var presetError:String?
+    static let presetMinutes=[15,25,45,60]
     private var policy=FocusTimer()
     private weak var session:PetSession?
     private let now:()->Duration
+    private let wallNow:()->Date,timeZone:()->TimeZone
     private var displaySources=Set<String>()
     private var sleeping=false,terminating=false,disposed=false
     private var commandGeneration:UInt64=0
@@ -41,6 +47,16 @@ struct FocusCommand:Hashable {
     var status:FocusStatus {snapshot.status}
     var remainingSeconds:Int {snapshot.remainingSeconds}
     var primaryCommand:FocusCommand {.init(kind:status == .running ? .pause : .startOrResume,generation:commandGeneration)}
+    func presetCommand(minutes:Int)->FocusPresetCommand {.init(minutes:minutes,generation:commandGeneration)}
+    var canStartPreset:Bool {canOperate && !sleeping && session?.gate.sleeping==false && canPlayCompletionSound() && policy.status == .ready}
+    func startPreset(_ command:FocusPresetCommand) {
+        guard canStartPreset,command.generation==commandGeneration,Self.presetMinutes.contains(command.minutes) else{return}
+        do {
+            try applyDurations(focusMinutes:command.minutes,breakMinutes:breakMinutes)
+            presetError=nil;startOrResume()
+        }catch{presetError=error.localizedDescription}
+        onChange?()
+    }
     func perform(_ command:FocusCommand) {
         guard canOperate else{return}
         guard command.generation==commandGeneration else{refreshTime();return}
@@ -53,15 +69,19 @@ struct FocusCommand:Hashable {
     var statusText:String {snapshot.statusText}
     var primaryTitle:String {snapshot.primaryTitle}
     lazy var scheduler=FrameScheduler(now:now) {[weak self] in self?.refreshTime()}
-    init(session:PetSession,playCompletionSound:@escaping ()->Void = {_=NSSound(named:"Glass")?.play()}) {
-        self.session=session;self.now=session.now;self.playCompletionSound=playCompletionSound
+    init(session:PetSession,playCompletionSound:@escaping ()->Void = {_=NSSound(named:"Glass")?.play()},wallNow:@escaping ()->Date = {Date()},timeZone:@escaping ()->TimeZone = {.autoupdatingCurrent}) {
+        self.session=session;self.now=session.now;self.playCompletionSound=playCompletionSound;self.wallNow=wallNow;self.timeZone=timeZone
         super.init();refreshConfiguration()
         let center=NSWorkspace.shared.notificationCenter
         center.addObserver(self,selector:#selector(willSleep),name:NSWorkspace.willSleepNotification,object:nil)
         center.addObserver(self,selector:#selector(didWake),name:NSWorkspace.didWakeNotification,object:nil)
+        for name in [Notification.Name.NSCalendarDayChanged,.NSSystemClockDidChange,.NSSystemTimeZoneDidChange] {
+            NotificationCenter.default.addObserver(self,selector:#selector(calendarChanged),name:name,object:nil)
+        }
     }
     private var canOperate:Bool {!disposed && !terminating && session?.gate.exiting==false}
     func refreshConfiguration() {
+        refreshStatistics()
         let sound=session?.preferences.focusCompletionSound ?? false
         if completionSoundEnabled != sound{completionSoundEnabled=sound}
         guard canOperate,policy.status == .ready else{return}
@@ -83,16 +103,29 @@ struct FocusCommand:Hashable {
         publishAndSchedule()
     }
     func refreshTime() {
+        refreshStatistics()
         guard canOperate,!sleeping else{scheduler.cancel();return}
         settle(policy.advance(at:now()))
     }
     private func settle(_ completion:FocusPhase?) {
+        if completion == .focus {session?.recordFocusCompletion(minutes:Int(policy.duration.components.seconds/60),on:currentDay)}
+        refreshStatistics()
         publishAndSchedule()
         if let completion {
             if !suppressCompletionSound,!sleeping,canOperate,session?.gate.sleeping==false,session?.isQuiet==false,completionSoundEnabled,canPlayCompletionSound(){playCompletionSound()}
             session?.presentFocusCompletion(completion)
         }
     }
+    private var currentDay:String {FocusDailyStatistics.dayKey(for:wallNow(),timeZone:timeZone())}
+    func refreshStatistics() {
+        guard !disposed else{return}
+        let value=(session?.focusStatistics ?? .init()).forDay(currentDay)
+        if todayStatistics != value{todayStatistics=value}
+        let error=session?.focusStatisticsSaveError
+        if statisticsSaveError != error{statisticsSaveError=error}
+    }
+    func retryStatisticsSaving(){guard canOperate,canPlayCompletionSound() else{return};session?.retrySave();refreshStatistics();onChange?()}
+    @objc private func calendarChanged(_ notification:Notification){guard !disposed else{return};refreshStatistics();onChange?()}
     private func publishAndSchedule() {
         let remaining=policy.remaining(at:now())
         let seconds=Double(remaining.components.seconds)+Double(remaining.components.attoseconds)/1e18
@@ -124,5 +157,6 @@ struct FocusCommand:Hashable {
     func dispose() {
         guard !disposed else{return};disposed=true;scheduler.cancel();displaySources.removeAll()
         NSWorkspace.shared.notificationCenter.removeObserver(self);onChange=nil;session?.setFocusQuiet(false)
+        NotificationCenter.default.removeObserver(self)
     }
 }

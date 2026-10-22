@@ -23,7 +23,7 @@ final class FocusWindowSettingsTests:XCTestCase {
         guard case .loaded(let saved)=store.load() else{return XCTFail("valid v10 must migrate")}
         try store.save(saved)
         let result=try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:url)) as? [String:Any])
-        XCTAssertEqual(result["schemaVersion"] as? Int,12)
+        XCTAssertEqual(result["schemaVersion"] as? Int,13)
         let p=try XCTUnwrap(result["preferences"] as? [String:Any])
         let window=try XCTUnwrap(p["focusWindow"] as? [String:Any])
         XCTAssertEqual(window["isVisible"] as? Bool,true);XCTAssertEqual(window["alwaysOnTop"] as? Bool,true);XCTAssertNil(window["placement"])
@@ -62,7 +62,7 @@ final class FocusWindowSettingsTests:XCTestCase {
         guard case .loaded(let saved)=store.load() else{return XCTFail("v11 must migrate")}
         try store.save(saved)
         let result=try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:url)) as? [String:Any]),newP=try XCTUnwrap(result["preferences"] as? [String:Any])
-        XCTAssertEqual(result["schemaVersion"] as? Int,12)
+        XCTAssertEqual(result["schemaVersion"] as? Int,13)
         XCTAssertEqual(newP["focusCompletionSound"] as? Bool,false)
         var newWindow=try XCTUnwrap(newP["focusWindow"] as? [String:Any])
         XCTAssertEqual(newWindow.removeValue(forKey:"compact") as? Bool,false)

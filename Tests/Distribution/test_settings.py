@@ -56,13 +56,14 @@ class StandaloneSettingsTests(unittest.TestCase):
             settings.write_text(json.dumps({"schemaVersion": 1, "placement": position}))
             migrated_metrics = SMOKE.run_once(binary, work, 2)
             migrated = json.loads(settings.read_text())
-            self.assertEqual(migrated["schemaVersion"], 12)
+            self.assertEqual(migrated["schemaVersion"], 13)
             self.assertEqual(migrated["preferences"], {"scale": 1, "alwaysOnTop": True, "lookAtMouse": True,
                                                       "automaticActions": False, "automaticActionIntervalSeconds": 60,
                                                       "desktopRoaming": False, "roamIntervalSeconds": 75, "speechEnabled": False, "keyboardShortcuts": [],
                                                       "snapToEdges": False, "positionLocked": False,
                                                       "focusMinutes": 25, "breakMinutes": 5, "speechOverrides": {},
                                                       "focusCompletionSound": False, "focusWindow": {"isVisible": True, "alwaysOnTop": True, "compact": False}})
+            self.assertEqual(migrated["focusStatistics"], {"completedCount": 0, "plannedMinutes": 0})
             self.assertTrue(migrated_metrics["lookAtMouseEnabled"])
             self.assertGreater(migrated_metrics["gazeSamples"], 0)
             self.assertEqual(migrated["placement"], position)
@@ -75,12 +76,14 @@ class StandaloneSettingsTests(unittest.TestCase):
                            "speechOverrides": {"ye-shunguang": {"click": ["个人点击"], "drag": [],
                                                                   "focusCompleted": ["专注完成"], "breakCompleted": ["休息完成"]}}}
             migrated["preferences"] = preferences
+            migrated["focusStatistics"] = {"day": "2026-10-22", "completedCount": 2, "plannedMinutes": 40}
             settings.write_text(json.dumps(migrated))
             for sequence in [3, 4]:
                 actual = SMOKE.run_once(binary, work, sequence)
                 self.assertEqual(actual["window"], {"width": 288, "height": 312})
                 saved = json.loads(settings.read_text())
                 self.assertEqual(saved["preferences"], preferences)
+                self.assertEqual(saved["focusStatistics"], migrated["focusStatistics"])
                 self.assertFalse(actual["lookAtMouseEnabled"])
                 self.assertEqual(actual["gazeSamples"], 0)
                 self.assertTrue(actual["automaticActionsEnabled"])

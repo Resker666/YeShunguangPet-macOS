@@ -39,12 +39,46 @@ public struct PetPreferences: Codable, Equatable {
     }
     public var isValid: Bool { scale.isFinite && (0.5...2).contains(scale) && (15...120).contains(automaticActionIntervalSeconds) && (20...180).contains(roamIntervalSeconds) && (1...120).contains(focusMinutes) && (1...60).contains(breakMinutes) && focusWindow.isValid && (try? PersonalSpeech.validate(speechOverrides)) != nil && (try? KeyboardShortcuts.validate(keyboardShortcuts)) != nil }
 }
+public struct FocusDailyStatistics:Codable,Equatable {
+    public let day:String?
+    public let completedCount:Int
+    public let plannedMinutes:Int
+    public init(day:String?=nil,completedCount:Int=0,plannedMinutes:Int=0) {
+        self.day=day;self.completedCount=completedCount;self.plannedMinutes=plannedMinutes
+    }
+    public var isValid:Bool {
+        guard (0...1_000_000).contains(completedCount),plannedMinutes>=completedCount,plannedMinutes<=completedCount*120 else{return false}
+        return day.map(Self.validDay) ?? (completedCount==0 && plannedMinutes==0)
+    }
+    private static func validDay(_ value:String)->Bool {
+        guard value.range(of:"^[0-9]{4}-[0-9]{2}-[0-9]{2}$",options:.regularExpression) != nil else{return false}
+        let parts=value.split(separator:"-").compactMap{Int($0)}
+        guard parts.count==3,parts[0]>=1 else{return false}
+        var calendar=Calendar(identifier:.gregorian);calendar.timeZone=TimeZone(secondsFromGMT:0)!
+        guard let date=calendar.date(from:DateComponents(year:parts[0],month:parts[1],day:parts[2])) else{return false}
+        let components=calendar.dateComponents([.year,.month,.day],from:date)
+        return components.year==parts[0] && components.month==parts[1] && components.day==parts[2]
+    }
+    public static func dayKey(for date:Date,timeZone:TimeZone)->String {
+        var calendar=Calendar(identifier:.gregorian);calendar.timeZone=timeZone
+        let c=calendar.dateComponents([.year,.month,.day],from:date)
+        return String(format:"%04d-%02d-%02d",c.year ?? 0,c.month ?? 0,c.day ?? 0)
+    }
+    public func forDay(_ day:String)->Self {self.day==day ? self : .init(day:day)}
+    public func recording(minutes:Int,on day:String)throws->Self {
+        guard isValid,Self.validDay(day),(1...120).contains(minutes) else{throw SkinError("专注统计数据无效，未累计。")}
+        let current=forDay(day)
+        guard current.completedCount<1_000_000 else{throw SkinError("当天专注统计已达上限。")}
+        return .init(day:day,completedCount:current.completedCount+1,plannedMinutes:current.plannedMinutes+minutes)
+    }
+}
 public struct PetSettings: Equatable {
     public let placement: PlacementSnapshot?
     public let preferences: PetPreferences
     public let selectedSkinID: String?
-    public init(placement: PlacementSnapshot?, preferences: PetPreferences = .init(), selectedSkinID: String? = nil) { self.placement=placement; self.preferences=preferences; self.selectedSkinID=selectedSkinID }
-    public var isValid: Bool { (placement?.isValid ?? true) && preferences.isValid && (selectedSkinID.map(SkinLibrary.isValidID) ?? true) }
+    public let focusStatistics:FocusDailyStatistics
+    public init(placement: PlacementSnapshot?, preferences: PetPreferences = .init(), selectedSkinID: String? = nil,focusStatistics:FocusDailyStatistics = .init()) { self.placement=placement; self.preferences=preferences; self.selectedSkinID=selectedSkinID;self.focusStatistics=focusStatistics }
+    public var isValid: Bool { (placement?.isValid ?? true) && preferences.isValid && focusStatistics.isValid && (selectedSkinID.map(SkinLibrary.isValidID) ?? true) }
 }
 public enum SettingsLoadResult { case missing, loaded(PetSettings), protectedFile(message: String) }
 public final class SettingsStore {
@@ -75,7 +109,8 @@ public final class SettingsStore {
         }
     }
     private struct DesktopConfiguration:Decodable {let placement:PlacementSnapshot?;let preferences:DesktopPreferences;let selectedSkinID:String?}
-    private struct Configuration: Codable { let schemaVersion: Int; let placement: PlacementSnapshot?; let preferences: PetPreferences; let selectedSkinID: String? }
+    private struct ReminderConfiguration:Decodable {let placement:PlacementSnapshot?;let preferences:PetPreferences;let selectedSkinID:String?}
+    private struct Configuration: Codable { let schemaVersion: Int; let placement: PlacementSnapshot?; let preferences: PetPreferences; let selectedSkinID: String?;let focusStatistics:FocusDailyStatistics }
     public let url: URL
     private var checked=false, blocked=false
     private let write: (Data,URL) throws -> Void
@@ -121,8 +156,11 @@ public final class SettingsStore {
                 let config=try JSONDecoder().decode(DesktopConfiguration.self,from:data),p=config.preferences.companion,w=config.preferences.window
                 saved=PetSettings(placement:config.placement,preferences:.init(scale:p.scale,alwaysOnTop:p.alwaysOnTop,lookAtMouse:p.lookAtMouse,automaticActions:p.automaticActions,automaticActionIntervalSeconds:p.automaticActionIntervalSeconds,desktopRoaming:p.desktopRoaming,roamIntervalSeconds:p.roamIntervalSeconds,speechEnabled:p.speechEnabled,keyboardShortcuts:p.keyboardShortcuts,snapToEdges:p.snapToEdges,positionLocked:p.positionLocked,focusMinutes:p.focusMinutes,breakMinutes:p.breakMinutes,speechOverrides:p.speechOverrides,focusWindow:.init(isVisible:w.isVisible,alwaysOnTop:w.alwaysOnTop,placement:w.placement)),selectedSkinID:config.selectedSkinID)
             case .number("12"):
-                let config=try JSONDecoder().decode(Configuration.self,from:data)
+                let config=try JSONDecoder().decode(ReminderConfiguration.self,from:data)
                 saved=PetSettings(placement:config.placement,preferences:config.preferences,selectedSkinID:config.selectedSkinID)
+            case .number("13"):
+                let config=try JSONDecoder().decode(Configuration.self,from:data)
+                saved=PetSettings(placement:config.placement,preferences:config.preferences,selectedSkinID:config.selectedSkinID,focusStatistics:config.focusStatistics)
             default: throw SkinError("配置版本无效或尚不支持")
             }
             guard saved.isValid else { throw SkinError("配置中的位置或偏好无效") }
@@ -133,7 +171,7 @@ public final class SettingsStore {
         if !checked { _=load() }
         guard !blocked else { throw SkinError("原配置受保护，请先备份并重置") }
         guard settings.isValid else { throw SkinError("位置或偏好无效，未保存") }
-        let data=try JSONEncoder().encode(Configuration(schemaVersion:12,placement:settings.placement,preferences:settings.preferences,selectedSkinID:settings.selectedSkinID))
+        let data=try JSONEncoder().encode(Configuration(schemaVersion:13,placement:settings.placement,preferences:settings.preferences,selectedSkinID:settings.selectedSkinID,focusStatistics:settings.focusStatistics))
         guard data.count<=65536 else { throw SkinError("配置超过 64 KiB") }
         try FileManager.default.createDirectory(at:url.deletingLastPathComponent(),withIntermediateDirectories:true)
         try write(data,url)

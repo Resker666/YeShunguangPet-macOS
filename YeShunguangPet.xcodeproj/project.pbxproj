@@ -613,6 +613,7 @@
 				<string>97A2B9865F17CDE1623FE21C</string>
 				<string>E13F4874C34A1EC0EFA9BBB3</string>
 				<string>5F87F1AF19F18CA39B268B1E</string>
+				<string>E2BD8DBD870AB6259ED6C18B</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1451,6 +1452,7 @@
 				<string>52D5446E601913A20E39804D</string>
 				<string>C0B175F2EBCFEB3639ECF22F</string>
 				<string>EE6A897A50C26CD0BB4BF922</string>
+				<string>25C6026F9A30787B426957CD</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1762,6 +1764,8 @@
 				<string>F4D6EDE64D8F8789669E7ACB</string>
 				<string>DF1D7905B18DD9C07809ADEB</string>
 				<string>C7605F38523A638EC03C6385</string>
+				<string>4F6A07C481D6ABC76C97EFA9</string>
+				<string>4C841E97AF64914043B6DF8F</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -3087,6 +3091,42 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>C7605F38523A638EC03C6385</string>
+		</dict>
+		<key>4F6A07C481D6ABC76C97EFA9</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Tests/PetCoreTests/FocusStatisticsTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>E2BD8DBD870AB6259ED6C18B</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>4F6A07C481D6ABC76C97EFA9</string>
+		</dict>
+		<key>4C841E97AF64914043B6DF8F</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/FocusPresetStatisticsTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>25C6026F9A30787B426957CD</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>4C841E97AF64914043B6DF8F</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

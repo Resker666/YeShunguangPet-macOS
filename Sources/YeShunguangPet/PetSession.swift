@@ -11,6 +11,9 @@ import PetCore
     let screens: () -> [ScreenArea]
     private var placement: PlacementSnapshot?
     private(set) var preferences=PetPreferences()
+    private(set) var focusStatistics=FocusDailyStatistics()
+    private(set) var focusStatisticsSaveError:String?
+    private var focusStatisticsNeedsSave=false
     private var wantsVisible=true
     private(set) var persistenceError: String?
     private(set) var protectedSettings=false
@@ -100,7 +103,7 @@ import PetCore
     }
     func start(restoringSkin: Bool = true) {
         switch settings.load() {
-        case .loaded(let saved): placement=saved.placement; preferences=saved.preferences; selectedSkinID=saved.selectedSkinID
+        case .loaded(let saved): placement=saved.placement; preferences=saved.preferences; selectedSkinID=saved.selectedSkinID;focusStatistics=saved.focusStatistics
         case .missing: break
         case .protectedFile(let message): persistenceError=message; protectedSettings=true
         }
@@ -131,7 +134,7 @@ import PetCore
         cancelInput()
         let size=CGSize(width:Double(next.manifest.cellWidth)*preferences.scale,height:Double(next.manifest.cellHeight)*preferences.scale)
         let nextPlacement=WindowPlacement.capture(origin:panel.frame.origin,size:size,screens:screens()) ?? placement
-        do { try settings.save(PetSettings(placement:nextPlacement,preferences:preferences,selectedSkinID:id)) }
+        do { try saveSettings(PetSettings(placement:nextPlacement,preferences:preferences,selectedSkinID:id)) }
         catch { persistenceError=error.localizedDescription; onStatusChange?(); throw error }
         // Persistence is committed before touching the current image or playback.
         let nextAutomatic=AutomaticActions(manifest:next.manifest,random:automaticRandom)
@@ -157,7 +160,7 @@ import PetCore
         var candidate=preferences;candidate.keyboardShortcuts=bindings
         let current=WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()) ?? placement
         do {
-            try settings.save(PetSettings(placement:current,preferences:candidate,selectedSkinID:selectedSkinID))
+            try saveSettings(PetSettings(placement:current,preferences:candidate,selectedSkinID:selectedSkinID))
             preferences=candidate;placement=current;persistenceError=nil;onStatusChange?()
         }catch{persistenceError=error.localizedDescription;onStatusChange?();throw error}
     }
@@ -165,9 +168,26 @@ import PetCore
         guard !gate.exiting,!protectedSettings,candidate.isValid,candidate.keyboardShortcuts==preferences.keyboardShortcuts else{throw SkinError("配置受保护、内容无效或正在退出，未保存。")}
         let current=WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()) ?? placement
         do {
-            try settings.save(PetSettings(placement:current,preferences:candidate,selectedSkinID:selectedSkinID))
+            try saveSettings(PetSettings(placement:current,preferences:candidate,selectedSkinID:selectedSkinID))
             preferences=candidate;placement=current;persistenceError=nil;onStatusChange?()
         }catch{persistenceError=error.localizedDescription;onStatusChange?();throw error}
+    }
+    private func saveSettings(_ candidate:PetSettings)throws {
+        do {
+            try settings.save(.init(placement:candidate.placement,preferences:candidate.preferences,selectedSkinID:candidate.selectedSkinID,focusStatistics:focusStatistics))
+            focusStatisticsNeedsSave=false;focusStatisticsSaveError=nil
+        }catch{
+            if focusStatisticsNeedsSave{focusStatisticsSaveError=error.localizedDescription}
+            throw error
+        }
+    }
+    func recordFocusCompletion(minutes:Int,on day:String) {
+        guard !gate.exiting else{return}
+        do {
+            focusStatistics=try focusStatistics.recording(minutes:minutes,on:day)
+            focusStatisticsNeedsSave=true
+            _=savePosition()
+        }catch{focusStatisticsSaveError=error.localizedDescription;onStatusChange?()}
     }
     private func applyWindowPreferences() {
         let size=CGSize(width:Double(skin.manifest.cellWidth)*preferences.scale,height:Double(skin.manifest.cellHeight)*preferences.scale)
@@ -194,7 +214,7 @@ import PetCore
     }
     @discardableResult private func savePosition() -> Bool {
         if let current=WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()) { placement=current }
-        do { try settings.save(PetSettings(placement:placement,preferences:preferences,selectedSkinID:selectedSkinID)); persistenceError=nil; onStatusChange?(); return true }
+        do { try saveSettings(PetSettings(placement:placement,preferences:preferences,selectedSkinID:selectedSkinID)); persistenceError=nil; onStatusChange?(); return true }
         catch { persistenceError=error.localizedDescription; onStatusChange?(); return false }
     }
     func retrySave() { _=savePosition() }

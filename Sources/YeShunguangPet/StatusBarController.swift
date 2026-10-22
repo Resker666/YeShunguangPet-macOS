@@ -40,7 +40,7 @@ import PetCore
         #else
         let architecture=ReleaseArchitecture.x86_64
         #endif
-        self.updates=updates ?? ReleaseUpdateModel(currentVersion:ReleaseVersion(tag:Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") ?? ReleaseVersion(tag:"0.1.17")!,architecture:architecture,client:ReleaseUpdateClient())
+        self.updates=updates ?? ReleaseUpdateModel(currentVersion:ReleaseVersion(tag:Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") ?? ReleaseVersion(tag:"0.1.18")!,architecture:architecture,client:ReleaseUpdateClient())
         self.loginItem=loginItem
         let focus=session.map{FocusController(session:$0)}
         self.focus=focus
@@ -96,7 +96,7 @@ import PetCore
                 guard let self else{return false}
                 return !self.terminating && self.session?.gate.exiting==false && self.settingsController?.hasBlockingSheet != true && NSApp.modalWindow==nil
             },onSettings:{[weak self] in self?.presentSettings(tab:.focus)})
-            focusMenus=menus
+            focusMenus=menus;for tracked in menus.trackingMenus{tracked.delegate=self}
             for (parent,child) in zip([menu,contextMenu],menus.menus) {
                 let entry=NSMenuItem(title:"专注计时",action:nil,keyEquivalent:"");entry.submenu=child;parent.insertItem(entry,at:1);child.delegate=self
             }
@@ -127,7 +127,7 @@ import PetCore
     @objc private func retry() { session?.retrySave(); refresh() }
     @objc private func reset() { session?.resetProtectedSettings(); refresh() }
     func menuWillOpen(_ menu: NSMenu) {
-        guard menu === self.menu || menu === contextMenu || quickSkins?.menus.contains(where:{$0 === menu})==true || focusMenus?.menus.contains(where:{$0 === menu})==true else{return}
+        guard menu === self.menu || menu === contextMenu || quickSkins?.menus.contains(where:{$0 === menu})==true || focusMenus?.trackingMenus.contains(where:{$0 === menu})==true else{return}
         openMenus.insert(ObjectIdentifier(menu));session?.setMenuOpen(true);refresh()
         focus?.setDisplayVisible(true,source:"menus")
         quickSkins?.reload()

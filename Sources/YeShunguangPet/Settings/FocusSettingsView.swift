@@ -24,6 +24,28 @@ struct FocusSettingsView:View {
                         Button("重置") {focus.reset();reloadDrafts()}.disabled(focus.status == .ready)
                     }
                 }.frame(maxWidth:.infinity).padding().background(.quaternary,in:RoundedRectangle(cornerRadius:12))
+                VStack(alignment:.leading,spacing:8) {
+                    Text("快捷开始").font(.headline)
+                    HStack {
+                        ForEach(FocusController.presetMinutes,id:\.self) {minutes in
+                            let command=focus.presetCommand(minutes:minutes)
+                            Button("\(minutes) 分钟"){focus.startPreset(command)}.id(command)
+                        }
+                    }.disabled(!focus.canStartPreset)
+                    Text("准备状态可用；保存为常用专注时长后开始，休息时长不变。")
+                        .font(.caption).foregroundStyle(.secondary)
+                    if let error=focus.presetError{Text(error).font(.caption).foregroundStyle(.red)}
+                }
+                VStack(alignment:.leading,spacing:8) {
+                    Text("今日专注").font(.headline)
+                    Text("完成 \(focus.todayStatistics.completedCount) 次 · 累计 \(focus.todayStatistics.plannedMinutes) 分钟")
+                    Text("只统计完整完成的专注段计划时长，包含睡眠；重置或退出未完成段不计，休息不计。按结算时本地日期归属，只保留当天汇总。")
+                        .font(.caption).foregroundStyle(.secondary)
+                    if let error=focus.statisticsSaveError {
+                        Text("统计尚未保存：\(error)").font(.caption).foregroundStyle(.orange)
+                        Button("重试保存统计"){focus.retryStatisticsSaving()}
+                    }
+                }.accessibilityIdentifier("pet-focus-today-statistics")
                 VStack(alignment:.leading,spacing:10) {
                     Text("时长").font(.headline)
                     HStack {
@@ -54,7 +76,7 @@ struct FocusSettingsView:View {
                 Text("隐藏角色、关闭设置不暂停；睡眠时间计入倒计时。完成时若角色正隐藏、安静或交互被阻挡，可从菜单查看完成状态。退出结束本次计时，重开只保留时长。")
                     .font(.caption).foregroundStyle(.secondary)
             }.padding(20).frame(maxWidth:.infinity,alignment:.leading)
-        }.onAppear{reloadDrafts()}
+        }.onAppear{reloadDrafts()}.onChange(of:focus.focusMinutes){_,minutes in focusText=String(minutes)}
     }
     private func reloadDrafts(){focusText=String(focus.focusMinutes);breakText=String(focus.breakMinutes)}
 }

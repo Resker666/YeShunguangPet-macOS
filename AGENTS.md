@@ -2,7 +2,7 @@
 适用于本仓库。先读 docs/superpowers/specs/2026-10-20-macos-first-playable-design.md 和对应 plans 文件，检查 git status。
 - Swift 6、AppKit、macOS 15+；arm64优先日用，x86_64为用户同意增加的实验交叉构建。使用现有Xcode，不引入外部依赖。
 - 测试：bash scripts/test.sh；构建：bash scripts/build-app.sh；打包：bash scripts/package-app.sh。独立启动回归：python3 scripts/smoke-app.py。
-- 分发：0.1.17 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
+- 分发：0.1.18 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
 - 独立进程验证设置 YSGPET_SETTINGS_PATH 使用临时配置；不带该变量才使用个人 Application Support。
 - 用户已确认真实拖动、单击/双击、菜单隐藏/显示和召回正常。GUI 工具首次超时，后续可读取实际角色画面；焦点、Spaces、锁屏和真实睡眠仍未验证，不能以属性或模拟事件当作通过。
 - 真实皮肤 JSON/PNG 字节保持不变；源码 MIT 与第三方素材声明分开。
@@ -70,3 +70,5 @@
 - 0.1.17本地交付完成：完整303项原生（125Core/178Mac）、13项离线发版、10项分发、八附件离线核验通过。单次只读评审394efa8..8721017无Critical/Important/Minor；未独立二次评审。干净来源8721017的双架构App/包、签名/原素材/库存/摘要与ARM搬移重开通过；隔离Bundle的普通/紧凑浅深色与完成态、失败/重试原生渲染通过，紧凑窗实际60.008719秒完成一次，60个不同显示秒数，Focus调度器60次唤醒；不等于全进程唤醒数。
 - /Applications已安装并运行0.1.17/build18，schema11→12保留原偏好/皮肤/迁移时位置/快捷键/时长/个人台词/窗口偏好，声音false、compactfalse；旧App与配置已备份，正式登录项未改。按该App的PID核对普通280×208计时窗在屏。声音仅以播放器边界和系统音加载验证，实际可闻、用户整体体验、真实键鼠/焦点/系统/Intel/外机仍待确认；界面工具本轮未重复调用，既有超时不改写为通过。仅本地codex/macos-focus-reminders-compact，未合并main、推送、打标签或发布；后续仅交付文档提交不改变8721017的App来源。详见docs/focus-reminder-compact-validation.md及忽略目录.build/focus-reminder-compact-validation。
 - 用户随后反馈“验证通过推送”：确认0.1.17完成提醒与紧凑计时窗版本的本机整体体验，授权按既有流程同步main和codex/macos-focus-reminders-compact，普通push；不触发prepare_release，不打标签或创建/发布Release。反馈不扩展为每段实际声音、全部阻挡/失败/取消/重开、物理输入或系统/Intel/外机场景逐项通过；既有自动化边界保留。云端及远端结果按实际日志记录，未授权下一版产品实施。
+- 0.1.17已按授权推送4a824d5，main云端39717565864及开发分支39717565979成功，303项原生/13项离线发版/10项分发、双架构Artifacts上传通过，草稿job跳过。读取实际job日志与附件元数据，未下载二进制，未打标签或发布；证据.build/focus-reminder-compact-validation/push-verification.json。
+- 0.1.18用户选择A＋C并确认完整会话短设计，本会话原地实施。预设15/25/45/60仅准备态，先存常用时长再开始，休息不变，失败不启动，捕获状态代次挡旧命令，子菜单纳入暂停集合。今日统计只累计完整完成的专注段计划分钟，休息/未完成重置退出不计；包含睡眠、按结算时本地日期归属，跨日投影0，睡眠到期归唤醒结算当天，只保留一天汇总。schema13顶层统计，专用12迁移保留全部旧字段；所有设置写入携带当前/待存统计，写失败提示重试且不重复累计，正常退出沿用既有失败决策。完整323项原生与13项离线发版已通过，评审/打包/个人更新以docs/focus-presets-statistics-validation.md的实际结果为准，未授权本版push/tag/Release。
