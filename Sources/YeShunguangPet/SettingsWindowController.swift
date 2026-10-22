@@ -52,8 +52,8 @@ import UniformTypeIdentifiers
         self.session=session; self.model=model ?? SettingsModel(session:session,loginItem:loginItem)
         let settingsModel=self.model
         self.diagnostics=diagnostics ?? SupportDiagnosticsModel(capture:{[weak session] in SupportDiagnosticSnapshot.capture(session:session,focusWindow:nil)},canCopy:{[weak session,weak settingsModel] in session?.gate.exiting==false && settingsModel?.isTerminating==false && NSApp.modalWindow==nil})
-        let window=NSWindow(contentRect:CGRect(x:0,y:0,width:520,height:640),styleMask:[.titled,.closable,.miniaturizable,.resizable],backing:.buffered,defer:false)
-        window.minSize=CGSize(width:520,height:480); window.title="叶瞬光桌宠设置"; window.isReleasedWhenClosed=false
+        let window=NSWindow(contentRect:CGRect(x:0,y:0,width:600,height:640),styleMask:[.titled,.closable,.miniaturizable,.resizable],backing:.buffered,defer:false)
+        window.minSize=CGSize(width:560,height:480); window.title="叶瞬光桌宠设置"; window.isReleasedWhenClosed=false
         super.init(window:window)
         self.model.onSettingsPresentationChange={[weak self] in self?.updateFocusVisibility()}
         for name in [NSApplication.didHideNotification,NSApplication.didUnhideNotification] {

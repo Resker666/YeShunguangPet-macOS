@@ -80,4 +80,20 @@ import PetCore
         defer{session.prepareToExit()};session.start()
         XCTAssertEqual(SupportDiagnosticSnapshot.capture(session:session,focusWindow:nil).skin,.external)
     }
+    func testRememberedSkinDoesNotMisclassifyTheCurrentCommandLineSkin()throws {
+        let f=try ShortcutFixture();defer{f.close()}
+        let external=try SkinLoader.load(manifestURL:SkinFixtures.writePackage(in:f.directory.appendingPathComponent("external")))
+        let store=SettingsStore(url:f.directory.appendingPathComponent("external-settings.json"))
+        let library=SkinLibrary(directory:f.directory.appendingPathComponent("Skins"))
+        let imported=try library.install(SkinLoader.readPackage(manifestURL:f.session.skin.directory.appendingPathComponent("pet.json")))
+        try store.save(.init(placement:nil,selectedSkinID:imported.id))
+        let session=PetSession(skin:external,defaultSkin:f.session.skin,now:{.zero},settings:store,screens:f.session.screens)
+        defer{session.prepareToExit()};session.start(restoringSkin:false)
+        XCTAssertEqual(session.selectedSkinID,imported.id)
+        XCTAssertEqual(SupportDiagnosticSnapshot.capture(session:session,focusWindow:nil).skin,.external)
+        try session.useImportedSkin(imported)
+        XCTAssertEqual(SupportDiagnosticSnapshot.capture(session:session,focusWindow:nil).skin,.imported)
+        try session.restoreDefaultSkin()
+        XCTAssertEqual(SupportDiagnosticSnapshot.capture(session:session,focusWindow:nil).skin,.bundled)
+    }
 }

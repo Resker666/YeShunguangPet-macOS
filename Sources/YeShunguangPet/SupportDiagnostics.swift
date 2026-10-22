@@ -49,7 +49,10 @@ struct SupportDiagnosticSnapshot {
         value.screens=session?.screens().map(\.visibleFrame) ?? NSScreen.screens.map(\.visibleFrame)
         if let session {
             value.configuration=session.protectedSettings ? .protectedFile : session.persistenceError == nil ? .ready : .saveFailed
-            value.skin=session.skinWarning != nil ? .fallback : session.selectedSkinID != nil ? .imported : session.skin.directory==session.defaultSkin.directory ? .bundled : .external
+            if session.skinWarning != nil {value.skin = .fallback}
+            else if session.skin.directory==session.defaultSkin.directory {value.skin = .bundled}
+            else if let id=session.selectedSkinID,session.skin.directory==session.library.directory.appendingPathComponent(id,isDirectory:true).resolvingSymlinksInPath() {value.skin = .imported}
+            else {value.skin = .external}
             value.pet = .init(frame:session.panel.frame,visible:session.panel.isVisible)
             value.positionLocked=session.preferences.positionLocked;value.quiet=session.effectiveQuiet
             value.statisticsSaveFailed=session.focusStatisticsSaveError != nil
