@@ -37,3 +37,7 @@
 安装前后完整记录及私有备份在忽略目录`.build/sonoma-compatibility-validation/`，包括`final-source.json`、`mach-o-requirements.json`、`package-verification.json`、`local-install.json`、`installed-window.json`及各测试日志。安装几何探针第一次误用`visible`字段而报KeyError，按实际`isVisible`字段更正后通过，仅属探针错误，未修改产品代码。
 
 本版用户整体体验、Sonoma/Intel/黑苹果及其他系统场景仍待验收。仅本地提交，未合并main、推送、打标签或发布。
+
+## 后续云端推送授权
+
+用户随后明确要求推送到云端，以便黑苹果从GitHub项目下载；授权普通同步main及开发分支并核对Actions产物。本次没有声明本机或黑苹果体验已通过，未授权标签、Release草稿或公开发布。Actions成功运行页面提供x86_64安装产物，需登录GitHub，保留14天；下载外层ZIP解压后使用其中的DMG。实际远端、云端检查与下载核验结果另按日志记录，不把推送授权当作运行通过。
