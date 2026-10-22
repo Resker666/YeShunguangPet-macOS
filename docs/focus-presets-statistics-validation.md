@@ -46,3 +46,9 @@ App：/Applications/YeShunguangPet.app。安装包：dist/YeShunguangPet-0.1.18-
 保持本地codex/macos-focus-presets-statistics，未合并main、推送、打标签或发布，云端未构建本版。用户整体体验、真实键鼠/焦点/系统睡眠与日期事件、Spaces/登录/热插拔、Intel/外机/Gatekeeper、强制结束/断电时未保存汇总的耐久仍未据本轮验证；明确继续退出或强制结束可能丢失尚未保存的增量。
 
 真实键鼠、跨应用焦点、系统睡眠/Spaces/登录/热插拔、Intel/黑苹果、外机与Gatekeeper首开未由本轮自动回归验证；注入时间/通知与原生回调不代替系统实测。保持Windows仓库和Minimal Sleep只读。
+
+## 用户验收与推送授权
+
+用户随后在本会话反馈“验证通过，推送”，确认0.1.18快捷计时与今日统计版本的本机整体体验，授权按既有流程同步main和codex/macos-focus-presets-statistics。只做普通push，不触发prepare_release，不打标签或创建/发布Release。
+
+该反馈不扩展为四种预设、所有计数/跨日/睡眠结算、保存失败/重开、物理输入或系统/Intel/外机场景均逐项实测；既有自动化边界继续保留。前述“待验收”“未推送”为本地交付时状态，远端和云端结果按本轮实际日志记录，未授权下一版产品实施。
