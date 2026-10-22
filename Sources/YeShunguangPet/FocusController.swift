@@ -5,6 +5,19 @@ import PetCore
 struct FocusSnapshot:Equatable {
     let phase:FocusPhase,status:FocusStatus
     let remainingSeconds:Int,durationSeconds:Int
+    var timeText:String {String(format:"%02d:%02d",remainingSeconds/60,remainingSeconds%60)}
+    var phaseName:String {phase == .focus ? "专注" : "休息"}
+    var statusText:String {
+        switch status {case .ready:return "准备\(phaseName)";case .running:return "\(phaseName)中";case .paused:return "\(phaseName)已暂停";case .completed:return "\(phaseName)完成"}
+    }
+    var primaryTitle:String {
+        switch status {
+        case .ready:return "开始\(phaseName)"
+        case .running:return "暂停\(phaseName)"
+        case .paused:return "继续\(phaseName)"
+        case .completed:return phase == .focus ? "开始休息" : "开始专注"
+        }
+    }
 }
 struct FocusCommand:Hashable {
     enum Kind:Hashable {case startOrResume,pause}
@@ -31,19 +44,10 @@ struct FocusCommand:Hashable {
     }
     var focusMinutes:Int {session?.preferences.focusMinutes ?? 25}
     var breakMinutes:Int {session?.preferences.breakMinutes ?? 5}
-    var timeText:String {String(format:"%02d:%02d",remainingSeconds/60,remainingSeconds%60)}
-    var phaseName:String {phase == .focus ? "专注" : "休息"}
-    var statusText:String {
-        switch status {case .ready:return "准备\(phaseName)";case .running:return "\(phaseName)中";case .paused:return "\(phaseName)已暂停";case .completed:return "\(phaseName)完成"}
-    }
-    var primaryTitle:String {
-        switch status {
-        case .ready:return "开始\(phaseName)"
-        case .running:return "暂停\(phaseName)"
-        case .paused:return "继续\(phaseName)"
-        case .completed:return phase == .focus ? "开始休息" : "开始专注"
-        }
-    }
+    var timeText:String {snapshot.timeText}
+    var phaseName:String {snapshot.phaseName}
+    var statusText:String {snapshot.statusText}
+    var primaryTitle:String {snapshot.primaryTitle}
     lazy var scheduler=FrameScheduler(now:now) {[weak self] in self?.refreshTime()}
     init(session:PetSession) {
         self.session=session;self.now=session.now

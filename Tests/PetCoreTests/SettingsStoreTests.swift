@@ -31,7 +31,7 @@ final class SettingsStoreTests: XCTestCase {
         guard case .loaded(let saved)=store.load() else { return XCTFail("valid imported selection must load") }
         try store.save(saved)
         let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
-        XCTAssertEqual(encoded["schemaVersion"] as? Int,10)
+        XCTAssertEqual(encoded["schemaVersion"] as? Int,11)
         XCTAssertEqual(encoded["selectedSkinID"] as? String,"4AEFD8B7-6164-482F-997F-13ABFBB4275D")
         XCTAssertEqual(saved.placement,placement)
         XCTAssertEqual(saved.preferences,PetPreferences(scale:1.5,alwaysOnTop:false))
@@ -42,7 +42,7 @@ final class SettingsStoreTests: XCTestCase {
         guard case .loaded(let saved)=store.load() else { return XCTFail("legacy position must load") }
         try store.save(saved)
         let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
-        XCTAssertEqual(encoded["schemaVersion"] as? Int,10)
+        XCTAssertEqual(encoded["schemaVersion"] as? Int,11)
         let preferences=try XCTUnwrap(encoded["preferences"] as? [String:Any])
         XCTAssertEqual(preferences["scale"] as? Double,1)
         XCTAssertEqual(preferences["alwaysOnTop"] as? Bool,true)
@@ -137,7 +137,7 @@ final class SettingsStoreTests: XCTestCase {
             XCTAssertTrue(saved.preferences.lookAtMouse)
             try store.save(saved)
             let encoded=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
-            XCTAssertEqual(encoded["schemaVersion"] as? Int,10)
+            XCTAssertEqual(encoded["schemaVersion"] as? Int,11)
             XCTAssertEqual((encoded["preferences"] as? [String:Any])?["lookAtMouse"] as? Bool,true)
             if version==3 { XCTAssertEqual(encoded["selectedSkinID"] as? String,"4AEFD8B7-6164-482F-997F-13ABFBB4275D") }
         }
@@ -214,7 +214,7 @@ final class SettingsStoreTests: XCTestCase {
         try store.save(saved)
         var object=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
         var preferences=try XCTUnwrap(object["preferences"] as? [String:Any])
-        XCTAssertEqual(object["schemaVersion"] as? Int,10);XCTAssertEqual(preferences["speechEnabled"] as? Bool,false)
+        XCTAssertEqual(object["schemaVersion"] as? Int,11);XCTAssertEqual(preferences["speechEnabled"] as? Bool,false)
         preferences["speechEnabled"]=true;object["preferences"]=preferences;object["schemaVersion"]=7
         try JSONSerialization.data(withJSONObject:object).write(to:settingsURL)
         let reopened=SettingsStore(url:settingsURL)
@@ -259,7 +259,7 @@ final class SettingsStoreTests: XCTestCase {
 
             XCTAssertEqual(value.selectedSkinID,version>=3 ? "4AEFD8B7-6164-482F-997F-13ABFBB4275D" : nil)
             try store.save(value)
-            XCTAssertEqual((try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any])["schemaVersion"] as? Int,10)
+            XCTAssertEqual((try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any])["schemaVersion"] as? Int,11)
             guard case .loaded(let again)=SettingsStore(url:settingsURL).load() else{return XCTFail("v8 reload")}
             XCTAssertEqual(again,value)
         }
@@ -302,7 +302,7 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(saved.preferences,prefs);XCTAssertEqual(saved.placement,placement);XCTAssertEqual(saved.selectedSkinID,id)
         try store.save(saved)
         let object=try JSONSerialization.jsonObject(with:Data(contentsOf:settingsURL)) as! [String:Any]
-        XCTAssertEqual(object["schemaVersion"] as? Int,10)
+        XCTAssertEqual(object["schemaVersion"] as? Int,11)
         let current=try XCTUnwrap(object["preferences"] as? [String:Any])
         XCTAssertEqual(current["snapToEdges"] as? Bool,false);XCTAssertEqual(current["positionLocked"] as? Bool,false)
     }

@@ -25,7 +25,7 @@ final class CompanionSettingsTests:XCTestCase {
         XCTAssertEqual(saved.preferences.scale,1.5);XCTAssertTrue(saved.preferences.positionLocked)
         try SettingsStore(url:url).save(saved)
         let reloaded=try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:url)) as? [String:Any])
-        XCTAssertEqual(reloaded["schemaVersion"] as? Int,10)
+        XCTAssertEqual(reloaded["schemaVersion"] as? Int,11)
     }
     func testVersionNineMigrationPreservesAllPreferencesPlacementAndSelection()throws {
         var object=try configuration();object["schemaVersion"]=9
@@ -40,7 +40,7 @@ final class CompanionSettingsTests:XCTestCase {
         try SettingsStore(url:url).save(saved)
         let encoded=try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:url)) as? [String:Any])
         let newP=try XCTUnwrap(encoded["preferences"] as? [String:Any])
-        XCTAssertEqual(encoded["schemaVersion"] as? Int,10);XCTAssertEqual(newP["focusMinutes"] as? Int,25);XCTAssertEqual(newP["breakMinutes"] as? Int,5)
+        XCTAssertEqual(encoded["schemaVersion"] as? Int,11);XCTAssertEqual(newP["focusMinutes"] as? Int,25);XCTAssertEqual(newP["breakMinutes"] as? Int,5)
         XCTAssertEqual((newP["speechOverrides"] as? [String:Any])?.count,0)
         for (key,value) in p {XCTAssertEqual(String(describing:newP[key]!),String(describing:value),key)}
     }

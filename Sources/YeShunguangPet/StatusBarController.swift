@@ -7,6 +7,7 @@ import PetCore
     private let loginItem:LoginItemController?
     let skinModel:SettingsModel?
     let focus:FocusController?
+    private(set) var focusWindow:FocusWindowController?
     private var quickSkins:QuickSkinMenus?
     private var focusMenus:FocusMenus?
     private var openMenus=Set<ObjectIdentifier>(),terminating=false
@@ -39,7 +40,7 @@ import PetCore
         #else
         let architecture=ReleaseArchitecture.x86_64
         #endif
-        self.updates=updates ?? ReleaseUpdateModel(currentVersion:ReleaseVersion(tag:Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") ?? ReleaseVersion(tag:"0.1.15")!,architecture:architecture,client:ReleaseUpdateClient())
+        self.updates=updates ?? ReleaseUpdateModel(currentVersion:ReleaseVersion(tag:Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") ?? ReleaseVersion(tag:"0.1.16")!,architecture:architecture,client:ReleaseUpdateClient())
         self.loginItem=loginItem
         let focus=session.map{FocusController(session:$0)}
         self.focus=focus
@@ -81,8 +82,13 @@ import PetCore
                 let entry=NSMenuItem(title:"切换皮肤",action:nil,keyEquivalent:"");entry.submenu=child;parent.insertItem(entry,at:0);child.delegate=self
             }
         }
-        if let focus {
-            let menus=FocusMenus(focus:focus,canDispatch:{[weak self] in
+        if let focus,let session {
+            let window=FocusWindowController(session:session,focus:focus,canDispatch:{[weak self] in
+                guard let self else{return false}
+                return !self.terminating && self.session?.gate.exiting==false && self.settingsController?.hasBlockingSheet != true && NSApp.modalWindow==nil
+            })
+            focusWindow=window
+            let menus=FocusMenus(focus:focus,desktop:window,canDispatch:{[weak self] in
                 guard let self else{return false}
                 return !self.terminating && self.session?.gate.exiting==false && self.settingsController?.hasBlockingSheet != true && NSApp.modalWindow==nil
             },onSettings:{[weak self] in self?.presentSettings(tab:.focus)})
@@ -112,6 +118,7 @@ import PetCore
         resetItem.isHidden=session?.protectedSettings != true
         quickSkins?.refresh()
         focusMenus?.refresh()
+        focusWindow?.refreshPreferences()
     }
     @objc private func retry() { session?.retrySave(); refresh() }
     @objc private func reset() { session?.resetProtectedSettings(); refresh() }
@@ -141,9 +148,9 @@ import PetCore
         settingsController?.present(tab:tab)
     }
     @objc private func checkUpdates() {guard session != nil else{return};presentSettings(tab:.about);updates.check()}
-    func startShortcuts(){shortcuts?.start()}
-    func beginTermination(){terminating=true;focus?.setTerminating(true);contextMenu.cancelTracking();updates.cancel();quickSkins?.cancel();if let settingsController{settingsController.beginTermination()}else{skinModel?.beginTermination()};refresh()}
-    func cancelTermination(){terminating=false;focus?.setTerminating(false);if let settingsController{settingsController.cancelTermination()}else{skinModel?.cancelTermination()};refresh()}
+    func startShortcuts(){shortcuts?.start();focusWindow?.start()}
+    func beginTermination(){terminating=true;focusWindow?.beginTermination();focus?.setTerminating(true);contextMenu.cancelTracking();updates.cancel();quickSkins?.cancel();if let settingsController{settingsController.beginTermination()}else{skinModel?.beginTermination()};refresh()}
+    func cancelTermination(){terminating=false;focus?.setTerminating(false);focusWindow?.cancelTermination();if let settingsController{settingsController.cancelTermination()}else{skinModel?.cancelTermination()};refresh()}
     @objc private func quit() { onQuit() }
-    func dispose() { terminating=true;focus?.dispose();focusMenus?.dispose();focusMenus=nil;contextMenu.cancelTracking();quickSkins?.dispose();quickSkins=nil;session?.view.contextMenu=nil;contextMenu.delegate=nil;openMenus.removeAll();updates.cancel();shortcuts?.dispose();settingsController?.close(); settingsController=nil; session?.setMenuOpen(false); item.menu=nil; menu.delegate=nil; NSStatusBar.system.removeStatusItem(item) }
+    func dispose() { terminating=true;focusWindow?.dispose();focusWindow=nil;focus?.dispose();focusMenus?.dispose();focusMenus=nil;contextMenu.cancelTracking();quickSkins?.dispose();quickSkins=nil;session?.view.contextMenu=nil;contextMenu.delegate=nil;openMenus.removeAll();updates.cancel();shortcuts?.dispose();settingsController?.close(); settingsController=nil; session?.setMenuOpen(false); item.menu=nil; menu.delegate=nil; NSStatusBar.system.removeStatusItem(item) }
 }

@@ -44,6 +44,8 @@ struct FocusSettingsView:View {
                 if let error {Text(error).font(.caption).foregroundStyle(.red).textSelection(.enabled)}
                 Text("每段结束后，由你手动开始休息或下一次专注。专注运行时暂时安静，暂停或结束后恢复；手动安静开关保留。")
                     .font(.caption).foregroundStyle(.secondary)
+                Text("桌面计时器独立于角色，可拖动顶部移动、点击图钉切换置顶。关闭小窗仍继续计时；菜单栏或角色右键的专注计时菜单可重新显示或召回。")
+                    .font(.caption).foregroundStyle(.secondary)
                 Text("隐藏角色、关闭设置不暂停；睡眠时间计入倒计时。完成时若角色正隐藏、安静或交互被阻挡，可从菜单查看完成状态。退出结束本次计时，重开只保留时长。")
                     .font(.caption).foregroundStyle(.secondary)
             }.padding(20).frame(maxWidth:.infinity,alignment:.leading)

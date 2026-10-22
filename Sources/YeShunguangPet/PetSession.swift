@@ -144,7 +144,7 @@ import PetCore
         applyWindowPreferences(); applyPlacement(nextPlacement); synchronize(); onStatusChange?()
     }
     func setPreferences(_ value: PetPreferences) {
-        guard !gate.exiting,value.isValid,value.keyboardShortcuts==preferences.keyboardShortcuts,value.focusMinutes==preferences.focusMinutes,value.breakMinutes==preferences.breakMinutes,value.speechOverrides==preferences.speechOverrides,value != preferences else { return }
+        guard !gate.exiting,value.isValid,value.keyboardShortcuts==preferences.keyboardShortcuts,value.focusMinutes==preferences.focusMinutes,value.breakMinutes==preferences.breakMinutes,value.speechOverrides==preferences.speechOverrides,value.focusWindow==preferences.focusWindow,value != preferences else { return }
         cancelInput()
         preferences=value; applyWindowPreferences()
         applyPlacement(WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens()))

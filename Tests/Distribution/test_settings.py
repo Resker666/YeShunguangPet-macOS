@@ -56,12 +56,13 @@ class StandaloneSettingsTests(unittest.TestCase):
             settings.write_text(json.dumps({"schemaVersion": 1, "placement": position}))
             migrated_metrics = SMOKE.run_once(binary, work, 2)
             migrated = json.loads(settings.read_text())
-            self.assertEqual(migrated["schemaVersion"], 10)
+            self.assertEqual(migrated["schemaVersion"], 11)
             self.assertEqual(migrated["preferences"], {"scale": 1, "alwaysOnTop": True, "lookAtMouse": True,
                                                       "automaticActions": False, "automaticActionIntervalSeconds": 60,
                                                       "desktopRoaming": False, "roamIntervalSeconds": 75, "speechEnabled": False, "keyboardShortcuts": [],
                                                       "snapToEdges": False, "positionLocked": False,
-                                                      "focusMinutes": 25, "breakMinutes": 5, "speechOverrides": {}})
+                                                      "focusMinutes": 25, "breakMinutes": 5, "speechOverrides": {},
+                                                      "focusWindow": {"isVisible": True, "alwaysOnTop": True}})
             self.assertTrue(migrated_metrics["lookAtMouseEnabled"])
             self.assertGreater(migrated_metrics["gazeSamples"], 0)
             self.assertEqual(migrated["placement"], position)
@@ -70,6 +71,7 @@ class StandaloneSettingsTests(unittest.TestCase):
                            "desktopRoaming": True, "roamIntervalSeconds": 20, "speechEnabled": True, "keyboardShortcuts": [],
                            "snapToEdges": True, "positionLocked": True,
                            "focusMinutes": 45, "breakMinutes": 10,
+                           "focusWindow": {"isVisible": False, "alwaysOnTop": False},
                            "speechOverrides": {"ye-shunguang": {"click": ["个人点击"], "drag": [],
                                                                   "focusCompleted": ["专注完成"], "breakCompleted": ["休息完成"]}}}
             migrated["preferences"] = preferences

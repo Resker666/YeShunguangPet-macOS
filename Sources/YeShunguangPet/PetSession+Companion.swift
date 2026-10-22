@@ -1,6 +1,10 @@
 import PetCore
 
 extension PetSession {
+    func saveFocusWindow(_ value:FocusWindowPreferences)throws {
+        var candidate=preferences;candidate.focusWindow=value
+        try commitCompanionPreferences(candidate)
+    }
     func saveSpeechOverrides(_ overrides:[String:SpeechLines])throws {
         try PersonalSpeech.validate(overrides)
         var candidate=preferences;candidate.speechOverrides=overrides

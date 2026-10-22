@@ -2,7 +2,7 @@
 适用于本仓库。先读 docs/superpowers/specs/2026-10-20-macos-first-playable-design.md 和对应 plans 文件，检查 git status。
 - Swift 6、AppKit、macOS 15+；arm64优先日用，x86_64为用户同意增加的实验交叉构建。使用现有Xcode，不引入外部依赖。
 - 测试：bash scripts/test.sh；构建：bash scripts/build-app.sh；打包：bash scripts/package-app.sh。独立启动回归：python3 scripts/smoke-app.py。
-- 分发：0.1.15 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
+- 分发：0.1.16 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
 - 独立进程验证设置 YSGPET_SETTINGS_PATH 使用临时配置；不带该变量才使用个人 Application Support。
 - 用户已确认真实拖动、单击/双击、菜单隐藏/显示和召回正常。GUI 工具首次超时，后续可读取实际角色画面；焦点、Spaces、锁屏和真实睡眠仍未验证，不能以属性或模拟事件当作通过。
 - 真实皮肤 JSON/PNG 字节保持不变；源码 MIT 与第三方素材声明分开。
@@ -59,3 +59,5 @@
 - 0.1.15本地交付完成：13项离线发版、10项分发、八附件离线核验通过；干净来源4430577的双架构App/包、签名/原素材/库存/摘要及ARM搬移重开通过。隔离Bundle三套旧皮肤四类个人台词、保存失败保留、原生页面及菜单跟踪通过；隐藏实际计时60.046秒完成一次，FocusController调度器唤醒一次，不等于全进程只唤醒一次。原生程序化事件和渲染不记作物理输入或焦点通过。
 - /Applications日用App已更新并运行0.1.15/build16，schema9→10原偏好/皮肤/更新时位置/快捷键保留，新25/5/空覆盖；旧App和配置已备份，正式登录项未改。交付代码来源4430577，后续仅文档提交不改变包来源。用户整体验收、真实键鼠/选中Tab现场显示/系统睡眠/Spaces/登录/多屏、Intel/外机/Gatekeeper仍待验证。保留本地codex/macos-focus-custom-speech，未推送、打标签或发布；证据在docs/focus-speech-validation.md及忽略目录.build/focus-speech-validation。
 - 用户随后反馈“验证通过，推送”：确认0.1.15个人台词与专注计时版本的本机整体体验，授权按既有流程同步main和codex/macos-focus-custom-speech，普通push；不触发prepare_release，不打标签或创建/发布Release。该反馈不扩展为四类台词、两段计时、所有失败/取消/重开或物理输入场景均逐项实测，也不代表系统睡眠、焦点、Intel或外机通过。云端验证结果以实际日志另行记录。
+- 0.1.15已按授权推送8ef5665，main云端39700968167及开发分支39700968123成功，270项原生/13项离线发版/10项分发及双架构Artifacts上传通过，release-draft跳过。核对实际日志与产物元数据，未另下载二进制，未打标签或发布；证据.build/focus-speech-validation/push-verification.json。
+- 0.1.16用户批准独立桌面计时小窗的会话短设计并明确“开始执行”，本会话原地实施。复用FocusController、非激活NSPanel与独立显示消费者；窗口与角色显示、位置、设置门控分开，关闭只隐藏，完成手动衔接；默认显示/置顶，顶部拖动结束保存、屏幕变化修正。schema11专用旧10迁移保留全部字段，新窗口true/true/nil；坏配置保护。窗口操作写失败可本次临时生效、保留磁盘和已保存偏好、提示并可重试。详情及真实交付边界见docs/desktop-focus-validation.md；本版尚未授权推送或Release。
