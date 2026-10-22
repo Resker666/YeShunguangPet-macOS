@@ -18,9 +18,9 @@ schema13在PetSettings顶层存focusStatistics，专用12结构迁移，旧偏�
 
 Xcode运行器有系统linkd连接诊断；测试退出0且TEST SUCCEEDED。编译缺失不写作运行期失败。测试仅使用临时配置/皮肤，不改个人登录登记。
 
-## 后续交付核验
+## 交付证据
 
-单次独立评审、双架构干净来源App与包、10项分发、签名/原素材/包内容/摘要、八附件离线检查、ARM搬移重开、原生设置页渲染/真实一分钟及个人App备份更新，实际完成后补记，不预先宣称通过。原始证据保存在忽略目录.build/focus-presets-statistics-validation。
+最终结果如下；原始日志、包与个人备份只保存在忽略目录.build/focus-presets-statistics-validation，不提交或上传个人数据。
 
 ## 单次评审与候选包
 
@@ -29,5 +29,20 @@ Xcode运行器有系统linkd连接诊断；测试退出0且TEST SUCCEEDED。编�
 a71193f候选的10项分发、双架构包库存/签名/摘要、八附件离线检查和ARM搬移重开通过，已归档至review-initial；它不是文案修正后的最终交付来源。隔离探针真实60.051963秒完成一次，60个不同显示秒数、Focus调度器60次唤醒、额外573次100ms等待检查，汇总1次/1分钟落盘并由新控制器读取；不等于全进程仅60次唤醒。最终来源核验仍以之后的实际结果为准。
 
 最初NSHostingView缓存PNG含透明背景，不能据此认定文字不可读或布局通过。探针显式补背景、设置colorScheme并在当前drawingAppearance中缓存后，已查看浅色准备态、深色完成态，预设/统计/错误区可读。该改动仅在忽略的探针中，不改产品视觉；保留initial-alpha-renders和render-recheck.log。原生缓存渲染不等于真实窗口截图、鼠标或焦点实测。
+
+## 最终来源、运行与安装
+
+最终干净来源a63be62227391ba3fc2a20b36adaf5c6a158dd14，trackedChanges=false，0.1.18/build19。之后交付记录提交只改文档，不改变App来源。
+
+- 最终导出工程的10项分发测试通过（distribution.log），含schema1→13、统计2次/40分钟及全部偏好跨独立进程重开保留、素材缺失回退。两架构App/DMG/ZIP、签名、原素材、最低macOS15、动态依赖、符号链接、库存一致性和SHA-256核对通过。八附件prepare-release.py --check-only完全离线通过，没有创建草稿、标签或Release。
+- ARM从DMG复制到中文/空格路径、弹出DMG后，在/private/tmp、剥离开发变量并设置无效DEVELOPER_DIR的环境启动、正常退出并重开恢复；仅本机搬移，不是外机或Gatekeeper首开。见package-verification.json和final-relocated-smoke.json。
+- 最终来源的隔离Bundle由原生菜单开始15分钟预设、保存为常用时长，用注入时刻结算一次15分钟；休息不计、跨日投影0、写失败保旧字节及待存汇总、重试不重复均通过。另一段真实自定义1分钟耗时60.076829秒，显示60个不同秒数，完成1次/1计划分钟落盘，新控制器读取且处于准备态。Focus调度器60次唤醒，探针另有573次100ms等待检查，不宣称全进程只唤醒60次。15/25/45/60分钟的到期边界由注入时刻验证，不冒充四次真实长计时。
+- 缓存12张最终原生画面，含浅/深色准备和完成、预设运行、换日、保存失败、紧凑完成及真实一分钟。已查看准备态/深色完成/错误区，以及520×380内容区的顶部和原生NSScrollView滚动到底部，说明可达；探针背景处理仅用于缓存，不能代替实际系统样式/焦点/物理滚轮。见native-probe.json/.log、minimum-render.log及PNG。
+- 按准确路径正常退出旧0.1.17，备份旧App、退出前及退出后配置，再安装/Applications/YeShunguangPet.app。schema12→13保留全部原偏好、皮肤、迁移时位置、快捷键、时长、个人台词与计时窗状态，新增空日/0次/0分钟统计；正常启动和退出核对后移除验证环境变量，保持新版运行。未登记或撤销正式登录项。见local-install.json，备份previous-installed-0.1.17.app及personal-settings-migration-baseline.json只保留本机。
+- 按已安装App的PID筛选在屏窗口几何，确认计时窗大小/显示状态符合保存偏好；不读取其他应用内容或推定跨应用焦点。见installed-window.json。
+
+App：/Applications/YeShunguangPet.app。安装包：dist/YeShunguangPet-0.1.18-macOS-arm64.dmg，Intel实验包另标x86_64。完整来源/评审/包/安装汇总见final-source.json、review-summary.json、final-delivery.json、local-install.json及completion.json。
+
+保持本地codex/macos-focus-presets-statistics，未合并main、推送、打标签或发布，云端未构建本版。用户整体体验、真实键鼠/焦点/系统睡眠与日期事件、Spaces/登录/热插拔、Intel/外机/Gatekeeper、强制结束/断电时未保存汇总的耐久仍未据本轮验证；明确继续退出或强制结束可能丢失尚未保存的增量。
 
 真实键鼠、跨应用焦点、系统睡眠/Spaces/登录/热插拔、Intel/黑苹果、外机与Gatekeeper首开未由本轮自动回归验证；注入时间/通知与原生回调不代替系统实测。保持Windows仓库和Minimal Sleep只读。
