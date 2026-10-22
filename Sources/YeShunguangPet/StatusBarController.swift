@@ -13,6 +13,10 @@ import PetCore
     private var openMenus=Set<ObjectIdentifier>(),terminating=false
     private var menuOpen:Bool { !openMenus.isEmpty }
     let checkUpdatesItem=NSMenuItem(title:"检查更新…",action:#selector(checkUpdates),keyEquivalent:"")
+    let helpItem=NSMenuItem(title:"使用帮助…",action:#selector(openHelp),keyEquivalent:"")
+    let copyDiagnosticsItem=NSMenuItem(title:"复制诊断信息",action:#selector(copyDiagnostics),keyEquivalent:"")
+    private let diagnosticResultItem=NSMenuItem(title:"",action:nil,keyEquivalent:"")
+    private(set) var diagnostics:SupportDiagnosticsModel?
     private let item: NSStatusItem
     weak var session: PetSession?
     let visibilityItem=NSMenuItem(title:"显示角色",action:#selector(toggle),keyEquivalent:"")
@@ -34,13 +38,13 @@ import PetCore
     private let resetItem=NSMenuItem(title:"备份原配置并重置",action:#selector(reset),keyEquivalent:"")
     let skinWarningItem=NSMenuItem(title:"皮肤恢复提示（查看设置…）",action:#selector(openSettings),keyEquivalent:"")
     private let onQuit: () -> Void
-    init(session: PetSession?, error: String? = nil, updates:ReleaseUpdateModel?=nil,registry:(any HotKeyRegistry)?=nil,loginItem:LoginItemController?=nil, onQuit: @escaping () -> Void) {
+    init(session: PetSession?, error: String? = nil, updates:ReleaseUpdateModel?=nil,registry:(any HotKeyRegistry)?=nil,loginItem:LoginItemController?=nil,diagnosticWriter:((String)->Bool)?=nil, onQuit: @escaping () -> Void) {
         #if arch(arm64)
         let architecture=ReleaseArchitecture.arm64
         #else
         let architecture=ReleaseArchitecture.x86_64
         #endif
-        self.updates=updates ?? ReleaseUpdateModel(currentVersion:ReleaseVersion(tag:Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") ?? ReleaseVersion(tag:"0.1.19")!,architecture:architecture,client:ReleaseUpdateClient())
+        self.updates=updates ?? ReleaseUpdateModel(currentVersion:ReleaseVersion(tag:Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") ?? ReleaseVersion(tag:"0.1.20")!,architecture:architecture,client:ReleaseUpdateClient())
         self.loginItem=loginItem
         let focus=session.map{FocusController(session:$0)}
         self.focus=focus
@@ -66,6 +70,9 @@ import PetCore
         quietItem.toolTip="本次运行暂时暂停注视、自动动作和走动，保留待机与手动互动；重开恢复正常。"
         settingsItem.target=self; menu.addItem(settingsItem)
         checkUpdatesItem.target=self;menu.addItem(checkUpdatesItem)
+        helpItem.target=self;menu.addItem(helpItem)
+        copyDiagnosticsItem.target=self;menu.addItem(copyDiagnosticsItem)
+        diagnosticResultItem.isEnabled=false;menu.addItem(diagnosticResultItem)
         skinWarningItem.target=self; menu.addItem(skinWarningItem)
         persistenceItem.isEnabled=false
         for entry in [persistenceItem,retryItem,resetItem] { entry.target=self; menu.addItem(entry) }
@@ -105,11 +112,15 @@ import PetCore
             guard let self,!self.terminating,self.session?.gate.shouldRunFrames==true,self.settingsController?.hasBlockingSheet != true,NSApp.modalWindow==nil else{return nil}
             self.refresh();return self.contextMenu
         }
+        diagnostics=SupportDiagnosticsModel(capture:{[weak self] in SupportDiagnosticSnapshot.capture(session:self?.session,focusWindow:self?.focusWindow)},canCopy:{[weak self] in self?.canUseSupportCommands==true},write:diagnosticWriter)
         session?.onStatusChange = { [weak self] in self?.refresh() }; refresh()
     }
     func refresh() {
         visibilityItem.title=session?.isVisible == true ? "隐藏角色" : "显示角色"; visibilityItem.isEnabled=session != nil; recallItem.isEnabled=session != nil
         checkUpdatesItem.isEnabled=session != nil
+        helpItem.isEnabled=session != nil && !terminating && settingsController?.hasBlockingSheet != true && NSApp.modalWindow==nil
+        copyDiagnosticsItem.isEnabled=canUseSupportCommands
+        diagnosticResultItem.title=diagnostics?.feedback.message ?? "";diagnosticResultItem.isHidden=diagnostics?.feedback.message==nil
         settingsItem.isEnabled=session != nil; skinModel?.refresh();focus?.refreshConfiguration()
         quietItem.isEnabled=session != nil;quietItem.state=session?.isQuiet == true ? .on : .off
         contextQuietItem.state=quietItem.state
@@ -146,9 +157,15 @@ import PetCore
         var prefs=session.preferences;prefs.positionLocked.toggle();session.setPreferences(prefs);refresh()
     }
     @objc private func openSettings() {presentSettings()}
+    private var canUseSupportCommands:Bool {!terminating && session?.gate.exiting != true && settingsController?.hasBlockingSheet != true && NSApp.modalWindow==nil}
+    @objc private func copyDiagnostics() {diagnostics?.copyDiagnostics();refresh()}
+    @objc private func openHelp() {
+        guard !terminating,session?.gate.exiting==false,settingsController?.hasBlockingSheet != true,NSApp.modalWindow==nil else{return}
+        presentSettings(tab:.help)
+    }
     private func presentSettings(tab:SettingsTab?=nil) {
         guard let session,let shortcuts else { return }
-        if settingsController == nil { settingsController=SettingsWindowController(session:session,updates:updates,shortcuts:shortcuts,loginItem:loginItem,model:skinModel) }
+        if settingsController == nil { settingsController=SettingsWindowController(session:session,updates:updates,shortcuts:shortcuts,loginItem:loginItem,model:skinModel,diagnostics:diagnostics) }
         settingsController?.present(tab:tab)
     }
     @objc private func checkUpdates() {guard session != nil else{return};presentSettings(tab:.about);updates.check()}

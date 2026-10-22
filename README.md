@@ -1,20 +1,26 @@
 # YeShunguangPet macOS
 
-为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前开发体验版为 0.1.19，最低系统调整为 macOS 14.0；本版尚未公开发布。此前0.1.12查询的公开最新版为0.1.11，该旧包仍要求macOS 15.0。
+为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前 0.1.20 正在本地开发，范围为手动使用帮助与复制诊断信息，尚未交付或发布。公开最新版为 [0.1.19](https://github.com/Resker666/YeShunguangPet-macOS/releases/tag/v0.1.19)，最低系统为 macOS 14.0。
 
 延后验证事项与后续候选路线见 [项目待办](TODO.md)。0.1.12更新、快捷键和设置分组的证据与限制见[验证记录](docs/update-shortcuts-settings-validation.md)。日用设置见 [设置验证记录](docs/settings-validation.md)；皮肤导入与切换见 [皮肤导入记录](docs/skin-import-validation.md)，已有副本管理见 [皮肤库验证记录](docs/skin-library-validation.md)，注视与资源采样见 [注视验证记录](docs/gaze-validation.md)，自动小动作见 [验证记录](docs/automatic-actions-validation.md)，小范围走动见 [走动验证](docs/roaming-validation.md)。
 
 ## 安装体验版
 
-普通用户从[最新 Release](https://github.com/Resker666/YeShunguangPet-macOS/releases/latest)下载安装包，无需从源码构建或登录后下载Actions产物。选择`arm64.dmg`用于M系列Mac，`x86_64.dmg`用于Intel实验测试。
+普通用户从[最新 Release](https://github.com/Resker666/YeShunguangPet-macOS/releases/latest)下载安装包，无需从源码构建或登录后下载Actions产物。当前公开版为0.1.19，选择`arm64.dmg`用于M系列Mac，`x86_64.dmg`用于Intel实验测试。
 
-使用者不需要安装 Xcode、Swift 或其他依赖。日用包请选择 M 系列 Mac（arm64）；另提供x86_64实验包。两种包分开，文件名标明架构。从0.1.19起部署目标为14.0，0.1.18及更早的现有包仍要求15.0。日用体验在 M4 / macOS 27.0 实测，另有macOS 26.6.2云端自动回归；0.1.19已获用户在一台Sonoma14.8.9 / Intel Core i5黑苹果上的整体体验通过反馈，其他硬件/系统及未逐项确认的场景继续待测，见[兼容记录](docs/sonoma-compatibility-validation.md)。
+使用者不需要安装 Xcode、Swift 或其他依赖。日用包请选择 M 系列 Mac（arm64）；另提供x86_64实验包。两种包分开，文件名标明架构。从0.1.19起部署目标为14.0，0.1.18及更早的现有包仍要求15.0。既有版本有 M4 / macOS 27.0 日用证据，本版M4用户整体体验待确认，另有macOS 26.6.2云端自动回归；0.1.19已获用户在一台Sonoma14.8.9 / Intel Core i5黑苹果上的整体体验通过反馈，其他硬件/系统及未逐项确认的场景继续待测，见[兼容记录](docs/sonoma-compatibility-validation.md)。
 
-1. M 系列打开 `YeShunguangPet-0.1.11-macOS-arm64.dmg`；Intel测试机选择文件名以`x86_64.dmg`结尾的实验包。将 App 拖到旁边的 Applications。
+1. M 系列打开 `YeShunguangPet-0.1.19-macOS-arm64.dmg`；Intel测试机选择 `YeShunguangPet-0.1.19-macOS-x86_64.dmg`。将 App 拖到旁边的 Applications。
 2. 弹出 DMG，从“应用程序”打开 App；菜单栏爪印提供操作和退出入口。
 3. 免费体验版使用 ad-hoc 签名，未公证。网上下载后若系统拦截，请先核实来源，在尝试打开后按 [Apple 官方说明](https://support.apple.com/zh-cn/102445) 前往“隐私与安全性 → 仍要打开”。DMG 不会消除系统提示。
 
 备用ZIP含对应架构的App和安装说明；安装、更新、卸载及配置保留说明见 [安装说明](docs/installation.txt)。0.1.1分发记录见 [分发记录](docs/distribution-validation.md)；双架构构建证据和限制见 [Intel测试包记录](docs/intel-validation.md)。
+
+## 0.1.20 开发范围
+
+已批准在现有设置窗口增加可随时手动打开的“使用帮助”页，菜单栏与关于页提供入口，不强制首启向导。帮助覆盖基础操作、换肤、专注计时与常见排查；“复制诊断信息”由用户点击后将版本/build、macOS/架构、屏幕与窗口矩形、配置状态复制为文本。
+
+诊断默认不含个人路径、个人台词、完整配置或原始错误，不上传；不新增配置schema、计时器或后台联网。实施、回归、双架构打包与本地交付状态见[本轮验证记录](docs/help-diagnostics-validation.md)，目前待验证。
 
 ## 打开与退出
 
@@ -28,7 +34,7 @@ open dist/YeShunguangPet.app
 
 右键角色可打开设置、切换安静模式或锁定位置、隐藏，以及手动挥手/跳跃。打开菜单取消待判定点击或正在进行的拖动，并暂停被动行为和快捷键；隐藏后可从菜单栏显示或召回。
 
-菜单栏和角色右键的“切换皮肤”子菜单可直接选择默认角色或已导入的皮肤，当前项带勾选；相同显示名附短标识，损坏项置灰并说明原因。“管理皮肤…”打开设置中的皮肤页，继续提供导入、预览和删除。列表在后台刷新并缓存，读取失败可重试；导入/删除、模态确认或退出期间不能切换。换肤失败保留原角色，在菜单中提供原因及查看设置的入口。换肤保留当前隐藏、临时安静状态和原有偏好，所选皮肤按原流程保存，原素材不变。0.1.14引入时使用schema9，本版迁移为schema11。证据与限制见[快捷换肤验证](docs/quick-skin-validation.md)。
+菜单栏和角色右键的“切换皮肤”子菜单可直接选择默认角色或已导入的皮肤，当前项带勾选；相同显示名附短标识，损坏项置灰并说明原因。“管理皮肤…”打开设置中的皮肤页，继续提供导入、预览和删除。列表在后台刷新并缓存，读取失败可重试；导入/删除、模态确认或退出期间不能切换。换肤失败保留原角色，在菜单中提供原因及查看设置的入口。换肤保留当前隐藏、临时安静状态和原有偏好，所选皮肤按原流程保存，原素材不变。0.1.14引入时使用schema9，当前配置为schema13。证据与限制见[快捷换肤验证](docs/quick-skin-validation.md)。
 
 通用页新增“拖动后贴边”和“锁定位置”，默认均关闭并自动保存。正常拖动松手距当前屏幕可用边缘12个逻辑点以内会贴齐，角落可同时贴齐两个方向；超出可用区域仍按原规则移回屏内。中断拖动、召回、缩放和屏幕修正不触发贴边。锁定暂停拖动和自动走动，保留单双击、召回、缩放及屏幕修正；解除后按原间隔等待走动。右键或菜单栏也可解除锁定。验证证据及限制见[记录](docs/context-placement-validation.md)。
 
@@ -116,7 +122,7 @@ python3 scripts/smoke-app.py --app /绝对路径/YeShunguangPet.app --check-rest
 
 构建需要 Xcode；使用 App 不需要。默认ARM App在`dist/YeShunguangPet.app`，Intel App在`dist/x86_64/YeShunguangPet.app`。两者主程序和嵌入框架架构必须一致；打包核对所选架构、Info.plist声明和两个Mach-O的实际macOS 14.0最低版本，拒绝错误标签、混合框架或最低版本不符的包。
 
-打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.19-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.9已按用户指令发布；0.1.10已体验通过并推送。0.1.11已获本机拖拽体验通过并推送；此前查询的公开最新版为0.1.11。0.1.17、0.1.18已验收并普通推送；0.1.19已普通推送、两路CI通过并获本台黑苹果体验通过反馈，尚未发布Release。
+打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.19-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.19已公开发布八份附件，标签及云端包来源为`37a73f0cd163dbb172300d0df269a4b7575180b5`，两路CI通过并获本台黑苹果整体体验通过反馈；本地历史交付包来源仍为`5164ba9`。0.1.20仅获本地开发授权，推送、标签和Release未获授权。
 
 App 图标由原仓库 ICO 转换，原图256×256；大尺寸仅作缩放，不新增绘制细节。需要重新生成时运行 `bash tools/make-icon.sh`，使用系统 sips/iconutil，无外部图像工具依赖。
 

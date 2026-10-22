@@ -2,7 +2,7 @@
 适用于本仓库。先读 docs/superpowers/specs/2026-10-20-macos-first-playable-design.md 和对应 plans 文件，检查 git status。
 - Swift 6、AppKit、macOS 14+（从0.1.19起，用户批准降低原15+目标）；arm64优先日用，x86_64为用户同意增加的实验交叉构建。使用现有Xcode，不引入外部依赖。
 - 测试：bash scripts/test.sh；构建：bash scripts/build-app.sh；打包：bash scripts/package-app.sh。独立启动回归：python3 scripts/smoke-app.py。
-- 分发：0.1.19 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
+- 分发：0.1.20 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
 - 独立进程验证设置 YSGPET_SETTINGS_PATH 使用临时配置；不带该变量才使用个人 Application Support。
 - 用户已确认真实拖动、单击/双击、菜单隐藏/显示和召回正常。GUI 工具首次超时，后续可读取实际角色画面；焦点、Spaces、锁屏和真实睡眠仍未验证，不能以属性或模拟事件当作通过。
 - 真实皮肤 JSON/PNG 字节保持不变；源码 MIT 与第三方素材声明分开。
@@ -83,3 +83,5 @@
 - 用户随后明确“推送到云端吧，到时候我黑苹果从github项目里去下载”，授权按既有流程同步main和codex/macos-sonoma-compatibility，普通推送并核对Actions构建/产物，提供Intel下载入口。该请求没有声明本机体验或黑苹果运行已通过；首次位置偏移原因仍未确认。Actions产物保留14天，下载需登录GitHub；未授权本版标签、草稿或Release发布。
 - 0.1.19已按授权推送37a73f0，main云端39743478929及开发分支39743478912成功，每路323项原生/13项离线发版/13项分发、双架构构建/打包/来源摘要/产物上传通过，草稿job跳过。实际下载开发分支Intel产物12410985491，外层/内层摘要、来源37a73f0、0.1.19/build20、最低14.0、签名/架构/原素材/依赖及DMG/ZIP库存通过，未在M4执行Intel程序；证据.build/sonoma-compatibility-validation/push-verification.json和cloud-log-summary.json。
 - 用户随后明确反馈“在黑苹果验证通过了”：本轮0.1.19在其Sonoma14.8.9 / 四核Intel Core i5 / 16GB黑苹果的整体体验通过。此为用户实机反馈，不扩展为其他Intel/Apple原生机型/macOS、所有功能或Gatekeeper/无Xcode/焦点/睡眠/Spaces/多屏/登录专项通过，也不代替M4本版整体验收；具体Artifact ID和安装App内build-info未单独核对，原单次位置偏移原因仍未知。本次只更新本地验收文档和TODO，不新增推送、标签、草稿或Release授权，原已构建包保持不变。
+- 用户随后表示已发布并批准“按你的想法来”：收尾0.1.19发布说明与实机记录，并按A→B在本会话原地开发0.1.20使用帮助与手动复制诊断信息。公开0.1.19确为已发布，远端说明编辑因浏览器工具超时未完成，替换文案保存在本地；不得据此写作远端已修改。0.1.20仍只本地提交和交付，未授权推送、标签或Release。
+- 0.1.20复用设置窗口新增帮助Tab、菜单栏及关于页入口，不强制首次打开；手动复制只在点击时生成白名单摘要（版本/构建、系统架构、屏幕/自身窗口、配置保存状态），不含路径、台词、完整配置、皮肤标识或原始错误，不上传、不轮询。模态/退出阻止复制，启动失败仍可取得匿名状态；配置保持schema13。新行为经先RED后GREEN验证，完整333项原生（130Core/203Mac）及13项离线发版测试通过；最终评审、双架构包和本地安装结果以docs/help-diagnostics-validation.md为准，不能由阶段测试推定完成交付。

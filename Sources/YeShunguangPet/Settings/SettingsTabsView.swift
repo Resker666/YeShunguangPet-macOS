@@ -1,12 +1,13 @@
 import AppKit
 import SwiftUI
 
-enum SettingsTab:String,CaseIterable {case skin,general,interaction,focus,shortcuts,about}
+enum SettingsTab:String,CaseIterable {case skin,general,interaction,focus,shortcuts,about,help}
 struct SettingsTabsView:View {
     @ObservedObject var model:SettingsModel
     @ObservedObject var updates:ReleaseUpdateModel
     @ObservedObject var shortcuts:ShortcutController
     @ObservedObject var login:LoginItemController
+    @ObservedObject var diagnostics:SupportDiagnosticsModel
     let onChooseSkin:()->Void
     var body:some View {
         VStack(spacing:0) {
@@ -16,7 +17,8 @@ struct SettingsTabsView:View {
                 InteractionSettingsView(model:model).tabItem{Label("互动",systemImage:"hand.wave")}.tag(SettingsTab.interaction)
                 FocusSettingsView(focus:model.focus).tabItem{Label("专注",systemImage:"timer")}.tag(SettingsTab.focus)
                 ShortcutSettingsView(controller:shortcuts,onApplied:{model.refresh()}).id(model.shortcutEditGeneration).tabItem{Label("快捷键",systemImage:"keyboard")}.tag(SettingsTab.shortcuts)
-                AboutSettingsView(updates:updates).tabItem{Label("关于",systemImage:"info.circle")}.tag(SettingsTab.about)
+                AboutSettingsView(updates:updates,diagnostics:diagnostics,onHelp:{model.selectedTab = .help}).tabItem{Label("关于",systemImage:"info.circle")}.tag(SettingsTab.about)
+                HelpSettingsView(diagnostics:diagnostics).tabItem{Label("帮助",systemImage:"questionmark.circle")}.tag(SettingsTab.help)
             }
             if let error=model.saveError {
                 VStack(alignment:.leading,spacing:4) {

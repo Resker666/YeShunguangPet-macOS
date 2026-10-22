@@ -1037,6 +1037,8 @@
 				<string>E3957299C956B1814B47D226</string>
 				<string>ED3BC652A487AC3834565392</string>
 				<string>8B6DE1F8D99288BBFB5D1D86</string>
+				<string>B6FD490F2B7B5F10F3FA7169</string>
+				<string>BE9634E0D059F487B05456EE</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1453,6 +1455,10 @@
 				<string>C0B175F2EBCFEB3639ECF22F</string>
 				<string>EE6A897A50C26CD0BB4BF922</string>
 				<string>25C6026F9A30787B426957CD</string>
+				<string>12F10F83ED2CDA8C1F586291</string>
+				<string>D22DA9A4FD05265C26FB9389</string>
+				<string>F8A6FE5F3C6E20CFFB632F1B</string>
+				<string>DCE3D5F639CD43C31E805356</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1766,6 +1772,10 @@
 				<string>C7605F38523A638EC03C6385</string>
 				<string>4F6A07C481D6ABC76C97EFA9</string>
 				<string>4C841E97AF64914043B6DF8F</string>
+				<string>0BC00B1F08882717DFED5336</string>
+				<string>F77DB793BE50969FE7B6BA5C</string>
+				<string>4FB507FF63108BCC8936615E</string>
+				<string>739A3EDEBBE7A067462DEDED</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -3127,6 +3137,92 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>4C841E97AF64914043B6DF8F</string>
+		</dict>
+		<key>0BC00B1F08882717DFED5336</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/HelpDiagnosticsTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>12F10F83ED2CDA8C1F586291</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>0BC00B1F08882717DFED5336</string>
+		</dict>
+		<key>F77DB793BE50969FE7B6BA5C</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Settings/HelpSettingsView.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>B6FD490F2B7B5F10F3FA7169</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>F77DB793BE50969FE7B6BA5C</string>
+		</dict>
+		<key>D22DA9A4FD05265C26FB9389</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>F77DB793BE50969FE7B6BA5C</string>
+		</dict>
+		<key>4FB507FF63108BCC8936615E</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/SupportDiagnostics.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>BE9634E0D059F487B05456EE</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>4FB507FF63108BCC8936615E</string>
+		</dict>
+		<key>F8A6FE5F3C6E20CFFB632F1B</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>4FB507FF63108BCC8936615E</string>
+		</dict>
+		<key>739A3EDEBBE7A067462DEDED</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/SupportDiagnosticsTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>DCE3D5F639CD43C31E805356</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>739A3EDEBBE7A067462DEDED</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

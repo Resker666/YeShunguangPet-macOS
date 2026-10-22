@@ -165,14 +165,17 @@ import PetCore
         f.focus.refreshTime();XCTAssertEqual(f.focus.remainingSeconds,50);XCTAssertTrue(f.session.focusQuiet)
         XCTAssertTrue(f.session.preferences.positionLocked);XCTAssertEqual(f.session.preferences.speechOverrides.count,1)
     }
-    func testBothNativeFocusMenusAndDedicatedSettingsTabExistWithoutOpeningSettings()throws {
+    func testNativeFocusMenusAreIndependentAndOpenDedicatedSettingsOnRequest()throws {
         let f=try fixture();defer{f.close()}
         let status=StatusBarController(session:f.session,registry:FakeHotKeyRegistry(),onQuit:{});defer{status.dispose()}
         let bar=try XCTUnwrap(status.menu.items.first{$0.title=="专注计时"}?.submenu)
         let right=try XCTUnwrap(f.session.view.contextMenu?()?.items.first{$0.title=="专注计时"}?.submenu)
-        XCTAssertFalse(bar === right);XCTAssertEqual(SettingsTab.allCases.count,6)
+        XCTAssertFalse(bar === right)
         XCTAssertNotNil(bar.items.first{$0.title=="开始专注"});XCTAssertNotNil(right.items.first{$0.title=="专注设置…"})
         XCTAssertNil(status.settingsController)
+        let settings=try XCTUnwrap(right.items.first{$0.title=="专注设置…"})
+        right.performActionForItem(at:right.index(of:settings))
+        XCTAssertEqual(status.settingsController?.model.selectedTab,.focus)
     }
     func testMenusShareTimerAndClosingSettingsKeepsItRunning()throws {
         let f=try fixture();defer{f.close()}

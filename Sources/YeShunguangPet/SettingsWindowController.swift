@@ -42,13 +42,16 @@ import UniformTypeIdentifiers
     let model: SettingsModel
     let updates:ReleaseUpdateModel
     let shortcuts:ShortcutController
+    let diagnostics:SupportDiagnosticsModel
     var hasBlockingSheet:Bool {filePanel != nil || window?.attachedSheet != nil || NSApp.modalWindow != nil}
     private weak var session: PetSession?
     private var filePanel: NSOpenPanel? {didSet{session?.onStatusChange?()}}
     private var previewTask:Task<Void,Never>?
-    init(session: PetSession,updates:ReleaseUpdateModel,shortcuts:ShortcutController,loginItem:LoginItemController?=nil,model:SettingsModel?=nil) {
+    init(session: PetSession,updates:ReleaseUpdateModel,shortcuts:ShortcutController,loginItem:LoginItemController?=nil,model:SettingsModel?=nil,diagnostics:SupportDiagnosticsModel?=nil) {
         self.updates=updates;self.shortcuts=shortcuts
         self.session=session; self.model=model ?? SettingsModel(session:session,loginItem:loginItem)
+        let settingsModel=self.model
+        self.diagnostics=diagnostics ?? SupportDiagnosticsModel(capture:{[weak session] in SupportDiagnosticSnapshot.capture(session:session,focusWindow:nil)},canCopy:{[weak session,weak settingsModel] in session?.gate.exiting==false && settingsModel?.isTerminating==false && NSApp.modalWindow==nil})
         let window=NSWindow(contentRect:CGRect(x:0,y:0,width:520,height:640),styleMask:[.titled,.closable,.miniaturizable,.resizable],backing:.buffered,defer:false)
         window.minSize=CGSize(width:520,height:480); window.title="叶瞬光桌宠设置"; window.isReleasedWhenClosed=false
         super.init(window:window)
@@ -56,7 +59,7 @@ import UniformTypeIdentifiers
         for name in [NSApplication.didHideNotification,NSApplication.didUnhideNotification] {
             NotificationCenter.default.addObserver(self,selector:#selector(appVisibilityChanged),name:name,object:nil)
         }
-        let view=SkinDropHostingView(rootView:AnyView(SettingsTabsView(model:self.model,updates:updates,shortcuts:shortcuts,login:self.model.loginItem,onChooseSkin:{ [weak self] in self?.chooseSkin() })))
+        let view=SkinDropHostingView(rootView:AnyView(SettingsTabsView(model:self.model,updates:updates,shortcuts:shortcuts,login:self.model.loginItem,diagnostics:self.diagnostics,onChooseSkin:{ [weak self] in self?.chooseSkin() })))
         view.canAccept={ [weak self] in self?.canAcceptSkinDrop==true }
         view.onDrop={ [weak self] board in self?.acceptSkinDrop(from:board) != nil }
         view.onTargetChanged={ [weak self] targeted in self?.model.isDropTargeted=targeted }

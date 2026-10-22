@@ -4,6 +4,8 @@ import PetCore
 
 struct AboutSettingsView:View {
     @ObservedObject var updates:ReleaseUpdateModel
+    @ObservedObject var diagnostics:SupportDiagnosticsModel
+    var onHelp:()->Void = {}
     private var architecture:String {updates.architecture == .arm64 ? "Apple Silicon · arm64" : "Intel · x86_64（实验版）"}
     var body:some View {
         Form {
@@ -11,6 +13,11 @@ struct AboutSettingsView:View {
                 LabeledContent("当前版本",value:updates.currentVersion.description)
                 LabeledContent("架构",value:architecture)
                 Text("Swift + AppKit 原生桌宠。程序许可与素材声明随 App 提供。").font(.caption).foregroundStyle(.secondary)
+            }
+            Section("使用帮助") {
+                Button("使用帮助…",action:onHelp)
+                Text("安装、召回角色、换肤和独立计时窗的操作说明。").font(.caption).foregroundStyle(.secondary)
+                DiagnosticCopyControls(model:diagnostics)
             }
             Section("手动检查更新") {
                 Button("检查更新") {updates.check()}.disabled(updates.state == .checking)
