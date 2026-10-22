@@ -2,7 +2,7 @@
 适用于本仓库。先读 docs/superpowers/specs/2026-10-20-macos-first-playable-design.md 和对应 plans 文件，检查 git status。
 - Swift 6、AppKit、macOS 15+；arm64优先日用，x86_64为用户同意增加的实验交叉构建。使用现有Xcode，不引入外部依赖。
 - 测试：bash scripts/test.sh；构建：bash scripts/build-app.sh；打包：bash scripts/package-app.sh。独立启动回归：python3 scripts/smoke-app.py。
-- 分发：0.1.16 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
+- 分发：0.1.17 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
 - 独立进程验证设置 YSGPET_SETTINGS_PATH 使用临时配置；不带该变量才使用个人 Application Support。
 - 用户已确认真实拖动、单击/双击、菜单隐藏/显示和召回正常。GUI 工具首次超时，后续可读取实际角色画面；焦点、Spaces、锁屏和真实睡眠仍未验证，不能以属性或模拟事件当作通过。
 - 真实皮肤 JSON/PNG 字节保持不变；源码 MIT 与第三方素材声明分开。
@@ -65,3 +65,5 @@
 - 0.1.16本地交付完成：干净来源45ae3b3的双架构包、签名/原素材/库存/摘要、八附件离线核验及ARM搬移重开通过。最终隔离Bundle八种原生画面、标题区程序化鼠标回调、保存失败/重试与实际60.056秒计时通过，显示60个不同秒数，Focus调度器60次唤醒；不等于全进程唤醒数。原生界面自动化读取因工具超时失败，不记为真实输入或焦点通过。
 - /Applications已更新并运行0.1.16/build17，schema10→11保留全部旧偏好/皮肤/迁移时位置/快捷键/时长/个人台词，新窗口显示/置顶开启；旧App和配置已备份。按本进程系统窗口几何确认280×208小窗在屏，不读取其他应用内容或推定焦点；正式登录项未改。用户整体体验、真实鼠标/焦点/系统/Intel/外机仍待确认。仅保留本地codex/macos-desktop-focus，未推送、打标签或发布；源码及App来源45ae3b3，后续仅文档提交，证据见docs/desktop-focus-validation.md及.build/desktop-focus-validation。
 - 用户随后反馈“验证通过，推送，下一版做什么”：确认0.1.16独立桌面计时窗版本的本机整体体验，授权按既有流程同步main与codex/macos-desktop-focus，普通push；不触发prepare_release、不打标签或创建/发布Release。此反馈不扩展为拖动、置顶、隐藏/召回、失败/取消/重开或跨应用焦点全部逐项实测，也不代表系统、Intel或外机通过；曾超时的界面自动化仍记作失败。下一版先给方向建议，尚未授权产品实施。
+- 0.1.16已按授权推送394efa8，main云端39711286794及开发分支39711286880成功，289项原生/13项离线发版/10项分发及双架构Artifacts上传通过，草稿job跳过。只读取日志与元数据、未下载二进制，未打标签或发布；证据.build/desktop-focus-validation/push-verification.json。
+- 0.1.17用户选择A＋B并明确确认短设计“按此实施”，本会话原地实施，无额外工作树。完成快照静态高亮；提示音默认关闭且每段至多一次，手动安静/睡眠/模态/退出抑制并丢弃，不在醒来或取消退出时补响。非激活NSPanel切换普通280×208/紧凑200×112，顶部按钮与菜单切换，保留状态/倒计时/主命令，完整重置从菜单使用；保持左上角、屏内夹取、取消旧手势、模式与位置一起保存。schema12专用11迁移保留旧字段，新声音false/compactfalse。回归及交付结果见docs/focus-reminder-compact-validation.md，尚未授权本版push/tag/Release。

@@ -1,6 +1,10 @@
 import PetCore
 
 extension PetSession {
+    func saveFocusCompletionSound(_ enabled:Bool)throws {
+        var candidate=preferences;candidate.focusCompletionSound=enabled
+        try commitCompanionPreferences(candidate)
+    }
     func saveFocusWindow(_ value:FocusWindowPreferences)throws {
         var candidate=preferences;candidate.focusWindow=value
         try commitCompanionPreferences(candidate)

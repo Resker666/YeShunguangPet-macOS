@@ -2,7 +2,7 @@ import AppKit
 import XCTest
 import PetCore
 
-@MainActor private final class FocusInput {var time=Duration.zero;var failWrites=false}
+@MainActor private final class FocusInput {var time=Duration.zero;var failWrites=false;var sounds=0;var modal=false}
 @MainActor final class FocusCompanionTests:XCTestCase {
     @MainActor private struct Fixture {
         let directory:URL,session:PetSession,input:FocusInput,focus:FocusController
@@ -19,7 +19,54 @@ import PetCore
         try store.save(.init(placement:nil,preferences:.init(alwaysOnTop:false,lookAtMouse:false,speechEnabled:true,positionLocked:true,focusMinutes:1,breakMinutes:1)))
         let session=PetSession(skin:try SkinLoader.load(manifestURL:manifest),now:{input.time},settings:store,screens:{[.init(id:"test",visibleFrame:CGRect(x:0,y:0,width:1200,height:900),isPrimary:true)]})
         session.start();session.panel.setFrameOrigin(CGPoint(x:200,y:200))
-        return .init(directory:directory,session:session,input:input,focus:FocusController(session:session))
+        let focus=FocusController(session:session,playCompletionSound:{input.sounds+=1})
+        focus.canPlayCompletionSound = {!input.modal}
+        return .init(directory:directory,session:session,input:input,focus:focus)
+    }
+    func testCompletionSoundDefaultsOffAndEnablingAfterCompletionDoesNotReplay()throws {
+        let f=try fixture();defer{f.close()};f.focus.startOrResume();f.input.time = .seconds(60);f.focus.refreshTime()
+        XCTAssertEqual(f.input.sounds,0);try f.focus.setCompletionSound(true);f.focus.refreshTime()
+        XCTAssertEqual(f.input.sounds,0);XCTAssertTrue(f.focus.completionSoundEnabled)
+    }
+    func testEachPhaseSoundsOnceEvenWhenPetAndTimerAreHidden()throws {
+        let f=try fixture();defer{f.close()};try f.focus.setCompletionSound(true);f.session.setVisible(false)
+        f.focus.startOrResume();f.input.time = .seconds(60);f.focus.refreshTime();f.focus.refreshTime()
+        XCTAssertEqual(f.input.sounds,1);XCTAssertEqual(f.focus.status,.completed)
+        f.focus.setDisplayVisible(true,source:"test");XCTAssertEqual(f.input.sounds,1)
+        f.focus.startOrResume();f.input.time = .seconds(120);f.focus.pause();f.focus.refreshTime()
+        XCTAssertEqual(f.input.sounds,2);XCTAssertEqual(f.focus.phase,.rest);XCTAssertEqual(f.focus.status,.completed)
+    }
+    func testBlockedSoundsAreDiscardedWithoutReplay()throws {
+        for blocker in ["quiet","modal","sleep","exit"] {
+            let f=try fixture();defer{f.close()};try f.focus.setCompletionSound(true);f.focus.startOrResume()
+            switch blocker {case "quiet":f.session.setQuiet(true);case "modal":f.input.modal=true;case "sleep":f.focus.setSleeping(true);default:f.focus.setTerminating(true)}
+            f.input.time = .seconds(80);f.focus.refreshTime()
+            f.session.setQuiet(false);f.input.modal=false;f.focus.setSleeping(false);f.focus.setTerminating(false);f.focus.refreshTime()
+            XCTAssertEqual(f.input.sounds,0,blocker);XCTAssertEqual(f.focus.status,.completed,blocker)
+            f.focus.startOrResume();f.input.time = .seconds(140);f.focus.refreshTime();XCTAssertEqual(f.input.sounds,1,blocker)
+        }
+    }
+    func testSleepBeforeDeadlineDoesNotSuppressLaterAwakeCompletion()throws {
+        let f=try fixture();defer{f.close()};try f.focus.setCompletionSound(true);f.focus.startOrResume()
+        f.focus.setSleeping(true);f.input.time = .seconds(20);f.focus.setSleeping(false)
+        f.input.time = .seconds(60);f.focus.refreshTime();XCTAssertEqual(f.input.sounds,1)
+    }
+    func testSoundPreferenceSavesBeforeEffectAndOrdinaryChangesCannotBypass()throws {
+        let f=try fixture();defer{f.close()};let bytes=try Data(contentsOf:f.session.settings.url)
+        f.input.failWrites=true;XCTAssertThrowsError(try f.focus.setCompletionSound(true))
+        XCTAssertFalse(f.focus.completionSoundEnabled);XCTAssertEqual(try Data(contentsOf:f.session.settings.url),bytes)
+        f.input.failWrites=false;try f.focus.setCompletionSound(true)
+        var bypass=f.session.preferences;bypass.focusCompletionSound=false;f.session.setPreferences(bypass)
+        XCTAssertTrue(f.session.preferences.focusCompletionSound)
+        guard case .loaded(let saved)=SettingsStore(url:f.session.settings.url).load() else{return XCTFail("must save")}
+        XCTAssertTrue(saved.preferences.focusCompletionSound)
+    }
+    func testDisablingSoundDuringRunKeepsTimerAndNormalSettingsDoNotMuteEnabledSound()throws {
+        let f=try fixture();defer{f.close()};try f.focus.setCompletionSound(true);f.focus.startOrResume()
+        f.input.time = .seconds(30);try f.focus.setCompletionSound(false);f.input.time = .seconds(60);f.focus.refreshTime()
+        XCTAssertEqual(f.input.sounds,0);XCTAssertEqual(f.focus.status,.completed)
+        try f.focus.setCompletionSound(true);f.session.setSettingsOpen(true);f.focus.startOrResume()
+        f.input.time = .seconds(120);f.focus.refreshTime();XCTAssertEqual(f.input.sounds,1)
     }
     private func bubbleText(_ session:PetSession)->String? {
         session.panel.childWindows?.first{$0.title=="角色台词" && $0.isVisible}?.contentView?.subviews.compactMap{$0 as? NSTextField}.first?.stringValue

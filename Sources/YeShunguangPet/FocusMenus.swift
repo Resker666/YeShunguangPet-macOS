@@ -17,7 +17,7 @@ import AppKit
             menu.addItem(.separator())
             let settings=NSMenuItem(title:"专注设置…",action:#selector(settings),keyEquivalent:"");settings.target=self;menu.addItem(settings)
             menu.addItem(.separator())
-            for (title,action) in [("显示桌面计时器",#selector(toggleDesktop)),("召回计时器",#selector(recallDesktop)),("计时器置顶",#selector(pinDesktop)),("重试保存计时器偏好",#selector(retryDesktop))] {
+            for (title,action) in [("显示桌面计时器",#selector(toggleDesktop)),("召回计时器",#selector(recallDesktop)),("计时器置顶",#selector(pinDesktop)),("重试保存计时器偏好",#selector(retryDesktop)),("紧凑计时窗",#selector(compactDesktop))] {
                 let item=NSMenuItem(title:title,action:action,keyEquivalent:"");item.target=self;menu.addItem(item)
             }
         }
@@ -33,9 +33,10 @@ import AppKit
             menu.items[1].isEnabled = !disposed && canDispatch()
             menu.items[2].isEnabled = !disposed && canDispatch() && focus.status != .ready
             menu.items[4].isEnabled = !disposed && canDispatch()
-            for index in 6...9 {menu.items[index].isEnabled = !disposed && desktop != nil && canDispatch()}
+            for index in 6...10 {menu.items[index].isEnabled = !disposed && desktop != nil && canDispatch()}
             menu.items[6].state=desktop?.configuration.isVisible==true ? .on : .off
             menu.items[8].state=desktop?.configuration.alwaysOnTop==true ? .on : .off
+            menu.items[10].state=desktop?.configuration.compact==true ? .on : .off
             menu.items[9].isHidden=desktop?.lastSaveError==nil;menu.items[9].toolTip=desktop?.lastSaveError
             menu.items[0].toolTip=focus.phase == .focus && focus.status == .running ? "注视、自动动作、走动和台词暂时暂停；手动安静开关保持原值。" : "每段完成后手动开始下一段。"
         }
@@ -51,5 +52,6 @@ import AppKit
     @objc private func recallDesktop(){guard !disposed,canDispatch() else{return};desktop?.recall()}
     @objc private func pinDesktop(){guard !disposed,canDispatch(),let desktop else{return};desktop.setAlwaysOnTop(!desktop.configuration.alwaysOnTop)}
     @objc private func retryDesktop(){guard !disposed,canDispatch() else{return};desktop?.retrySave()}
+    @objc private func compactDesktop(){guard !disposed,canDispatch(),let desktop else{return};desktop.setCompact(!desktop.configuration.compact)}
     func dispose(){disposed=true;focus.onChange=nil;desktop?.onPresentationChange=nil;for menu in menus{menu.cancelTracking();menu.delegate=nil;for item in menu.items{item.target=nil}}}
 }

@@ -41,6 +41,11 @@ struct FocusSettingsView:View {
                         }catch{self.error=error.localizedDescription}
                     }
                 }.disabled(focus.status != .ready)
+                Toggle("每段完成时播放提示音",isOn:Binding(get:{focus.completionSoundEnabled},set:{value in
+                    do{try focus.setCompletionSound(value);error=nil}catch{self.error=error.localizedDescription}
+                }))
+                Text("提示音默认关闭；手动安静、睡眠、模态或退出阻挡时不响，之后不补响。完成状态会在计时窗持续高亮，直到开始下一段或重置。")
+                    .font(.caption).foregroundStyle(.secondary)
                 if let error {Text(error).font(.caption).foregroundStyle(.red).textSelection(.enabled)}
                 Text("每段结束后，由你手动开始休息或下一次专注。专注运行时暂时安静，暂停或结束后恢复；手动安静开关保留。")
                     .font(.caption).foregroundStyle(.secondary)

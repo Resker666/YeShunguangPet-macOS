@@ -26,12 +26,16 @@ struct FocusCommand:Hashable {
 
 @MainActor final class FocusController:NSObject,ObservableObject {
     @Published private(set) var snapshot=FocusSnapshot(phase:.focus,status:.ready,remainingSeconds:1500,durationSeconds:1500)
+    @Published private(set) var completionSoundEnabled=false
     private var policy=FocusTimer()
     private weak var session:PetSession?
     private let now:()->Duration
     private var displaySources=Set<String>()
     private var sleeping=false,terminating=false,disposed=false
     private var commandGeneration:UInt64=0
+    private var suppressCompletionSound=false
+    private let playCompletionSound:()->Void
+    var canPlayCompletionSound:()->Bool = {NSApp.modalWindow==nil}
     var onChange:(()->Void)?
     var phase:FocusPhase {snapshot.phase}
     var status:FocusStatus {snapshot.status}
@@ -49,8 +53,8 @@ struct FocusCommand:Hashable {
     var statusText:String {snapshot.statusText}
     var primaryTitle:String {snapshot.primaryTitle}
     lazy var scheduler=FrameScheduler(now:now) {[weak self] in self?.refreshTime()}
-    init(session:PetSession) {
-        self.session=session;self.now=session.now
+    init(session:PetSession,playCompletionSound:@escaping ()->Void = {_=NSSound(named:"Glass")?.play()}) {
+        self.session=session;self.now=session.now;self.playCompletionSound=playCompletionSound
         super.init();refreshConfiguration()
         let center=NSWorkspace.shared.notificationCenter
         center.addObserver(self,selector:#selector(willSleep),name:NSWorkspace.willSleepNotification,object:nil)
@@ -58,6 +62,8 @@ struct FocusCommand:Hashable {
     }
     private var canOperate:Bool {!disposed && !terminating && session?.gate.exiting==false}
     func refreshConfiguration() {
+        let sound=session?.preferences.focusCompletionSound ?? false
+        if completionSoundEnabled != sound{completionSoundEnabled=sound}
         guard canOperate,policy.status == .ready else{return}
         try? policy.configure(focusMinutes:focusMinutes,breakMinutes:breakMinutes)
         publishAndSchedule()
@@ -65,6 +71,11 @@ struct FocusCommand:Hashable {
     func startOrResume() {guard canOperate else{return};settle(policy.startOrResume(at:now()))}
     func pause() {guard canOperate else{return};settle(policy.pause(at:now()))}
     func reset() {guard canOperate else{return};policy.reset();refreshConfiguration()}
+    func setCompletionSound(_ enabled:Bool)throws {
+        guard canOperate,canPlayCompletionSound(),let session else{throw SkinError("当前无法修改提示音，请稍后重试。")}
+        try session.saveFocusCompletionSound(enabled)
+        refreshConfiguration()
+    }
     func applyDurations(focusMinutes:Int,breakMinutes:Int)throws {
         guard canOperate,policy.status == .ready,let session else{throw SkinError("请先重置计时，再修改时长。")}
         try session.saveFocusDurations(focusMinutes:focusMinutes,breakMinutes:breakMinutes)
@@ -77,7 +88,10 @@ struct FocusCommand:Hashable {
     }
     private func settle(_ completion:FocusPhase?) {
         publishAndSchedule()
-        if let completion{session?.presentFocusCompletion(completion)}
+        if let completion {
+            if !suppressCompletionSound,!sleeping,canOperate,session?.gate.sleeping==false,session?.isQuiet==false,completionSoundEnabled,canPlayCompletionSound(){playCompletionSound()}
+            session?.presentFocusCompletion(completion)
+        }
     }
     private func publishAndSchedule() {
         let remaining=policy.remaining(at:now())
@@ -99,8 +113,12 @@ struct FocusCommand:Hashable {
         let changed=visible ? displaySources.insert(source).inserted : displaySources.remove(source) != nil
         if changed{refreshTime()}
     }
-    func setSleeping(_ value:Bool) {guard !disposed else{return};sleeping=value;if value{scheduler.cancel()}else{refreshTime()}}
-    func setTerminating(_ value:Bool) {guard !disposed else{return};terminating=value;if value{scheduler.cancel()}else{refreshTime()}}
+    private func reconcileWithoutSound() {
+        let previous=suppressCompletionSound;suppressCompletionSound=true
+        defer{suppressCompletionSound=previous};refreshTime()
+    }
+    func setSleeping(_ value:Bool) {guard !disposed else{return};let wasSleeping=sleeping;sleeping=value;if value{scheduler.cancel()}else if wasSleeping{reconcileWithoutSound()}else{refreshTime()}}
+    func setTerminating(_ value:Bool) {guard !disposed else{return};let wasTerminating=terminating;terminating=value;if value{scheduler.cancel()}else if wasTerminating{reconcileWithoutSound()}else{refreshTime()}}
     @objc private func willSleep(_ notification:Notification){setSleeping(true)}
     @objc private func didWake(_ notification:Notification){setSleeping(false)}
     func dispose() {

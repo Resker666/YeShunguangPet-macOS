@@ -4,9 +4,10 @@ import Darwin
 public struct FocusWindowPreferences:Codable,Equatable {
     public var isVisible:Bool
     public var alwaysOnTop:Bool
+    public var compact:Bool
     public var placement:PlacementSnapshot?
-    public init(isVisible:Bool=true,alwaysOnTop:Bool=true,placement:PlacementSnapshot?=nil) {
-        self.isVisible=isVisible;self.alwaysOnTop=alwaysOnTop;self.placement=placement
+    public init(isVisible:Bool=true,alwaysOnTop:Bool=true,compact:Bool=false,placement:PlacementSnapshot?=nil) {
+        self.isVisible=isVisible;self.alwaysOnTop=alwaysOnTop;self.compact=compact;self.placement=placement
     }
     var isValid:Bool {placement?.isValid ?? true}
 }
@@ -26,14 +27,15 @@ public struct PetPreferences: Codable, Equatable {
     public var breakMinutes:Int
     public var speechOverrides:[String:SpeechLines]
     public var focusWindow:FocusWindowPreferences
-    public init(scale: Double = 1, alwaysOnTop: Bool = true, lookAtMouse: Bool = true, automaticActions: Bool = false, automaticActionIntervalSeconds: Int = 60, desktopRoaming: Bool = false, roamIntervalSeconds: Int = 75,speechEnabled:Bool=false,keyboardShortcuts:[ShortcutBinding]=[],snapToEdges:Bool=false,positionLocked:Bool=false,focusMinutes:Int=25,breakMinutes:Int=5,speechOverrides:[String:SpeechLines]=[:],focusWindow:FocusWindowPreferences = .init()) {
+    public var focusCompletionSound:Bool
+    public init(scale: Double = 1, alwaysOnTop: Bool = true, lookAtMouse: Bool = true, automaticActions: Bool = false, automaticActionIntervalSeconds: Int = 60, desktopRoaming: Bool = false, roamIntervalSeconds: Int = 75,speechEnabled:Bool=false,keyboardShortcuts:[ShortcutBinding]=[],snapToEdges:Bool=false,positionLocked:Bool=false,focusMinutes:Int=25,breakMinutes:Int=5,speechOverrides:[String:SpeechLines]=[:],focusWindow:FocusWindowPreferences = .init(),focusCompletionSound:Bool=false) {
         self.scale=scale; self.alwaysOnTop=alwaysOnTop; self.lookAtMouse=lookAtMouse
         self.automaticActions=automaticActions; self.automaticActionIntervalSeconds=automaticActionIntervalSeconds
         self.desktopRoaming=desktopRoaming;self.roamIntervalSeconds=roamIntervalSeconds
         self.speechEnabled=speechEnabled;self.keyboardShortcuts=keyboardShortcuts
         self.snapToEdges=snapToEdges;self.positionLocked=positionLocked
         self.focusMinutes=focusMinutes;self.breakMinutes=breakMinutes;self.speechOverrides=speechOverrides
-        self.focusWindow=focusWindow
+        self.focusWindow=focusWindow;self.focusCompletionSound=focusCompletionSound
     }
     public var isValid: Bool { scale.isFinite && (0.5...2).contains(scale) && (15...120).contains(automaticActionIntervalSeconds) && (20...180).contains(roamIntervalSeconds) && (1...120).contains(focusMinutes) && (1...60).contains(breakMinutes) && focusWindow.isValid && (try? PersonalSpeech.validate(speechOverrides)) != nil && (try? KeyboardShortcuts.validate(keyboardShortcuts)) != nil }
 }
@@ -63,6 +65,16 @@ public final class SettingsStore {
     private struct PlacementConfiguration:Decodable {let placement:PlacementSnapshot?;let preferences:PlacementPreferences;let selectedSkinID:String?}
     private struct CompanionPreferences:Decodable {let scale:Double;let alwaysOnTop,lookAtMouse,automaticActions:Bool;let automaticActionIntervalSeconds:Int;let desktopRoaming:Bool;let roamIntervalSeconds:Int;let speechEnabled:Bool;let keyboardShortcuts:[ShortcutBinding];let snapToEdges,positionLocked:Bool;let focusMinutes,breakMinutes:Int;let speechOverrides:[String:SpeechLines]}
     private struct CompanionConfiguration:Decodable {let placement:PlacementSnapshot?;let preferences:CompanionPreferences;let selectedSkinID:String?}
+    private struct OldFocusWindow:Decodable {let isVisible,alwaysOnTop:Bool;let placement:PlacementSnapshot?}
+    private struct DesktopPreferences:Decodable {
+        let companion:CompanionPreferences,window:OldFocusWindow
+        enum CodingKeys:String,CodingKey {case focusWindow}
+        init(from decoder:Decoder)throws {
+            companion=try CompanionPreferences(from:decoder)
+            window=try decoder.container(keyedBy:CodingKeys.self).decode(OldFocusWindow.self,forKey:.focusWindow)
+        }
+    }
+    private struct DesktopConfiguration:Decodable {let placement:PlacementSnapshot?;let preferences:DesktopPreferences;let selectedSkinID:String?}
     private struct Configuration: Codable { let schemaVersion: Int; let placement: PlacementSnapshot?; let preferences: PetPreferences; let selectedSkinID: String? }
     public let url: URL
     private var checked=false, blocked=false
@@ -106,6 +118,9 @@ public final class SettingsStore {
                 let config=try JSONDecoder().decode(CompanionConfiguration.self,from:data),p=config.preferences
                 saved=PetSettings(placement:config.placement,preferences:.init(scale:p.scale,alwaysOnTop:p.alwaysOnTop,lookAtMouse:p.lookAtMouse,automaticActions:p.automaticActions,automaticActionIntervalSeconds:p.automaticActionIntervalSeconds,desktopRoaming:p.desktopRoaming,roamIntervalSeconds:p.roamIntervalSeconds,speechEnabled:p.speechEnabled,keyboardShortcuts:p.keyboardShortcuts,snapToEdges:p.snapToEdges,positionLocked:p.positionLocked,focusMinutes:p.focusMinutes,breakMinutes:p.breakMinutes,speechOverrides:p.speechOverrides),selectedSkinID:config.selectedSkinID)
             case .number("11"):
+                let config=try JSONDecoder().decode(DesktopConfiguration.self,from:data),p=config.preferences.companion,w=config.preferences.window
+                saved=PetSettings(placement:config.placement,preferences:.init(scale:p.scale,alwaysOnTop:p.alwaysOnTop,lookAtMouse:p.lookAtMouse,automaticActions:p.automaticActions,automaticActionIntervalSeconds:p.automaticActionIntervalSeconds,desktopRoaming:p.desktopRoaming,roamIntervalSeconds:p.roamIntervalSeconds,speechEnabled:p.speechEnabled,keyboardShortcuts:p.keyboardShortcuts,snapToEdges:p.snapToEdges,positionLocked:p.positionLocked,focusMinutes:p.focusMinutes,breakMinutes:p.breakMinutes,speechOverrides:p.speechOverrides,focusWindow:.init(isVisible:w.isVisible,alwaysOnTop:w.alwaysOnTop,placement:w.placement)),selectedSkinID:config.selectedSkinID)
+            case .number("12"):
                 let config=try JSONDecoder().decode(Configuration.self,from:data)
                 saved=PetSettings(placement:config.placement,preferences:config.preferences,selectedSkinID:config.selectedSkinID)
             default: throw SkinError("配置版本无效或尚不支持")
@@ -118,7 +133,7 @@ public final class SettingsStore {
         if !checked { _=load() }
         guard !blocked else { throw SkinError("原配置受保护，请先备份并重置") }
         guard settings.isValid else { throw SkinError("位置或偏好无效，未保存") }
-        let data=try JSONEncoder().encode(Configuration(schemaVersion:11,placement:settings.placement,preferences:settings.preferences,selectedSkinID:settings.selectedSkinID))
+        let data=try JSONEncoder().encode(Configuration(schemaVersion:12,placement:settings.placement,preferences:settings.preferences,selectedSkinID:settings.selectedSkinID))
         guard data.count<=65536 else { throw SkinError("配置超过 64 KiB") }
         try FileManager.default.createDirectory(at:url.deletingLastPathComponent(),withIntermediateDirectories:true)
         try write(data,url)

@@ -46,10 +46,12 @@ import PetCore
     override func acceptsFirstMouse(for event:NSEvent?)->Bool {true}
 }
 @MainActor private final class FocusWindowBackground:NSView {
+    var completed=false {didSet{if completed != oldValue{needsDisplay=true}}}
     override func draw(_ dirtyRect:NSRect) {
         let path=NSBezierPath(roundedRect:bounds.insetBy(dx:0.5,dy:0.5),xRadius:14,yRadius:14)
         NSColor.windowBackgroundColor.setFill();path.fill()
-        NSColor.separatorColor.setStroke();path.lineWidth=1;path.stroke()
+        if completed{NSColor.controlAccentColor.withAlphaComponent(0.12).setFill();path.fill()}
+        (completed ? NSColor.controlAccentColor : NSColor.separatorColor).setStroke();path.lineWidth=completed ? 2 : 1;path.stroke()
     }
     override func viewDidChangeEffectiveAppearance(){super.viewDidChangeEffectiveAppearance();needsDisplay=true}
 }
@@ -58,6 +60,11 @@ import PetCore
     let panel=FocusPanel()
     let timeLabel=NSTextField(labelWithString:"")
     let statusLabel=NSTextField(labelWithString:"")
+    let modeButton=FocusWindowButton() as NSButton
+    private let titleLabel=NSTextField(labelWithString:"专注计时")
+    private let footer=NSStackView(),stack=NSStackView()
+    private var headerHeight:NSLayoutConstraint!,headerTop:NSLayoutConstraint!,buttonsHeight:NSLayoutConstraint!
+    var isCompletionHighlighted:Bool {(panel.contentView as? FocusWindowBackground)?.completed==true}
     private(set) var primaryButton=FocusWindowButton(title:"",target:nil,action:nil) as NSButton
     private let resetButton=FocusWindowButton(title:"重置",target:nil,action:nil)
     private let pinButton=FocusWindowButton(),closeButton=FocusWindowButton(),retryButton=FocusWindowButton(title:"重试",target:nil,action:nil)
@@ -88,7 +95,7 @@ import PetCore
     func refreshPreferences() {
         guard started,!disposed,!saving else{return}
         let stored=session.preferences.focusWindow
-        if stored != lastStored {lastStored=stored;configuration=stored;placeRestored();applyPresentation()}
+        if stored != lastStored {lastStored=stored;configuration=stored;applyLayout();placeRestored();applyPresentation()}
         refreshControls()
     }
     private func initialPlacement()->PlacementSnapshot? {
@@ -112,6 +119,16 @@ import PetCore
     }
     func setAlwaysOnTop(_ pinned:Bool) {
         guard canOperate else{return};configuration.alwaysOnTop=pinned;applyPresentation();persist()
+    }
+    func setCompact(_ compact:Bool) {
+        guard canOperate,configuration.compact != compact else{return}
+        header.cancelDrag()
+        let topLeft=CGPoint(x:panel.frame.minX,y:panel.frame.maxY)
+        configuration.compact=compact;applyLayout()
+        if let placement=WindowPlacement.capture(origin:CGPoint(x:topLeft.x,y:topLeft.y-panel.frame.height),size:panel.frame.size,screens:session.screens()) {
+            configuration.placement=placement;panel.setFrameOrigin(placement.origin)
+        }
+        applyPresentation();persist()
     }
     func recall() {
         guard canOperate else{return}
@@ -151,6 +168,11 @@ import PetCore
         let snapshot=published ?? focus.snapshot
         let command=FocusCommand(kind:snapshot.status == .running ? .pause : .startOrResume,generation:focus.primaryCommand.generation)
         timeLabel.stringValue=snapshot.timeText;statusLabel.stringValue=snapshot.statusText
+        titleLabel.stringValue=configuration.compact ? snapshot.statusText : "专注计时"
+        let completed=snapshot.status == .completed
+        (panel.contentView as? FocusWindowBackground)?.completed=completed
+        statusLabel.textColor=completed ? .controlAccentColor : .secondaryLabelColor
+        titleLabel.textColor=completed ? .controlAccentColor : .secondaryLabelColor
         progress.doubleValue=Double(max(0,snapshot.durationSeconds-snapshot.remainingSeconds))/Double(max(1,snapshot.durationSeconds))
         if primaryButton.cell?.representedObject as? FocusCommand != command {
             buttons.removeArrangedSubview(primaryButton);primaryButton.removeFromSuperview()
@@ -161,6 +183,11 @@ import PetCore
         primaryButton.isEnabled=canOperate;resetButton.isEnabled=canOperate && snapshot.status != .ready
         pinButton.image=NSImage(systemSymbolName:configuration.alwaysOnTop ? "pin.fill" : "pin",accessibilityDescription:"计时器置顶")
         pinButton.state=configuration.alwaysOnTop ? .on : .off;pinButton.isEnabled=canOperate;closeButton.isEnabled=canOperate
+        modeButton.isEnabled=canOperate
+        modeButton.image=NSImage(systemSymbolName:configuration.compact ? "arrow.up.left.and.arrow.down.right" : "arrow.down.right.and.arrow.up.left",accessibilityDescription:configuration.compact ? "普通计时窗" : "紧凑计时窗")
+        modeButton.toolTip=lastSaveError.map{"窗口偏好未保存：\($0)；请从专注计时菜单重试保存。"} ?? (configuration.compact ? "切回普通计时窗" : "切换紧凑计时窗")
+        timeLabel.toolTip=lastSaveError
+        timeLabel.textColor=lastSaveError == nil ? .labelColor : .systemOrange
         hint.stringValue=lastSaveError == nil ? "每段结束后，手动开始下一段" : "窗口偏好未保存"
         hint.toolTip=lastSaveError;retryButton.isHidden=lastSaveError == nil;retryButton.isEnabled=canOperate
     }
@@ -168,15 +195,27 @@ import PetCore
     @objc private func reset(){guard canOperate else{return};focus.reset()}
     @objc private func pin(){setAlwaysOnTop(!configuration.alwaysOnTop)}
     @objc private func hide(){setVisible(false)}
+    @objc private func toggleMode(){setCompact(!configuration.compact)}
+    private func applyLayout() {
+        let compact=configuration.compact
+        headerHeight.constant=compact ? 22 : 28;headerTop.constant=compact ? 2 : 5
+        buttonsHeight.constant=compact ? 26 : 30;stack.spacing=compact ? 2 : 7
+        timeLabel.font = .monospacedDigitSystemFont(ofSize:compact ? 32 : 46,weight:.medium)
+        for view in [statusLabel,progress,resetButton,footer]{view.isHidden=compact}
+        panel.contentView?.layoutSubtreeIfNeeded()
+        panel.setContentSize(compact ? CGSize(width:200,height:112) : CGSize(width:280,height:208))
+        panel.contentView?.layoutSubtreeIfNeeded()
+    }
     private func buildContent() {
         let background=FocusWindowBackground(frame:CGRect(origin:.zero,size:panel.frame.size));panel.contentView=background
         header.translatesAutoresizingMaskIntoConstraints=false;header.canDrag={[weak self] in self?.canOperate==true}
         header.onDragFinished={[weak self] in self?.finishDrag()};header.toolTip="拖动顶部移动计时器"
-        let title=NSTextField(labelWithString:"专注计时");title.font = .systemFont(ofSize:12,weight:.medium);title.textColor = .secondaryLabelColor
+        titleLabel.font = .systemFont(ofSize:12,weight:.medium);titleLabel.textColor = .secondaryLabelColor
         closeButton.image=NSImage(systemSymbolName:"xmark",accessibilityDescription:"隐藏计时器");closeButton.toolTip="隐藏计时器，计时继续";closeButton.target=self;closeButton.action=#selector(hide)
         pinButton.toolTip="切换计时器置顶";pinButton.target=self;pinButton.action=#selector(pin)
-        for view in [closeButton,title,pinButton]{view.translatesAutoresizingMaskIntoConstraints=false;header.addSubview(view)}
-        for button in [closeButton,pinButton]{button.isBordered=false}
+        modeButton.target=self;modeButton.action=#selector(toggleMode)
+        for view in [closeButton,titleLabel,modeButton,pinButton]{view.translatesAutoresizingMaskIntoConstraints=false;header.addSubview(view)}
+        for button in [closeButton,pinButton,modeButton]{button.isBordered=false}
         background.addSubview(header)
         timeLabel.font = .monospacedDigitSystemFont(ofSize:46,weight:.medium);timeLabel.alignment = .center
         statusLabel.font = .systemFont(ofSize:13,weight:.medium);statusLabel.alignment = .center;statusLabel.textColor = .secondaryLabelColor
@@ -185,15 +224,18 @@ import PetCore
         resetButton.bezelStyle = .rounded;resetButton.target=self;resetButton.action=#selector(reset)
         buttons.addArrangedSubview(primaryButton);buttons.addArrangedSubview(resetButton)
         hint.font = .systemFont(ofSize:10);hint.textColor = .secondaryLabelColor;retryButton.bezelStyle = .inline;retryButton.font = .systemFont(ofSize:11);retryButton.target=self;retryButton.action=#selector(retrySave)
-        let footer=NSStackView(views:[hint,retryButton]);footer.orientation = .horizontal;footer.spacing=5;footer.alignment = .centerY
-        let stack=NSStackView(views:[statusLabel,timeLabel,progress,buttons,footer]);stack.orientation = .vertical;stack.alignment = .centerX;stack.spacing=7;stack.translatesAutoresizingMaskIntoConstraints=false;background.addSubview(stack)
+        footer.addArrangedSubview(hint);footer.addArrangedSubview(retryButton);footer.orientation = .horizontal;footer.spacing=5;footer.alignment = .centerY
+        for view in [statusLabel,timeLabel,progress,buttons,footer]{stack.addArrangedSubview(view)}
+        stack.orientation = .vertical;stack.alignment = .centerX;stack.spacing=7;stack.translatesAutoresizingMaskIntoConstraints=false;background.addSubview(stack)
+        headerTop=header.topAnchor.constraint(equalTo:background.topAnchor,constant:5);headerHeight=header.heightAnchor.constraint(equalToConstant:28);buttonsHeight=buttons.heightAnchor.constraint(equalToConstant:30)
         NSLayoutConstraint.activate([
-            header.leadingAnchor.constraint(equalTo:background.leadingAnchor,constant:8),header.trailingAnchor.constraint(equalTo:background.trailingAnchor,constant:-8),header.topAnchor.constraint(equalTo:background.topAnchor,constant:5),header.heightAnchor.constraint(equalToConstant:28),
+            header.leadingAnchor.constraint(equalTo:background.leadingAnchor,constant:8),header.trailingAnchor.constraint(equalTo:background.trailingAnchor,constant:-8),headerTop,headerHeight,
             closeButton.leadingAnchor.constraint(equalTo:header.leadingAnchor,constant:4),closeButton.centerYAnchor.constraint(equalTo:header.centerYAnchor),closeButton.widthAnchor.constraint(equalToConstant:24),
             pinButton.trailingAnchor.constraint(equalTo:header.trailingAnchor,constant:-4),pinButton.centerYAnchor.constraint(equalTo:header.centerYAnchor),pinButton.widthAnchor.constraint(equalToConstant:24),
-            title.centerXAnchor.constraint(equalTo:header.centerXAnchor),title.centerYAnchor.constraint(equalTo:header.centerYAnchor),
+            modeButton.trailingAnchor.constraint(equalTo:pinButton.leadingAnchor,constant:-2),modeButton.centerYAnchor.constraint(equalTo:header.centerYAnchor),modeButton.widthAnchor.constraint(equalToConstant:24),
+            titleLabel.centerXAnchor.constraint(equalTo:header.centerXAnchor,constant:-12),titleLabel.centerYAnchor.constraint(equalTo:header.centerYAnchor),
             stack.topAnchor.constraint(equalTo:header.bottomAnchor,constant:2),stack.leadingAnchor.constraint(equalTo:background.leadingAnchor,constant:18),stack.trailingAnchor.constraint(equalTo:background.trailingAnchor,constant:-18),stack.bottomAnchor.constraint(lessThanOrEqualTo:background.bottomAnchor,constant:-10),
-            progress.widthAnchor.constraint(equalTo:stack.widthAnchor),buttons.widthAnchor.constraint(equalTo:stack.widthAnchor),buttons.heightAnchor.constraint(equalToConstant:30)
+            progress.widthAnchor.constraint(equalTo:stack.widthAnchor),buttons.widthAnchor.constraint(equalTo:stack.widthAnchor),buttonsHeight
         ])
         refreshControls()
     }

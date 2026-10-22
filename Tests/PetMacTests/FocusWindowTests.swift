@@ -26,6 +26,66 @@ import PetCore
         window.start();return .init(directory:directory,session:session,focus:focus,window:window,input:input)
     }
     private func click(_ button:NSButton)throws {XCTAssertTrue(NSApp.sendAction(try XCTUnwrap(button.action),to:button.target,from:button))}
+    func testCompactModePreservesTopLeftAndCountdownAndRestoresAfterRestart()throws {
+        let f=try fixture();defer{f.close()};f.window.panel.setFrameOrigin(CGPoint(x:200,y:200));f.window.finishDrag()
+        let pet=f.session.panel.frame,writes=f.input.writes;f.focus.startOrResume();f.input.time = .seconds(12);f.focus.refreshTime()
+        f.window.setCompact(true)
+        XCTAssertEqual(f.window.panel.frame,CGRect(x:200,y:296,width:200,height:112));XCTAssertEqual(f.input.writes,writes+1)
+        XCTAssertEqual(f.window.timeLabel.stringValue,"00:48");XCTAssertEqual(f.session.panel.frame,pet)
+        XCTAssertTrue(f.session.preferences.focusWindow.compact)
+        let another=FocusWindowController(session:f.session,focus:f.focus,canDispatch:{true});defer{another.dispose()};f.window.dispose();another.start()
+        XCTAssertEqual(another.panel.frame,CGRect(x:200,y:296,width:200,height:112))
+        another.setCompact(false);XCTAssertEqual(another.panel.frame,CGRect(x:200,y:200,width:280,height:208));XCTAssertEqual(f.focus.remainingSeconds,48)
+    }
+    func testCompactExpansionClampsToScreenAndKeepsHiddenState()throws {
+        let f=try fixture();defer{f.close()};f.window.setCompact(true);f.window.setVisible(false)
+        f.window.panel.setFrameOrigin(CGPoint(x:1000,y:0));f.window.finishDrag();f.window.setCompact(false)
+        XCTAssertTrue(f.input.screens[0].visibleFrame.contains(f.window.panel.frame));XCTAssertFalse(f.window.panel.isVisible)
+        XCTAssertFalse(f.session.preferences.focusWindow.isVisible)
+    }
+    func testCompactSaveFailureLeavesTemporaryModeAndCanRetry()throws {
+        let f=try fixture();defer{f.close()};let bytes=try Data(contentsOf:f.session.settings.url)
+        f.input.failWrites=true;f.window.setCompact(true)
+        XCTAssertEqual(f.window.panel.frame.size,CGSize(width:200,height:112));XCTAssertNotNil(f.window.lastSaveError)
+        XCTAssertFalse(f.session.preferences.focusWindow.compact);XCTAssertEqual(try Data(contentsOf:f.session.settings.url),bytes)
+        f.window.refreshPreferences();XCTAssertTrue(f.window.configuration.compact)
+        f.input.failWrites=false;f.window.retrySave();XCTAssertTrue(f.session.preferences.focusWindow.compact)
+    }
+    func testCompactToggleFromMenusAndHeaderRespectsModalAndExit()throws {
+        let f=try fixture();defer{f.close()}
+        let menus=FocusMenus(focus:f.focus,desktop:f.window,canDispatch:{!f.input.blocked},onSettings:{});defer{menus.dispose()}
+        let item=try XCTUnwrap(menus.menus[0].items.first{$0.title=="紧凑计时窗"})
+        menus.menus[0].performActionForItem(at:try XCTUnwrap(menus.menus[0].items.firstIndex(of:item)))
+        XCTAssertTrue(f.window.configuration.compact);XCTAssertEqual(item.state,.on)
+        f.input.blocked=true;try click(f.window.modeButton);XCTAssertTrue(f.window.configuration.compact)
+        f.input.blocked=false;f.window.beginTermination();try click(f.window.modeButton);XCTAssertTrue(f.window.configuration.compact)
+        f.window.cancelTermination();try click(f.window.modeButton);XCTAssertFalse(f.window.configuration.compact)
+    }
+    func testCompletionHighlightPersistsAcrossModesUntilNextPhaseOrReset()throws {
+        let f=try fixture();defer{f.close()};f.focus.startOrResume();f.input.time = .seconds(60);f.focus.refreshTime()
+        XCTAssertTrue(f.window.isCompletionHighlighted);f.window.setCompact(true);XCTAssertTrue(f.window.isCompletionHighlighted)
+        f.window.setVisible(false);f.window.setVisible(true);XCTAssertTrue(f.window.isCompletionHighlighted)
+        try click(f.window.primaryButton);XCTAssertFalse(f.window.isCompletionHighlighted)
+        f.input.time = .seconds(120);f.focus.refreshTime();XCTAssertTrue(f.window.isCompletionHighlighted)
+        f.focus.reset();XCTAssertFalse(f.window.isCompletionHighlighted)
+    }
+    func testModeChangeCancelsExistingGestureAndCompactHeaderCanStartFreshDrag()throws {
+        let f=try fixture();defer{f.close()}
+        let header=try XCTUnwrap(f.window.panel.contentView?.hitTest(CGPoint(x:140,y:190)))
+        func event(_ type:NSEvent.EventType,_ point:CGPoint)throws->NSEvent {
+            try XCTUnwrap(NSEvent.mouseEvent(with:type,location:point,modifierFlags:[],timestamp:0,windowNumber:f.window.panel.windowNumber,context:nil,eventNumber:1,clickCount:1,pressure:0))
+        }
+        header.mouseDown(with:try event(.leftMouseDown,CGPoint(x:140,y:190)));f.window.setCompact(true)
+        let origin=f.window.panel.frame.origin,writes=f.input.writes
+        header.mouseUp(with:try event(.leftMouseUp,CGPoint(x:100,y:100)))
+        XCTAssertEqual(f.window.panel.frame.origin,origin);XCTAssertEqual(f.input.writes,writes)
+        let compactHeader=try XCTUnwrap(f.window.panel.contentView?.hitTest(CGPoint(x:85,y:98)))
+        compactHeader.mouseDown(with:try event(.leftMouseDown,CGPoint(x:85,y:98)))
+        compactHeader.mouseDragged(with:try event(.leftMouseDragged,CGPoint(x:65,y:88)))
+        XCTAssertEqual(f.input.writes,writes)
+        compactHeader.mouseUp(with:try event(.leftMouseUp,CGPoint(x:85,y:98)))
+        XCTAssertEqual(f.input.writes,writes+1);XCTAssertEqual(f.window.panel.frame.origin,CGPoint(x:origin.x-20,y:origin.y-10))
+    }
     func testVisibleTimerIsIndependentOfPetAndDoesNotBlockCompletion()throws {
         let f=try fixture();defer{f.close()}
         XCTAssertTrue(f.window.panel.isVisible);XCTAssertFalse(f.window.panel.canBecomeKey);XCTAssertFalse(f.window.panel.canBecomeMain)
