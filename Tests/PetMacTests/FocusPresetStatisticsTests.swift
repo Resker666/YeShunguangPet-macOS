@@ -96,6 +96,43 @@ import PetCore
         XCTAssertEqual(f.focus.todayStatistics.day,"2026-10-23");XCTAssertEqual(f.focus.todayStatistics.completedCount,0)
         XCTAssertEqual(try f.saved().focusStatistics.day,"2026-10-22")
     }
+    func testBackgroundCalendarNotificationsRefreshTodayAndMenusOnMainWithoutWrites()async throws {
+        for name in [Notification.Name.NSCalendarDayChanged,.NSSystemClockDidChange,.NSSystemTimeZoneDidChange] {
+            let f=try fixture();defer{f.close()}
+            let menus=FocusMenus(focus:f.focus,canDispatch:{true},onSettings:{});defer{menus.dispose()}
+            f.focus.startOrResume();f.input.time = .seconds(60);f.focus.refreshTime()
+            let writes=f.input.writes;var changes=0
+            let original=f.focus.onChange
+            f.focus.onChange={XCTAssertTrue(Thread.isMainThread);changes+=1;original?()}
+            f.input.date+=86400
+            await Task.detached {
+                XCTAssertFalse(Thread.isMainThread)
+                NotificationCenter.default.post(name:name,object:nil)
+            }.value
+            for _ in 0..<10000 {if changes>0{break};await Task.yield()}
+            XCTAssertGreaterThan(changes,0)
+            XCTAssertEqual(f.focus.todayStatistics.day,"2026-10-23")
+            XCTAssertEqual(f.focus.todayStatistics.completedCount,0)
+            XCTAssertEqual(try f.saved().focusStatistics.day,"2026-10-22")
+            XCTAssertEqual(try f.saved().focusStatistics.completedCount,1)
+            XCTAssertEqual(f.input.writes,writes);XCTAssertEqual(f.focus.scheduler.pendingCount,0)
+            XCTAssertTrue(menus.menus.allSatisfy{$0.items.contains{$0.title.contains("今日") && $0.title.contains("0 次")}})
+        }
+    }
+    func testDisposedControllerIgnoresQueuedBackgroundCalendarRefresh()async throws {
+        let f=try fixture();defer{f.close()};let original=f.focus.todayStatistics,writes=f.input.writes
+        var changes=0;f.focus.onChange={changes+=1};f.input.date+=86400
+        let posted=DispatchSemaphore(value:0)
+        DispatchQueue.global().async {
+            NotificationCenter.default.post(name:.NSCalendarDayChanged,object:nil)
+            posted.signal()
+        }
+        XCTAssertEqual(posted.wait(timeout:.now()+2),.success)
+        f.focus.dispose()
+        for _ in 0..<30 {await Task.yield()}
+        XCTAssertEqual(f.focus.todayStatistics,original);XCTAssertEqual(changes,0)
+        XCTAssertEqual(f.input.writes,writes);XCTAssertEqual(f.focus.scheduler.pendingCount,0)
+    }
     func testFailedStatisticsWriteRetainsPendingAggregateAndRetriesWithoutDuplicating()throws {
         let f=try fixture();defer{f.close()};f.focus.startOrResume();let bytes=try Data(contentsOf:f.session.settings.url)
         f.input.failWrites=true;f.input.time = .seconds(60);f.focus.refreshTime();f.focus.refreshTime()

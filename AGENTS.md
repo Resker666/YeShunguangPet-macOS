@@ -2,7 +2,7 @@
 适用于本仓库。先读 docs/superpowers/specs/2026-10-20-macos-first-playable-design.md 和对应 plans 文件，检查 git status。
 - Swift 6、AppKit、macOS 14+（从0.1.19起，用户批准降低原15+目标）；arm64优先日用，x86_64为用户同意增加的实验交叉构建。使用现有Xcode，不引入外部依赖。
 - 测试：bash scripts/test.sh；构建：bash scripts/build-app.sh；打包：bash scripts/package-app.sh。独立启动回归：python3 scripts/smoke-app.py。
-- 分发：0.1.20 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
+- 分发：0.1.21 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
 - 独立进程验证设置 YSGPET_SETTINGS_PATH 使用临时配置；不带该变量才使用个人 Application Support。
 - 用户已确认真实拖动、单击/双击、菜单隐藏/显示和召回正常。GUI 工具首次超时，后续可读取实际角色画面；焦点、Spaces、锁屏和真实睡眠仍未验证，不能以属性或模拟事件当作通过。
 - 真实皮肤 JSON/PNG 字节保持不变；源码 MIT 与第三方素材声明分开。
@@ -88,3 +88,7 @@
 - 0.1.20本地交付完成：单次只读评审02d725c..0f8967e有0Critical/0Important/2Minor；记住ID与CLI覆盖的诊断误分类先回归复现后按实际目录分类，缺失动作的帮助措辞更正，均在e15b739修复，无独立第二次评审。六标签520宽对照可见、七标签520整体溢出，默认宽改600/最小560，七个原生控件action逐项切页通过。完整334项原生（130Core/204Mac）、13项离线发版和13项分发通过；干净来源e15b739的双架构App/包、最低14.0、签名/原素材/依赖/库存/摘要、八附件离线来源校验及ARM中文空格路径搬移重开通过。
 - /Applications已安装并运行0.1.20/build21，schema13→13全部原偏好、皮肤、退出时位置、快捷键、时长、台词、计时窗及今日统计保留，旧App/配置已备份，正式登录项未改；自身PID核对200×112计时窗在屏。帮助浅深色/最小滚动/复制失败重试的原生渲染通过，使用独立剪贴板；程序化控件action与缓存黑胶囊现象不能记作物理输入或现场文字显示通过。0.1.20用户整体体验、真实键鼠/焦点/系统/Intel/Sonoma/外机/Gatekeeper仍待确认。仅保留本地codex/macos-help-diagnostics，未合并main、推送、打标签或发布；公开0.1.19正文工具超时未改，准确替换稿见docs/release-notes/0.1.19-public-body.md。后续交付文档不改变e15b739的App来源，证据见docs/help-diagnostics-validation.md及忽略目录.build/help-diagnostics-validation。
 - 用户随后反馈“验证通过，推送”：确认0.1.20使用帮助与手动诊断复制版本的本机整体体验，授权按既有流程同步main和codex/macos-help-diagnostics，普通push；不触发prepare_release、不打标签或创建/发布Release。反馈不扩展为每项帮助/复制失败重试/窗口导航、真实输入/选中标签显示、焦点/系统/Intel/Sonoma/外机/Gatekeeper专项逐项通过；0.1.19公开正文的工具超时待办保留。远端及云端验证结果按实际日志另记，未授权下一版产品实施。
+- 0.1.20已按授权普通原子推送a90c5e1，main云端39758143702及开发分支39758165117成功，每路334项原生（130Core/204Mac）、13项离线发版/13项分发、双架构App/包、来源摘要与产物上传通过，release-draft跳过；核对两路真实日志及Artifacts名称/来源/摘要/过期元数据，未另下载二进制，未创建标签或Release。工作区推送后干净，个人日用App仍来自e15b739，后续文档不改变该App。证据.build/help-diagnostics-validation/push-verification.json及cloud-log-summary.json。
+- 用户随后选择已提出的D测量专项，批准调查当前版本待机/全部隐藏/安静/专注的CPU和内存。本会话在原仓库新建本地codex/macos-resource-baseline，先用独立配置的优化编译同源探针，每组30秒预热＋600秒串行采样；另只读采样真实日用实例作为不控制场景的参考。生产源码未改，探针临时保存在.build/resource-baseline-validation，不新增产品启动参数、计时器、schema或网络。四组短自检通过，正式数据以docs/resource-baseline-validation.md及实际日志为准；逻辑调度回调不得称为全进程wakeups、功耗或省电结论。日用App、个人配置与登录项保持原状，未授权本轮push/tag/Release。
+- D主采样已完成：四组各600秒、独立日用参考2520秒；显示起止条件不同，专注角色原点也有变化，不作严格CPU比较。额外待机复测首次受限环境启动崩溃，重试于305.922秒因真实午夜通知崩溃中断，保留部分失败样本；不是完整第五组。00:00探针与00:00:05日用0.1.20均在后台Foundation日期通知→MainActor calendarChanged处SIGTRAP，原崩溃报告及数据保留。临时防睡眠断言已按准确PID释放且核查退出，未改系统偏好；日用App已重开。
+- 根据本轮真实故障直接实施0.1.21/build22有界修复：日期/时钟/时区共用selector非隔离，主线程同步刷新，后台通知弱引用转MainActor并在disposed后忽略；不改schema13、统计/计时规则、调度频率或无相同故障证据的AppKit/NSWorkspace通知。后台投递回归先重现同一SIGTRAP，修复后完整336项原生（130Core/206Mac）与13项离线发版通过。优化探针、最终评审及本地包/替换结果按docs/resource-baseline-validation.md实际记录；下一次真实午夜未验证。仍只本地提交和交付，未授权推送、标签或Release。

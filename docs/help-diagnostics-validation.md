@@ -45,3 +45,11 @@
 ## 后续用户反馈与推送授权
 
 用户在本会话明确“验证通过，推送”，确认本版本机整体体验，授权按既有流程同步main和`codex/macos-help-diagnostics`。本地交付时“尚未授权”的记录保留为历史状态，本次普通推送和云端核验按实际结果另记；不触发prepare_release、不打标签或创建/发布Release。该反馈不扩展为每项帮助/复制失败/重试/导航、真实键鼠、选中标签现场显示、焦点/睡眠/Spaces/多屏/登录、Intel/Sonoma/外机/Gatekeeper专项逐项通过；0.1.19远端正文待办不因本次反馈自动完成。
+
+## 实际推送与云端结果
+
+已按授权普通原子推送`a90c5e18dfed8c2bdba2bfa357ef8de287291de7`至main与`codex/macos-help-diagnostics`，独立读取远端两引用核对一致。main的[Actions 39758143702](https://github.com/Resker666/YeShunguangPet-macOS/actions/runs/39758143702)与开发分支的[Actions 39758165117](https://github.com/Resker666/YeShunguangPet-macOS/actions/runs/39758165117)均成功。
+
+两路实际日志各确认334项原生（130 Core＋204 Mac）、13项离线发版和13项分发通过；双架构Release App、DMG/ZIP、来源与摘要核验及Artifacts上传通过，release-draft跳过。云端为macOS26.6.2 / Xcode26.6 / Swift6.3.3，Artifacts保留14天。本次只核对真实日志与附件名称、来源、摘要、过期元数据，没有再次下载二进制，也没有打标签或创建/发布Release。
+
+证据：`.build/help-diagnostics-validation/push-verification.json`、`cloud-log-summary.json`及`cloud-logs/`。个人日用App继续来自`e15b739`，推送文档提交不改变其二进制；云端通过不扩展为Intel实机或Gatekeeper首开通过。

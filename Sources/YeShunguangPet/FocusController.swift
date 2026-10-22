@@ -125,7 +125,12 @@ struct FocusPresetCommand:Hashable {let minutes:Int,generation:UInt64}
         if statisticsSaveError != error{statisticsSaveError=error}
     }
     func retryStatisticsSaving(){guard canOperate,canPlayCompletionSound() else{return};session?.retrySave();refreshStatistics();onChange?()}
-    @objc private func calendarChanged(_ notification:Notification){guard !disposed else{return};refreshStatistics();onChange?()}
+    // Foundation can post these notifications from a background queue, including at midnight.
+    @objc nonisolated private func calendarChanged(_ notification:Notification) {
+        if Thread.isMainThread {MainActor.assumeIsolated{refreshForCalendarChange()}}
+        else {Task{@MainActor [weak self] in self?.refreshForCalendarChange()}}
+    }
+    private func refreshForCalendarChange(){guard !disposed else{return};refreshStatistics();onChange?()}
     private func publishAndSchedule() {
         let remaining=policy.remaining(at:now())
         let seconds=Double(remaining.components.seconds)+Double(remaining.components.attoseconds)/1e18
