@@ -57,3 +57,9 @@ review-red.log的14项中7处期望断言失败，review-green.log十四项通�
 App：/Applications/YeShunguangPet.app。安装包：dist/YeShunguangPet-0.1.16-macOS-arm64.dmg；Intel实验包另标x86_64。完整证据在.build/desktop-focus-validation，包括final-source.json、review-summary.json、package-verification.json、final-relocated-smoke.json、release-assets-check.json、final-delivery.json、local-install.json及旧App/配置备份。个人备份不提交或上传。
 
 保持本地分支codex/macos-desktop-focus，未合并main、推送、打标签、建草稿或发布。真实键鼠/跨应用焦点、系统睡眠/Spaces/登录/多屏热插拔、Intel/黑苹果、外机/Gatekeeper与本机整体体验仍待用户按实际结果确认；项目待办已保留。
+
+## 用户验收及推送授权
+
+用户随后在本会话反馈“验证通过，推送，下一版做什么”，确认0.1.16独立桌面计时窗版本的本机整体体验，授权按既有流程同步main和codex/macos-desktop-focus。只做普通push，不触发prepare_release，不创建标签、Release草稿或公开发布。
+
+该反馈不扩展为全部拖动、置顶、隐藏/召回、计时各状态、失败/取消/重开或跨应用焦点均逐项实测；系统、Intel/外机/Gatekeeper继续按实际证据记录。已超时的界面自动化不改写为通过。此前“待体验”和“未推送”为本地交付时状态，后续远端及CI结果另行核对；下一版尚未获产品实施授权。
