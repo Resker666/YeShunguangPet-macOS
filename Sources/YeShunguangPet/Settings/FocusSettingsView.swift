@@ -10,6 +10,7 @@ struct FocusSettingsView:View {
         self.focus=focus;_focusText=State(initialValue:String(focus.focusMinutes));_breakText=State(initialValue:String(focus.breakMinutes))
     }
     var body:some View {
+        let primaryCommand=focus.primaryCommand
         ScrollView {
             VStack(alignment:.leading,spacing:20) {
                 VStack(spacing:10) {
@@ -18,8 +19,8 @@ struct FocusSettingsView:View {
                         .accessibilityIdentifier("pet-focus-remaining")
                     ProgressView(value:1-Double(focus.remainingSeconds)/Double(max(1,focus.snapshot.durationSeconds)))
                     HStack {
-                        Button(focus.primaryTitle) {if focus.status == .running{focus.pause()}else{focus.startOrResume()}}
-                            .buttonStyle(.borderedProminent).accessibilityIdentifier("pet-focus-primary")
+                        Button(focus.primaryTitle) {focus.perform(primaryCommand)}
+                            .id(primaryCommand).buttonStyle(.borderedProminent).accessibilityIdentifier("pet-focus-primary")
                         Button("重置") {focus.reset();reloadDrafts()}.disabled(focus.status == .ready)
                     }
                 }.frame(maxWidth:.infinity).padding().background(.quaternary,in:RoundedRectangle(cornerRadius:12))

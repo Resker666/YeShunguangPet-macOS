@@ -6,6 +6,10 @@ struct FocusSnapshot:Equatable {
     let phase:FocusPhase,status:FocusStatus
     let remainingSeconds:Int,durationSeconds:Int
 }
+struct FocusCommand:Hashable {
+    enum Kind:Hashable {case startOrResume,pause}
+    let kind:Kind,generation:UInt64
+}
 
 @MainActor final class FocusController:NSObject,ObservableObject {
     @Published private(set) var snapshot=FocusSnapshot(phase:.focus,status:.ready,remainingSeconds:1500,durationSeconds:1500)
@@ -14,10 +18,17 @@ struct FocusSnapshot:Equatable {
     private let now:()->Duration
     private var displaySources=Set<String>()
     private var sleeping=false,terminating=false,disposed=false
+    private var commandGeneration:UInt64=0
     var onChange:(()->Void)?
     var phase:FocusPhase {snapshot.phase}
     var status:FocusStatus {snapshot.status}
     var remainingSeconds:Int {snapshot.remainingSeconds}
+    var primaryCommand:FocusCommand {.init(kind:status == .running ? .pause : .startOrResume,generation:commandGeneration)}
+    func perform(_ command:FocusCommand) {
+        guard canOperate else{return}
+        guard command.generation==commandGeneration else{refreshTime();return}
+        switch command.kind{case .pause:pause();case .startOrResume:startOrResume()}
+    }
     var focusMinutes:Int {session?.preferences.focusMinutes ?? 25}
     var breakMinutes:Int {session?.preferences.breakMinutes ?? 5}
     var timeText:String {String(format:"%02d:%02d",remainingSeconds/60,remainingSeconds%60)}
@@ -69,6 +80,7 @@ struct FocusSnapshot:Equatable {
         let seconds=Double(remaining.components.seconds)+Double(remaining.components.attoseconds)/1e18
         let value=FocusSnapshot(phase:policy.phase,status:policy.status,remainingSeconds:max(0,Int(ceil(seconds))),durationSeconds:Int(policy.duration.components.seconds))
         let changed=value != snapshot
+        if value.phase != snapshot.phase || value.status != snapshot.status || value.durationSeconds != snapshot.durationSeconds {commandGeneration &+= 1}
         if changed{snapshot=value}
         session?.setFocusQuiet(policy.phase == .focus && policy.status == .running && !disposed)
         scheduler.cancel()

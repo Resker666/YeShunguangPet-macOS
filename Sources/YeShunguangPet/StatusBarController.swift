@@ -143,7 +143,7 @@ import PetCore
     @objc private func checkUpdates() {guard session != nil else{return};presentSettings(tab:.about);updates.check()}
     func startShortcuts(){shortcuts?.start()}
     func beginTermination(){terminating=true;focus?.setTerminating(true);contextMenu.cancelTracking();updates.cancel();quickSkins?.cancel();if let settingsController{settingsController.beginTermination()}else{skinModel?.beginTermination()};refresh()}
-    func cancelTermination(){terminating=false;focus?.setTerminating(false);skinModel?.cancelTermination();refresh()}
+    func cancelTermination(){terminating=false;focus?.setTerminating(false);if let settingsController{settingsController.cancelTermination()}else{skinModel?.cancelTermination()};refresh()}
     @objc private func quit() { onQuit() }
     func dispose() { terminating=true;focus?.dispose();focusMenus?.dispose();focusMenus=nil;contextMenu.cancelTracking();quickSkins?.dispose();quickSkins=nil;session?.view.contextMenu=nil;contextMenu.delegate=nil;openMenus.removeAll();updates.cancel();shortcuts?.dispose();settingsController?.close(); settingsController=nil; session?.setMenuOpen(false); item.menu=nil; menu.delegate=nil; NSStatusBar.system.removeStatusItem(item) }
 }

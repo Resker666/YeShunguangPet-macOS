@@ -120,4 +120,5 @@ import UniformTypeIdentifiers
     func windowDidDeminiaturize(_ notification:Notification){updateFocusVisibility()}
     func windowWillClose(_ notification: Notification) {model.focus.setDisplayVisible(false,source:"settings");updates.cancel();model.resetShortcutEdits();model.resetSpeechEdits(); previewTask?.cancel(); filePanel?.cancel(nil); model.isDropTargeted=false; model.cancelSkinSelection(); session?.setSettingsOpen(false) }
     func beginTermination() {model.focus.setDisplayVisible(false,source:"settings");updates.cancel();model.resetShortcutEdits();model.resetSpeechEdits();previewTask?.cancel(); filePanel?.cancel(nil); model.isDropTargeted=false; model.beginTermination() }
+    func cancelTermination(){model.cancelTermination();updateFocusVisibility()}
 }

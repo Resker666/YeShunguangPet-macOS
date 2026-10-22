@@ -229,4 +229,42 @@ import PetCore
         XCTAssertThrowsError(try session.saveSpeechOverrides([session.skin.manifest.id:.defaults]))
         XCTAssertEqual(try Data(contentsOf:url),bad)
     }
+    func testRenderedPauseCannotStartNextPhaseWhenCompletionWasAlreadyDelivered()throws {
+        for reconcileFirst in [false,true] {
+            let f=try fixture();defer{f.close()}
+            let status=StatusBarController(session:f.session,registry:FakeHotKeyRegistry(),onQuit:{});defer{status.dispose()}
+            let focus=try XCTUnwrap(status.focus),menu=try XCTUnwrap(status.menu.items.first{$0.title=="专注计时"}?.submenu)
+            focus.startOrResume();let oldPause=try XCTUnwrap(menu.items.first{$0.title=="暂停专注"})
+            f.input.time = .seconds(60)
+            if reconcileFirst{focus.refreshTime()}
+            _=NSApp.sendAction(try XCTUnwrap(oldPause.action),to:oldPause.target,from:oldPause)
+            XCTAssertEqual(focus.status,.completed,"completion-first=\(reconcileFirst)")
+            XCTAssertEqual(focus.phase,.focus,"An old pause must never start rest")
+        }
+    }
+    func testCancelledTerminationRestoresOnlyVisibleFocusDisplayConsumer()throws {
+        for visibility in ["focus","other","closed"] {
+            let f=try fixture();defer{f.close()}
+            let status=StatusBarController(session:f.session,registry:FakeHotKeyRegistry(),onQuit:{});defer{status.dispose()}
+            let focus=try XCTUnwrap(status.focus),menu=try XCTUnwrap(status.menu.items.first{$0.title=="专注计时"}?.submenu)
+            menu.performActionForItem(at:try XCTUnwrap(menu.items.firstIndex{$0.title=="专注设置…"}))
+            let window=try XCTUnwrap(status.settingsController)
+            if visibility=="other"{window.model.selectedTab = .interaction}else if visibility=="closed"{window.close()}
+            focus.startOrResume();f.input.time = .seconds(10);status.beginTermination()
+            XCTAssertNil(focus.scheduler.scheduledDeadline)
+            status.cancelTermination()
+            XCTAssertEqual(focus.scheduler.scheduledDeadline,visibility=="focus" ? .seconds(11) : .seconds(60),visibility)
+            XCTAssertEqual(focus.status,.running)
+        }
+    }
+    func testCapturedViewCommandCannotBeReinterpretedAfterTransition()throws {
+        let f=try fixture();defer{f.close()}
+        f.focus.startOrResume();let pause=f.focus.primaryCommand
+        f.input.time = .seconds(60);f.focus.refreshTime();f.focus.perform(pause)
+        XCTAssertEqual(f.focus.status,.completed);XCTAssertEqual(f.focus.phase,.focus)
+        let startRest=f.focus.primaryCommand;f.focus.perform(startRest)
+        XCTAssertEqual(f.focus.status,.running);XCTAssertEqual(f.focus.phase,.rest)
+        f.focus.perform(startRest);XCTAssertEqual(f.focus.status,.running)
+        f.focus.reset();f.focus.perform(pause);XCTAssertEqual(f.focus.status,.ready)
+    }
 }
