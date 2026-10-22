@@ -19,8 +19,28 @@
 
 Xcode运行中有系统linkd服务连接诊断，测试退出码0且TEST SUCCEEDED；不将系统诊断当作业务断言失败。声音测试只在播放器调用边界计数，保持真实控制器/计时/配置与窗口，不等于实际扬声器可闻。
 
-## 待完成交付检查
+## 独立评审与原生探针
 
-单次独立只读评审、双架构干净来源构建、10项分发、包内容/签名/摘要、八附件离线检查、ARM搬移重开、原生渲染/真实一分钟，以及备份后更新个人App，均需本轮实际完成后补记；此处不预先宣称交付成功。
+单次独立只读评审范围394efa8..8721017，无Critical/Important/Minor；检查了完成声音、生命周期/模态、迁移、保存和紧凑布局及现有渲染。没有独立二次评审。评审未判断真实声音、键鼠/焦点、系统/Intel实机和最终安装；执行者保留运行限制，分发与安装另以实际证据验证，没有默默丢弃范围。
+
+隔离Bundle使用真实旧皮肤，缓存渲染12种窗口画面，包含普通/紧凑浅色与深色、完成高亮、运行、暂停、休息和保存失败。已查看紧凑普通态、深色完成态、普通完成态和紧凑保存失败PNG，文字与按钮可读；没有抓取其他应用画面。复核程序化标题拖动、隐藏独立、重开、召回、旧命令、保存失败保留和重试。
+
+紧凑窗真实计时一分钟，角色隐藏、计时窗可见；耗时60.008719秒，观察60个不同秒数，完成一次后00:00和高亮持续，不自动进入下一段，完成后调度挂起数0。FocusController调度器唤醒60次，探针另外做573次100ms检查，不宣称全进程只唤醒60次。隔离探针默认无声音交付，完成后开启也不补响；下一休息完成仅一次播放器调用。系统Glass音已成功加载，未播放并确认实际扬声器可闻。
+
+证据：review-summary.json、review.md、native-probe.json/.log、probe.swift及各PNG；界面工具此前多次超时，本轮不再重复尝试，不将原生程序化回调或渲染当作物理输入/焦点实测。
+
+## 安装包及个人App
+
+从干净8721017acd40c405d1500989b1a1a0173b1da726导出构建，trackedChanges=false，版本0.1.17/build18；后续交付记录提交只改文档，不改变App来源。
+
+- ARM和Intel实验App/DMG/ZIP均构建，10项分发测试通过；schema1→12及当前新偏好独立进程重开、原有素材回退等保持通过。双架构包与App库存、符号链接、签名、原素材、动态依赖、最低macOS15及SHA-256通过。
+- 八份版本化安装/校验文件的prepare-release.py --check-only通过，完全离线，未使用正式Token创建草稿、标签或Release。首次离线检查误传不支持的--repository参数，工具退出2且无写远端，移除该参数后退出0；不将首次失败改写为通过。
+- ARM从DMG复制到含中文/空格路径，弹出DMG，再从/private/tmp、剥离开发变量且DEVELOPER_DIR无效的环境正常启动/退出/重开恢复。仅本机搬移，不等于外机或Gatekeeper首开。
+- 按准确路径正常退出旧0.1.16，备份旧App、退出前和退出后的配置后更新/Applications/YeShunguangPet.app；schema11→12保留全部旧偏好、个人台词、所选皮肤、更新时位置/快捷键/时长/窗口偏好，新增声音false、compactfalse。新App独立启动、正常退出后核对配置，再移除验证环境变量保持运行。未登记或撤销正式登录项。
+- 仅按安装后App的PID筛选系统在屏窗口几何，确认普通280×208计时窗已显示，见installed-window.json；保留迁移后的普通默认模式，用户可按顶部按钮进入紧凑模式。未读取其他应用内容或据此推定焦点。
+
+App：/Applications/YeShunguangPet.app；安装包：dist/YeShunguangPet-0.1.17-macOS-arm64.dmg，Intel实验包另标x86_64。备份和最终证据在忽略目录.build/focus-reminder-compact-validation，含final-source.json、package-verification.json、final-relocated-smoke.json、release-assets-check.json、final-delivery.json和local-install.json。个人备份不提交或上传。
+
+保留本地codex/macos-focus-reminders-compact，未合并main、推送、打标签或发布；云端未构建本版。
 
 真实键鼠、跨应用焦点、系统睡眠/Spaces/登录/热插拔、Intel/黑苹果、外机与Gatekeeper首开仍未测；不使用程序化回调、窗口属性或交叉构建代替。声音实际可闻和个人整体体验留给用户验收。未改正式登录项、Windows仓库或Minimal Sleep。
