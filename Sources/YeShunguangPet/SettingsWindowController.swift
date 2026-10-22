@@ -44,7 +44,7 @@ import UniformTypeIdentifiers
     let shortcuts:ShortcutController
     var hasBlockingSheet:Bool {filePanel != nil || window?.attachedSheet != nil || NSApp.modalWindow != nil}
     private weak var session: PetSession?
-    private var filePanel: NSOpenPanel?
+    private var filePanel: NSOpenPanel? {didSet{session?.onStatusChange?()}}
     private var previewTask:Task<Void,Never>?
     init(session: PetSession,updates:ReleaseUpdateModel,shortcuts:ShortcutController,loginItem:LoginItemController?=nil,model:SettingsModel?=nil) {
         self.updates=updates;self.shortcuts=shortcuts
@@ -118,6 +118,7 @@ import UniformTypeIdentifiers
     @objc private func appVisibilityChanged(_ notification:Notification){updateFocusVisibility()}
     func windowDidMiniaturize(_ notification:Notification){updateFocusVisibility()}
     func windowDidDeminiaturize(_ notification:Notification){updateFocusVisibility()}
+    func windowDidEndSheet(_ notification:Notification){session?.onStatusChange?()}
     func windowWillClose(_ notification: Notification) {model.focus.setDisplayVisible(false,source:"settings");updates.cancel();model.resetShortcutEdits();model.resetSpeechEdits(); previewTask?.cancel(); filePanel?.cancel(nil); model.isDropTargeted=false; model.cancelSkinSelection(); session?.setSettingsOpen(false) }
     func beginTermination() {model.focus.setDisplayVisible(false,source:"settings");updates.cancel();model.resetShortcutEdits();model.resetSpeechEdits();previewTask?.cancel(); filePanel?.cancel(nil); model.isDropTargeted=false; model.beginTermination() }
     func cancelTermination(){model.cancelTermination();updateFocusVisibility()}

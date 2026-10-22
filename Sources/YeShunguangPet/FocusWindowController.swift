@@ -17,6 +17,9 @@ import PetCore
 }
 @MainActor private final class FocusDragHeader:NSView {
     var onDragFinished:(()->Void)?
+    var canDrag:()->Bool={false}
+    private var initialOrigin:CGPoint?,initialPointer:CGPoint?
+    private var moved=false
     override func acceptsFirstMouse(for event:NSEvent?)->Bool {true}
     override func hitTest(_ point:NSPoint)->NSView? {
         guard let hit=super.hitTest(point) else{return nil}
@@ -25,9 +28,19 @@ import PetCore
         return self
     }
     override func mouseDown(with event:NSEvent) {
-        guard event.type == .leftMouseDown else{return}
-        window?.performDrag(with:event);onDragFinished?()
+        cancelDrag()
+        guard event.type == .leftMouseDown,canDrag(),let window else{return}
+        initialOrigin=window.frame.origin;initialPointer=window.convertPoint(toScreen:event.locationInWindow)
     }
+    override func mouseDragged(with event:NSEvent){move(with:event)}
+    private func move(with event:NSEvent) {
+        guard canDrag(),let window,let origin=initialOrigin,let pointer=initialPointer else{cancelDrag();return}
+        let current=window.convertPoint(toScreen:event.locationInWindow)
+        let next=CGPoint(x:origin.x+current.x-pointer.x,y:origin.y+current.y-pointer.y)
+        if next != window.frame.origin{moved=true;window.setFrameOrigin(next)}
+    }
+    override func mouseUp(with event:NSEvent){guard initialOrigin != nil else{return};move(with:event);let finished=moved;cancelDrag();if finished{onDragFinished?()}}
+    func cancelDrag(){initialOrigin=nil;initialPointer=nil;moved=false}
 }
 @MainActor private final class FocusWindowButton:NSButton {
     override func acceptsFirstMouse(for event:NSEvent?)->Bool {true}
@@ -51,6 +64,7 @@ import PetCore
     private let hint=NSTextField(labelWithString:"每段结束后，手动开始下一段")
     private let progress=NSProgressIndicator()
     private let buttons=NSStackView()
+    private let header=FocusDragHeader()
     private let session:PetSession,focus:FocusController
     private let canDispatch:()->Bool
     private var subscription:AnyCancellable?
@@ -123,10 +137,11 @@ import PetCore
     private func updateDisplayVisibility(){focus.setDisplayVisible(started && !disposed && !terminating && panel.isVisible && !NSApp.isHidden,source:"desktop-window")}
     @objc private func appVisibilityChanged(){guard started,!disposed else{return};applyPresentation()}
     @objc private func screensChanged(){screenChanged()}
-    func beginTermination(){terminating=true;updateDisplayVisibility();refreshControls()}
+    func beginTermination(){terminating=true;header.cancelDrag();updateDisplayVisibility();refreshControls()}
     func cancelTermination(){guard !disposed else{return};terminating=false;applyPresentation();focus.refreshTime()}
     func dispose() {
         guard !disposed else{return};disposed=true;subscription=nil
+        header.cancelDrag();header.onDragFinished=nil;header.canDrag={false}
         NotificationCenter.default.removeObserver(self);updateDisplayVisibility()
         panel.onRequestClose=nil;panel.delegate=nil;panel.close();onPresentationChange=nil
     }
@@ -155,7 +170,7 @@ import PetCore
     @objc private func hide(){setVisible(false)}
     private func buildContent() {
         let background=FocusWindowBackground(frame:CGRect(origin:.zero,size:panel.frame.size));panel.contentView=background
-        let header=FocusDragHeader();header.translatesAutoresizingMaskIntoConstraints=false
+        header.translatesAutoresizingMaskIntoConstraints=false;header.canDrag={[weak self] in self?.canOperate==true}
         header.onDragFinished={[weak self] in self?.finishDrag()};header.toolTip="拖动顶部移动计时器"
         let title=NSTextField(labelWithString:"专注计时");title.font = .systemFont(ofSize:12,weight:.medium);title.textColor = .secondaryLabelColor
         closeButton.image=NSImage(systemSymbolName:"xmark",accessibilityDescription:"隐藏计时器");closeButton.toolTip="隐藏计时器，计时继续";closeButton.target=self;closeButton.action=#selector(hide)

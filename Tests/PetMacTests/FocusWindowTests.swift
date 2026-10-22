@@ -126,4 +126,55 @@ import PetCore
         XCTAssertFalse(try XCTUnwrap(status.focusWindow).panel.isVisible)
         next.start();status.startShortcuts();XCTAssertFalse(try XCTUnwrap(status.focusWindow).panel.isVisible)
     }
+    func testHeaderMouseSequenceMovesWindowAndSavesOnlyAtMouseUp()throws {
+        let f=try fixture();defer{f.close()};let original=f.window.panel.frame.origin,writes=f.input.writes
+        let header=try XCTUnwrap(f.window.panel.contentView?.hitTest(CGPoint(x:140,y:190)))
+        func event(_ type:NSEvent.EventType,_ point:CGPoint)throws->NSEvent {
+            try XCTUnwrap(NSEvent.mouseEvent(with:type,location:point,modifierFlags:[],timestamp:0,windowNumber:f.window.panel.windowNumber,context:nil,eventNumber:1,clickCount:1,pressure:0))
+        }
+        header.mouseDown(with:try event(.leftMouseDown,CGPoint(x:140,y:190)))
+        XCTAssertEqual(f.input.writes,writes,"mouse-down must not save the pre-drag position")
+        header.mouseDragged(with:try event(.leftMouseDragged,CGPoint(x:110,y:170)))
+        XCTAssertEqual(f.window.panel.frame.origin,CGPoint(x:original.x-30,y:original.y-20));XCTAssertEqual(f.input.writes,writes)
+        header.mouseUp(with:try event(.leftMouseUp,CGPoint(x:140,y:190)))
+        XCTAssertEqual(f.input.writes,writes+1);XCTAssertEqual(f.session.preferences.focusWindow.placement?.origin,CGPoint(x:original.x-30,y:original.y-20))
+    }
+    func testCompletedButtonsRecoverAfterNativeSettingsSheetEnds()async throws {
+        let f=try fixture();defer{f.close()};f.window.dispose()
+        let status=StatusBarController(session:f.session,registry:FakeHotKeyRegistry(),onQuit:{});defer{status.dispose()};status.startShortcuts()
+        let menu=try XCTUnwrap(status.menu.items.first{$0.title=="专注计时"}?.submenu)
+        menu.performActionForItem(at:try XCTUnwrap(menu.items.firstIndex{$0.title=="专注设置…"}))
+        let parent=try XCTUnwrap(status.settingsController?.window),timer=try XCTUnwrap(status.focus),window=try XCTUnwrap(status.focusWindow)
+        let sheet=NSWindow(contentRect:CGRect(x:0,y:0,width:200,height:100),styleMask:.titled,backing:.buffered,defer:false)
+        parent.beginSheet(sheet,completionHandler:{_ in});timer.startOrResume();f.input.time = .seconds(60);timer.refreshTime()
+        XCTAssertEqual(timer.status,.completed);XCTAssertFalse(window.primaryButton.isEnabled)
+        parent.endSheet(sheet);sheet.orderOut(nil)
+        let limit=ContinuousClock.now + .seconds(1)
+        while !window.primaryButton.isEnabled && ContinuousClock.now<limit {try await Task.sleep(for:.milliseconds(10))}
+        XCTAssertTrue(window.primaryButton.isEnabled,"completed timer must recover after the modal ends")
+        window.primaryButton.performClick(nil);XCTAssertEqual(timer.status,.running);XCTAssertEqual(timer.phase,.rest)
+    }
+    func testHeaderTapDoesNotWritePlacement()throws {
+        let f=try fixture();defer{f.close()};let writes=f.input.writes
+        let header=try XCTUnwrap(f.window.panel.contentView?.hitTest(CGPoint(x:140,y:190)))
+        for type in [NSEvent.EventType.leftMouseDown,.leftMouseUp] {
+            header.mouseDownOrUpForTest(type,panel:f.window.panel)
+        }
+        XCTAssertEqual(f.input.writes,writes)
+    }
+    func testTerminationCancelsPendingHeaderGesture()throws {
+        let f=try fixture();defer{f.close()};let writes=f.input.writes,origin=f.window.panel.frame.origin
+        let header=try XCTUnwrap(f.window.panel.contentView?.hitTest(CGPoint(x:140,y:190)))
+        header.mouseDownOrUpForTest(.leftMouseDown,panel:f.window.panel);f.window.beginTermination();f.window.cancelTermination()
+        let event=try XCTUnwrap(NSEvent.mouseEvent(with:.leftMouseDragged,location:CGPoint(x:110,y:170),modifierFlags:[],timestamp:0,windowNumber:f.window.panel.windowNumber,context:nil,eventNumber:1,clickCount:1,pressure:0))
+        header.mouseDragged(with:event);header.mouseDownOrUpForTest(.leftMouseUp,panel:f.window.panel)
+        XCTAssertEqual(f.window.panel.frame.origin,origin);XCTAssertEqual(f.input.writes,writes)
+    }
+}
+
+@MainActor private extension NSView {
+    func mouseDownOrUpForTest(_ type:NSEvent.EventType,panel:NSPanel) {
+        guard let event=NSEvent.mouseEvent(with:type,location:CGPoint(x:140,y:190),modifierFlags:[],timestamp:0,windowNumber:panel.windowNumber,context:nil,eventNumber:1,clickCount:1,pressure:0) else{return XCTFail("Missing event")}
+        if type == .leftMouseDown{mouseDown(with:event)}else{mouseUp(with:event)}
+    }
 }
