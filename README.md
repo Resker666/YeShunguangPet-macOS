@@ -1,6 +1,6 @@
 # YeShunguangPet macOS
 
-为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前开发版 0.1.21 / build22 修复午夜日期通知在后台线程触发的崩溃，正在完成本地交付；0.1.20已普通推送且两路CI通过。公开最新版为 [0.1.19](https://github.com/Resker666/YeShunguangPet-macOS/releases/tag/v0.1.19)，最低系统为 macOS 14.0。
+为 Mac mini M4 日常试用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前 0.1.21 / build22 已完成本地交付，修复午夜日期通知在后台线程触发的崩溃；336项原生、13项分发和13项离线发版通过。0.1.20已普通推送且两路CI通过；0.1.21尚未推送或发布。公开最新版为 [0.1.19](https://github.com/Resker666/YeShunguangPet-macOS/releases/tag/v0.1.19)，最低系统为 macOS 14.0。
 
 本轮完成0.1.20待机、隐藏、安静与专注各10分钟同源资源采样，并发现真实跨日崩溃。原始条件、结果、失败复测和0.1.21修复验证见[资源调查记录](docs/resource-baseline-validation.md)；这些数据不代表功耗、过夜稳定性或新版性能提升。
 
@@ -124,7 +124,7 @@ python3 scripts/smoke-app.py --app /绝对路径/YeShunguangPet.app --check-rest
 
 构建需要 Xcode；使用 App 不需要。默认ARM App在`dist/YeShunguangPet.app`，Intel App在`dist/x86_64/YeShunguangPet.app`。两者主程序和嵌入框架架构必须一致；打包核对所选架构、Info.plist声明和两个Mach-O的实际macOS 14.0最低版本，拒绝错误标签、混合框架或最低版本不符的包。
 
-打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.21-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.19已公开发布八份附件，标签及云端包来源为`37a73f0cd163dbb172300d0df269a4b7575180b5`，两路CI通过并获本台黑苹果整体体验通过反馈；本地历史交付包来源仍为`5164ba9`。0.1.20从干净来源`e15b7399248385a95eabcb309f098f446c0cf31a`本地交付，后续已普通同步`a90c5e1`且两路CI通过；0.1.21本地构建与替换状态见本轮记录，未推送或发布。
+打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.1.21-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.19已公开发布八份附件，标签及云端包来源为`37a73f0cd163dbb172300d0df269a4b7575180b5`，两路CI通过并获本台黑苹果整体体验通过反馈；本地历史交付包来源仍为`5164ba9`。0.1.20从干净来源`e15b739`本地交付，后续已普通同步`a90c5e1`且两路CI通过。0.1.21 App/八附件来自干净`76f9c615563b42359041f12ea38999ba516dfd6e`，已安装运行；本轮仅本地提交，未推送或发布。
 
 App 图标由原仓库 ICO 转换，原图256×256；大尺寸仅作缩放，不新增绘制细节。需要重新生成时运行 `bash tools/make-icon.sh`，使用系统 sips/iconutil，无外部图像工具依赖。
 

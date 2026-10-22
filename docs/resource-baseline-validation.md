@@ -1,6 +1,6 @@
 # D：资源基线与午夜通知崩溃调查
 
-日期：2026-10-22晚至23日凌晨（Asia/Shanghai）。D调查的四组主采样与日用参考已完成；额外待机复测在真实午夜崩溃时中断，生产App也发生同一崩溃。已实施有界修复，0.1.21本地交付待最后核验。
+日期：2026-10-22晚至23日凌晨（Asia/Shanghai）。D调查的四组主采样与日用参考已完成；额外待机复测在真实午夜崩溃时中断，生产App也发生同一崩溃。已完成有界修复及0.1.21/build22本地交付，App/包来源为干净提交`76f9c615563b42359041f12ea38999ba516dfd6e`；后续仅文档提交不改变该App。
 
 ## 方法与口径
 
@@ -54,7 +54,7 @@ CPU=累计CPU时间差÷单调时间差×100，100%代表一核。`ps`累计CPU�
 
 只读采样`/Applications`的0.1.20/build21，来源`e15b739`，2520.021秒、504个样本：CPU均值2.0790%，RSS均值138.92、范围134.95–148.97 MiB，约5秒峰值4.99%。采样期间未读取个人配置、控制窗口或重启它。设置/历史不同且场景未控制，不能与探针严格对比。
 
-该2520秒采样先完成，日用实例随后也在00:00:05崩溃，不能写成长时稳定性通过。确认崩溃后已重新打开原App；修复版替换和状态核对另按实际结果记录。
+该2520秒采样先完成，日用实例随后也在00:00:05崩溃，不能写成长时稳定性通过。确认崩溃后先重新打开原App，完成修复验证后再正常退出并备份、替换为0.1.21。
 
 ## 实际发现与修复范围
 
@@ -62,12 +62,24 @@ CPU=累计CPU时间差÷单调时间差×100，100%代表一核。`ps`累计CPU�
 
 0.1.21/build22只修复日期、时钟、时区共用入口：selector非隔离；主线程保持同步刷新，后台转至MainActor；排队任务遇dispose后忽略。schema13、统计归属、手动衔接、计时及调度频率不变。无相同故障证据的AppKit/NSWorkspace通知保持原实现。[补丁计划](superpowers/plans/2026-10-23-macos-calendar-notification-crash.md)。
 
-新增回归先在旧实现重现同一SIGTRAP（xcodebuild65）；修复后完整336项原生（130Core＋206Mac）和13项离线发版通过。覆盖三种后台通知刷新今日/菜单、主线程回调、保留旧日汇总、无额外写盘/计时器、排队后dispose忽略；既有主线程同步通知回归继续通过。独立优化编译同源探针连续后台投递300次通知，300次主线程回调、通知期间配置字节不变、准备态无Focus计时器及正常退出均通过；它仍不等于正式二进制跨过真实午夜。单一最终评审、干净包和本地替换结果待补。
+新增回归先在旧实现重现同一SIGTRAP（xcodebuild65）；修复后完整336项原生（130Core＋206Mac）和13项离线发版通过。覆盖三种后台通知刷新今日/菜单、主线程回调、保留旧日汇总、无额外写盘/计时器、排队后dispose忽略；既有主线程同步通知回归继续通过。独立优化编译同源探针连续后台投递300次通知，300次主线程回调、通知期间配置字节不变、准备态无Focus计时器及正常退出均通过；它仍不等于正式二进制跨过真实午夜。
+
+## 最终验证与本地交付
+
+- 同一独立评审座位先指出显示口径、断言覆盖和CPU量化边界，均按实际证据记录；最终代码/报告范围`a90c5e1..76f9c61`为0 Critical、0 Important、0 Minor。没有另做第二次独立代码评审。
+- 干净来源`76f9c61`的arm64/x86_64 Release App、最低macOS14.0、签名、原素材、依赖、DMG/ZIP库存和SHA-256通过；13项分发、八附件离线来源校验通过，没有GitHub写入。Intel只交叉构建，未在本轮执行Intel程序。
+- 首次搬移探针目录含字面Unicode转义，只证明空格路径；该记录保留。随后单独从ARM DMG复制到真正中文加空格目录，先弹出DMG，再在`/private/tmp`和独立配置下启动、保存、重开，全部通过。没有把第一次记录冒充中文路径验证。
+- 正常退出准确路径的旧实例后，备份旧App与配置，安装运行`/Applications/YeShunguangPet.app` 0.1.21/build22。整个App文件/链接库存与干净ARM构建一致；schema13→13，全部既有偏好、已选皮肤、退出时位置、快捷键、时长、台词、计时窗状态和持久化专注统计保留，未登记/撤销正式登录项。
+- 按新PID只核对自身窗口元数据，角色与200×112计时窗均有上屏记录；不记作物理输入或跨应用焦点验收。用户本版整体体验与修复版下一次真实午夜仍待日用观察。
+
+没有证据支持额外增加资源常驻监控或改写逐帧逻辑，因此保留既有资源调度；本轮产品变更只修复已复现的跨日线程崩溃。
 
 本轮未测系统/GPU功耗、电池、过夜耐久、其他皮肤/缩放/Retina或Intel/Sonoma资源；旧版数据不代表0.1.21性能改善。修复后下一次真实午夜尚待日用观察，不改系统日期冒充实测。
 
 ## 证据与交付边界
 
-本机忽略目录`.build/resource-baseline-validation/`保存`source.json`、`environment.json`、`build.json`、`probe.swift`、构建/采样/分析脚本、`pilot/`、`baseline/`、`analysis.json`、`installed-process.json`、`awake-idle-repeat*/`、各日志、`crash-summary.json`、`assertion-release.json`及`calendar-repair/`。崩溃原报告留在本机DiagnosticReports，不提交个人诊断原文。
+本机忽略目录`.build/resource-baseline-validation/`保存`source.json`、`environment.json`、`build.json`、`probe.swift`、构建/采样/分析脚本、`pilot/`、`baseline/`、`analysis.json`、`installed-process.json`、`awake-idle-repeat*/`、各日志、`crash-summary.json`、`assertion-release.json`、`assertion-exit-confirmation.json`及`calendar-repair/`。交付证据为`final-source.json`、`package-verification.json`、`eight-assets-offline-check.log`、`unicode-relocation-validation.json`、`final-delivery.json`、`local-install.json`、`installed-inventory.json`和`installed-window.json`。崩溃原报告留在本机DiagnosticReports，不提交个人诊断原文。
+
+八份安装/校验文件已放入仓库`dist`，旧App保存在本机`previous-installed-0.1.20.app`，个人配置备份仅留忽略目录。日用App继续运行，无临时测量进程或防睡眠断言需保持。
 
 临时探针不作为产品启动参数、常驻服务或遥测保留。Windows和Minimal Sleep只读，正式登录项未改；本轮仅本地开发/提交/交付，未获推送、标签或Release授权。
