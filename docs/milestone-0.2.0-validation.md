@@ -21,3 +21,9 @@
 ## 推送授权
 
 用户随后明确要求“推送”，授权普通同步main与codex/macos-deepseek-chat并核对云端构建/产物。使用普通快进推送，不强推或附带标签；不触发手动prepare_release或发布Release。实际远端SHA、两路CI与Artifacts结果完成后补记。当前日用App继续保留，不因源码推送而替换。
+
+## 首轮CI失败与测试同步修正
+
+首次普通原子推送来源4c82f3061e444b55af4e948fd0b7579d42b7157f，两路main39912153124与开发39912153000均在原生测试阶段失败：Core137通过，Mac235中1项失败，均为ChatClientTests.testCancellationAndHTTPFailuresNeverRetry第157行停止次数仍为0。13项离线发版已通过，后续构建/分发/安装包上传跳过，仅有诊断产物，Release草稿跳过；原失败日志保留。
+
+测试取消消费者后，用固定1000次Task.yield假定URLSession异步停止回调已经到达；消费者结束并不等待独立worker完成。测试夹具改为由每个实际请求实例捕获停止观察者，等待真实stopLoading回调（3秒上限），继续断言已停止且仅请求1次。未延长固定睡眠、跳过或删除取消检查，App功能代码无修改。本地相关4项及完整372项原生测试实际通过；修正后的新推送/CI结果后续补记。

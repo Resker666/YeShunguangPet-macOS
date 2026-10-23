@@ -11,15 +11,17 @@ private final class ChatURLProtocol: URLProtocol, @unchecked Sendable {
     nonisolated(unsafe) private static var responseURL: URL?
     nonisolated(unsafe) private static var requests = [URLRequest]()
     nonisolated(unsafe) private static var stopped = 0
-    static func configure(data: Data, status: Int = 200, finish: Bool = true, failure: URLError? = nil, responseURL: URL? = nil) {
-        lock.withLock { body = data; Self.status = status; Self.finish = finish; Self.failure = failure; Self.responseURL = responseURL; requests = []; stopped = 0 }
+    nonisolated(unsafe) private static var onStop: (@Sendable () -> Void)?
+    private var stopObserver: (@Sendable () -> Void)?
+    static func configure(data: Data, status: Int = 200, finish: Bool = true, failure: URLError? = nil, responseURL: URL? = nil, onStop: (@Sendable () -> Void)? = nil) {
+        lock.withLock { body = data; Self.status = status; Self.finish = finish; Self.failure = failure; Self.responseURL = responseURL; Self.onStop = onStop; requests = []; stopped = 0 }
     }
     static var recorded: [URLRequest] { lock.withLock { requests } }
     static var stopCount: Int { lock.withLock { stopped } }
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
-        let values = Self.lock.withLock { Self.requests.append(request); return (Self.body, Self.status, Self.finish, Self.failure, Self.responseURL) }
+        let values = Self.lock.withLock { stopObserver = Self.onStop; Self.requests.append(request); return (Self.body, Self.status, Self.finish, Self.failure, Self.responseURL) }
         if let error = values.3 { client?.urlProtocol(self, didFailWithError: error); return }
         let response = HTTPURLResponse(url: values.4 ?? request.url!, statusCode: values.1, httpVersion: nil, headerFields: ["Content-Type": "text/event-stream"])!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
@@ -28,7 +30,14 @@ private final class ChatURLProtocol: URLProtocol, @unchecked Sendable {
         }
         if values.2 { client?.urlProtocolDidFinishLoading(self) }
     }
-    override func stopLoading() { Self.lock.withLock { Self.stopped += 1 } }
+    override func stopLoading() {
+        let observer = Self.lock.withLock {
+            Self.stopped += 1
+            let observer = stopObserver; stopObserver = nil
+            return observer
+        }
+        observer?()
+    }
 }
 
 final class ChatClientTests: XCTestCase {
@@ -142,7 +151,8 @@ final class ChatClientTests: XCTestCase {
         }
         ChatURLProtocol.configure(data: try payload(), responseURL: URL(string: "https://wrong.invalid/chat/completions")!)
         do { _ = try await collect(client()); XCTFail("wrong response source accepted") } catch {}
-        ChatURLProtocol.configure(data: Data((try frame("开始")).utf8), finish: false)
+        let stopped = expectation(description: "URLSession stopped the active transport")
+        ChatURLProtocol.configure(data: Data((try frame("开始")).utf8), finish: false, onStop: { stopped.fulfill() })
         let transport = client(), started = expectation(description: "first content arrived")
         let request = try snapshot()
         let task = Task {
@@ -153,7 +163,9 @@ final class ChatClientTests: XCTestCase {
         await fulfillment(of: [started], timeout: 3)
         task.cancel()
         _ = await task.result
-        for _ in 0..<1000 { if ChatURLProtocol.stopCount > 0 { break }; await Task.yield() }
+        // Ending the consumer does not join the detached URLSession worker.
+        // Await the actual callback, with a time bound rather than a scheduler-iteration budget.
+        await fulfillment(of: [stopped], timeout: 3)
         XCTAssertGreaterThan(ChatURLProtocol.stopCount, 0)
         XCTAssertEqual(ChatURLProtocol.recorded.count, 1)
     }
