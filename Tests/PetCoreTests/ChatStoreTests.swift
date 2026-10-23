@@ -24,6 +24,65 @@ final class ChatStoreTests: XCTestCase {
     }
     private let valid = Data(#"{"schemaVersion":1,"conversation":{"characterID":"robin","profile":{"background":"","personality":"","speakingStyle":"","examples":""},"messages":[]}}"#.utf8)
 
+    func testV1LoadsWithoutRewriteAndWritesV2OnMutation() throws {
+        let directory = try root().appendingPathComponent("AI/characters")
+        let messages = (1...12).flatMap { number in [["role": "user", "content": "问\(number)"], ["role": "assistant", "content": "答\(number)"]] }
+        let bytes = try JSONSerialization.data(withJSONObject: ["schemaVersion": 1, "conversation": ["characterID": "robin", "profile": ["background": "旧人设", "personality": "", "speakingStyle": "", "examples": ""], "messages": messages]])
+        try put(bytes, at: file(directory))
+        let store = ChatStore(directory: directory)
+        let state = try loaded(store.load(characterID: "robin"))
+        XCTAssertEqual(try Data(contentsOf: file(directory)), bytes)
+        XCTAssertEqual(state.profile.background, "旧人设")
+        XCTAssertEqual(state.messages.map(\.content), messages.map { $0["content"]! })
+        XCTAssertEqual(state.memories, [])
+        XCTAssertEqual(state.memoryRevision, 0)
+        try store.save(state)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file(directory))) as? [String: Any])
+        XCTAssertEqual(object["schemaVersion"] as? Int, 2)
+        XCTAssertEqual(try loaded(ChatStore(directory: directory).load(characterID: "robin")), state)
+    }
+
+    func testV2MissingInvalidMemoryFieldsRemainProtected() throws {
+        let directory = try root().appendingPathComponent("AI/characters")
+        let state = try ChatConversation(characterID: "robin", memories: [ChatMemory(text: "é")])
+        let base = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(state)) as? [String: Any])
+        var cases = [[String: Any]]()
+        for field in ["memories", "memoryRevision"] {
+            var missing = base; missing.removeValue(forKey: field); cases.append(missing)
+            var null = base; null[field] = NSNull(); cases.append(null)
+        }
+        for bad: Any in [-1, 1.5, "0", true] { var value = base; value["memoryRevision"] = bad; cases.append(value) }
+        let id = UUID().uuidString
+        for memories: Any in ["bad", [["id": id, "text": "a"], ["id": id, "text": "b"]], [["id": id, "text": "é"], ["id": UUID().uuidString, "text": "e\u{301}"]], [["id": id, "text": " untrimmed "]]] {
+            var value = base; value["memories"] = memories; cases.append(value)
+        }
+        for value in cases {
+            let bytes = try JSONSerialization.data(withJSONObject: ["schemaVersion": 2, "conversation": value])
+            try put(bytes, at: file(directory))
+            let store = ChatStore(directory: directory)
+            if case .protectedFile = store.load(characterID: "robin") {} else { XCTFail("invalid v2 accepted") }
+            XCTAssertThrowsError(try store.save(state))
+            XCTAssertEqual(try Data(contentsOf: file(directory)), bytes)
+        }
+    }
+
+    func testResetBacksUpAllCharacterData() throws {
+        let directory = try root().appendingPathComponent("AI/characters")
+        let store = ChatStore(directory: directory)
+        let prior = try ChatConversation(characterID: "robin", profile: .init(background: "旧背景"), memories: [ChatMemory(text: "旧记忆")], memoryRevision: 5).appending(user: "问", assistant: "答")
+        try store.save(prior)
+        let original = try Data(contentsOf: file(directory))
+        let bad = ChatStore(directory: directory, backup: { _, _ in throw SkinError("injected") })
+        XCTAssertThrowsError(try bad.backupAndReset(characterID: "robin", profile: .init()))
+        XCTAssertEqual(try Data(contentsOf: file(directory)), original)
+        let fresh = try store.backupAndReset(characterID: "robin", profile: .init())
+        XCTAssertEqual(fresh.profile, ChatProfile())
+        XCTAssertTrue(fresh.messages.isEmpty && fresh.memories.isEmpty)
+        XCTAssertEqual(fresh.memoryRevision, 0)
+        let files = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+        XCTAssertTrue(try files.filter { $0 != file(directory) }.contains { try Data(contentsOf: $0) == original })
+    }
+
     func testArchivesReopenAndPreserveMainSettings() throws {
         let base = try root(), directory = base.appendingPathComponent("AI/characters")
         let settings = base.appendingPathComponent("settings.json"), original = Data("PRIVATE-MAIN-CONFIG".utf8)

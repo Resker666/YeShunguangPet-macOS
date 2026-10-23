@@ -97,12 +97,12 @@ Xcode 使用 XML plist 显式登记：每个新文件建立 PBXFileReference、r
 - `ChatWriteOperation` 新增 `.memories(characterID: String, expectedRevision: UInt64, memories: [ChatMemory])`。worker 对最新 current 调用 Task 1 重建接口，保存成功才更新缓存；profile/clear 改为 Task 1 保留字段的方法。
 - `ControlledChatPersistence.apply` 的 exhaustive switch 增加记录名 `memories:<id>`，沿用 `holdNextWrite/failNext/waitForOperations/releaseWrite`。FIFO ticket/waitForPending 接口保持。
 
-- [ ] **1. 写迁移失败用例。** `ChatStoreTests.testV1LoadsWithoutRewriteAndWritesV2OnMutation` 使用手写 v1 JSON，断言读后文件 Data 完全相等、旧人设/12轮相等、记忆空/revision0；明确保存后 schemaVersion2，重开所有字段相同。`testV2MissingInvalidMemoryFieldsRemainProtected` 覆盖缺失/null/错误类型/重复ID/NFC重复/非法修订/未知版本，断言 save 抛错且原字节相等。
-- [ ] **2. 写事务失败用例。** `ChatPersistenceTests.testMemoriesSurviveProfileAppendAndHistoryClear` 排队记忆→人设→第13轮→clear，最终 history 空、最新 profile/记忆/revision 均保留。`testMemoryRevisionConflictPreservesLatestArchive` 用相同原修订排两次记忆，后者失败且文件/缓存保持第一份。`testFailedAcceptedMemoryWriteCanRetryWithoutLoss` 注入一次失败，原文件/缓存不变，重试同意图一次成功且只增一次修订。`testResetBacksUpAllCharacterData` 断言备份含人设/历史/记忆，重置三者清空且 revision0，备份失败不解除保护。
-- [ ] **3. 运行 RED。** `bash scripts/test.sh -only-testing:PetCoreTests/ChatStoreTests -only-testing:PetMacTests/ChatPersistenceTests`。
-- [ ] **4. 实现 v2 和事务。** 读取 v1 不落盘，保留原 2MiB/身份/StrictJSON/权限/备份保护；普通资料写入都输出 v2。复用 FIFO，不从控制器直接调用 store，不让网络 Task 取消已经登记的写入。
-- [ ] **5. 运行同一命令 GREEN。** 连同原 >128KiB 中文档案、原子写失败、保主配置、FIFO 排序和退出 drain 用例通过。
-- [ ] **6. 本地提交。** `git commit -m "feat: migrate chat archives and serialize revisioned memory writes"`，仅暂存本任务文件。
+- [x] **1. 写迁移失败用例。** `ChatStoreTests.testV1LoadsWithoutRewriteAndWritesV2OnMutation` 使用手写 v1 JSON，断言读后文件 Data 完全相等、旧人设/12轮相等、记忆空/revision0；明确保存后 schemaVersion2，重开所有字段相同。`testV2MissingInvalidMemoryFieldsRemainProtected` 覆盖缺失/null/错误类型/重复ID/NFC重复/非法修订/未知版本，断言 save 抛错且原字节相等。
+- [x] **2. 写事务失败用例。** `ChatPersistenceTests.testMemoriesSurviveProfileAppendAndHistoryClear` 排队记忆→人设→第13轮→clear，最终 history 空、最新 profile/记忆/revision 均保留。`testMemoryRevisionConflictPreservesLatestArchive` 用相同原修订排两次记忆，后者失败且文件/缓存保持第一份。`testFailedAcceptedMemoryWriteCanRetryWithoutLoss` 注入一次失败，原文件/缓存不变，重试同意图一次成功且只增一次修订。`testResetBacksUpAllCharacterData` 断言备份含人设/历史/记忆，重置三者清空且 revision0，备份失败不解除保护。
+- [x] **3. 运行 RED。** `bash scripts/test.sh -only-testing:PetCoreTests/ChatStoreTests -only-testing:PetMacTests/ChatPersistenceTests`。
+- [x] **4. 实现 v2 和事务。** 读取 v1 不落盘，保留原 2MiB/身份/StrictJSON/权限/备份保护；普通资料写入都输出 v2。复用 FIFO，不从控制器直接调用 store，不让网络 Task 取消已经登记的写入。
+- [x] **5. 运行同一命令 GREEN。** 连同原 >128KiB 中文档案、原子写失败、保主配置、FIFO 排序和退出 drain 用例通过。
+- [x] **6. 本地提交。** `git commit -m "feat: migrate chat archives and serialize revisioned memory writes"`，仅暂存本任务文件。
 
 ## Task 3：复用 DeepSeek 传输并增加提炼客户端
 

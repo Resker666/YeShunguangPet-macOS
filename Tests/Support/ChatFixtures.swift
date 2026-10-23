@@ -38,6 +38,7 @@ actor ControlledChatPersistence: ChatPersisting {
         case .append(let id, _, _): name = "append:" + id
         case .clear(let id): name = "clear:" + id
         case .reset(let id, _): name = "reset:" + id
+        case .memories(let id, _, _): name = "memories:" + id
         case .connection: name = "connection"
         case .resetConnection: name = "resetConnection"
         }

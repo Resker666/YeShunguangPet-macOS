@@ -9,6 +9,15 @@ public enum ChatLoadResult<Value: Sendable>: Sendable {
 
 public final class ChatStore {
     private struct Archive: Codable { let schemaVersion: Int; let conversation: ChatConversation }
+    private struct Version: Decodable { let schemaVersion: Int }
+    private struct LegacyArchive: Decodable {
+        struct Conversation: Decodable {
+            let characterID: String
+            let profile: ChatProfile
+            let messages: [ChatMessage]
+        }
+        let conversation: Conversation
+    }
     public let directory: URL
     private let write: (Data, URL) throws -> Void
     private let backup: (URL, URL) throws -> Void
@@ -40,11 +49,19 @@ public final class ChatStore {
                 blocked.remove(characterID); return .missing
             }
             try StrictJSON.validate(data, maximumBytes: 2097152)
-            let archive = try JSONDecoder().decode(Archive.self, from: data)
-            guard archive.schemaVersion == 1, archive.conversation.characterID == characterID else { throw SkinError("聊天档案版本或角色不匹配。") }
-            try archive.conversation.validate()
+            let decoder = JSONDecoder(), version = try decoder.decode(Version.self, from: data).schemaVersion
+            let conversation: ChatConversation
+            switch version {
+            case 1:
+                let old = try decoder.decode(LegacyArchive.self, from: data).conversation
+                conversation = try ChatConversation(characterID: old.characterID, profile: old.profile, messages: old.messages)
+            case 2: conversation = try decoder.decode(Archive.self, from: data).conversation
+            default: throw SkinError("聊天档案版本无效。")
+            }
+            guard conversation.characterID == characterID else { throw SkinError("聊天档案角色不匹配。") }
+            try conversation.validate()
             blocked.remove(characterID)
-            return .loaded(archive.conversation)
+            return .loaded(conversation)
         } catch {
             blocked.insert(characterID)
             return .protectedFile("聊天记录无法读取，原文件保持不变。请备份并重置该角色记录。")
@@ -60,7 +77,7 @@ public final class ChatStore {
     }
 
     private func persist(_ value: ChatConversation) throws {
-        let data = try JSONEncoder().encode(Archive(schemaVersion: 1, conversation: value))
+        let data = try JSONEncoder().encode(Archive(schemaVersion: 2, conversation: value))
         guard data.count <= 2097152 else { throw SkinError("聊天记录超过允许大小。") }
         try checkDirectories(create: true)
         try write(data, url(for: value.characterID))

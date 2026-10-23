@@ -17,6 +17,50 @@ import PetCore
         return state
     }
 
+    func testMemoriesSurviveProfileAppendAndHistoryClear() async throws {
+        var seed = try ChatConversation(characterID: "robin")
+        for i in 1...12 { seed = try seed.appending(user: "u\(i)", assistant: "a\(i)") }
+        let (root, _, queue) = try fixture(seed: seed)
+        let memories = [try ChatMemory(text: "喜欢茶")]
+        queue.enqueue(.memories(characterID: "robin", expectedRevision: 0, memories: memories)) { _, result in if case .failure = result { XCTFail("memory failed") } }
+        queue.enqueue(.profile(characterID: "robin", profile: .init(background: "新背景"))) { _, result in if case .failure = result { XCTFail("profile failed") } }
+        queue.enqueue(.append(characterID: "robin", user: "u13", assistant: "a13")) { _, result in if case .failure = result { XCTFail("append failed") } }
+        await queue.waitForPending()
+        let beforeClear = try loaded(root)
+        XCTAssertEqual(beforeClear.messages.first?.content, "u2")
+        XCTAssertEqual(beforeClear.memories, memories)
+        queue.enqueue(.clear(characterID: "robin")) { _, result in if case .failure = result { XCTFail("clear failed") } }
+        await queue.waitForPending()
+        let saved = try loaded(root)
+        XCTAssertTrue(saved.messages.isEmpty)
+        XCTAssertEqual(saved.profile.background, "新背景")
+        XCTAssertEqual(saved.memories, memories)
+        XCTAssertEqual(saved.memoryRevision, 1)
+    }
+    func testMemoryRevisionConflictPreservesLatestArchive() async throws {
+        let (root, _, queue) = try fixture()
+        let first = [try ChatMemory(text: "第一条")]
+        var failed = false
+        queue.enqueue(.memories(characterID: "robin", expectedRevision: 0, memories: first)) { _, result in if case .failure = result { XCTFail("first failed") } }
+        queue.enqueue(.memories(characterID: "robin", expectedRevision: 0, memories: [])) { _, result in if case .failure = result { failed = true } }
+        await queue.waitForPending()
+        XCTAssertTrue(failed)
+        XCTAssertEqual(try loaded(root).memories, first)
+        XCTAssertEqual(try loaded(root).memoryRevision, 1)
+    }
+    func testFailedAcceptedMemoryWriteCanRetryWithoutLoss() async throws {
+        let seed = try ChatConversation(characterID: "robin", memories: [ChatMemory(text: "旧记忆")], memoryRevision: 4)
+        let (root, persistence, queue) = try fixture(seed: seed)
+        let replacement = [try ChatMemory(text: "新记忆")]
+        await persistence.failNext("memories:robin")
+        queue.enqueue(.memories(characterID: "robin", expectedRevision: 4, memories: replacement)) { _, result in if case .success = result { XCTFail("expected failure") } }
+        await queue.waitForPending()
+        XCTAssertEqual(try loaded(root), seed)
+        queue.enqueue(.memories(characterID: "robin", expectedRevision: 4, memories: replacement)) { _, result in if case .failure = result { XCTFail("retry failed") } }
+        await queue.waitForPending()
+        XCTAssertEqual(try loaded(root).memories, replacement)
+        XCTAssertEqual(try loaded(root).memoryRevision, 5)
+    }
     func testAcceptedAppendThenClearRemainsEmpty() async throws {
         let (root, persistence, queue) = try fixture()
         _ = await persistence.loadCharacter(id: "robin", defaultProfile: .init(background: "保留人设"))

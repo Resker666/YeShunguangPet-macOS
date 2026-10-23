@@ -6,6 +6,7 @@ enum ChatWriteOperation: Sendable {
     case append(characterID: String, user: String, assistant: String)
     case clear(characterID: String)
     case reset(characterID: String, profile: ChatProfile)
+    case memories(characterID: String, expectedRevision: UInt64, memories: [ChatMemory])
     case connection(ChatConnection)
     case resetConnection
 }
@@ -79,11 +80,13 @@ actor ChatArchiveWorker: ChatPersisting {
         switch operation {
         case .profile(let id, let profile):
             let prior = try current(id)
-            return try save(ChatConversation(characterID: id, profile: profile, messages: prior.messages))
+            return try save(prior.replacingProfile(profile))
         case .append(let id, let user, let assistant):
             return try save(current(id).appending(user: user, assistant: assistant))
         case .clear(let id):
-            return try save(ChatConversation(characterID: id, profile: current(id).profile))
+            return try save(current(id).clearingHistory())
+        case .memories(let id, let revision, let memories):
+            return try save(current(id).replacingMemories(memories, expectedRevision: revision))
         case .reset(let id, let profile):
             let value = try store.backupAndReset(characterID: id, profile: profile)
             characters[id] = value; protections[id] = nil
