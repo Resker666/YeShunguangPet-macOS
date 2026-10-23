@@ -2,7 +2,7 @@
 适用于本仓库。先读 docs/superpowers/specs/2026-10-20-macos-first-playable-design.md 和对应 plans 文件，检查 git status。
 - Swift 6、AppKit、macOS 14+（从0.1.19起，用户批准降低原15+目标）；arm64优先日用，x86_64为用户同意增加的实验交叉构建。使用现有Xcode，不引入外部依赖。
 - 测试：bash scripts/test.sh；构建：bash scripts/build-app.sh；打包：bash scripts/package-app.sh。独立启动回归：python3 scripts/smoke-app.py。
-- 分发：0.1.21 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
+- 分发：0.2.0 / arm64和x86_64分别打包、ad-hoc、未公证；DMG和ZIP带版本号与架构，含安装说明与许可。build-app.sh和package-app.sh可传x86_64，默认ARM路径不变，Intel App单独在dist/x86_64。先构建两个架构，再在M系列开发机运行 python3 -m unittest discover -s Tests/Distribution -v。不要把交叉构建、签名、挂载检查写作Intel／黑苹果运行通过；也不要把本机搬移测试写作外机或Gatekeeper首开通过。
 - 独立进程验证设置 YSGPET_SETTINGS_PATH 使用临时配置；不带该变量才使用个人 Application Support。
 - 用户已确认真实拖动、单击/双击、菜单隐藏/显示和召回正常。GUI 工具首次超时，后续可读取实际角色画面；焦点、Spaces、锁屏和真实睡眠仍未验证，不能以属性或模拟事件当作通过。
 - 真实皮肤 JSON/PNG 字节保持不变；源码 MIT 与第三方素材声明分开。
@@ -103,3 +103,4 @@
 - 0.1.22单次最终只读评审7e87dd5..d35086e为0Critical/3Important/0Minor；异步人设初始渲染、写入中关闭AI和发送按钮组合输入三项均先真实回归复现后单轮修复，16项相关及完整372项原生（137Core/235Mac）、13项离线发版通过，无第二次独立评审。最终干净包/本地安装与未测项以docs/deepseek-chat-validation.md实际补记为准。未授权本版push/tag/Release，真实API与正式钥匙串/物理输入/系统/本版Intel仍待验证。
 - 0.1.22本地交付完成：干净520f298双架构App/八附件，13项分发、八附件离线校验、最低14.0/签名/原素材/依赖/库存/数据排除及ARM真正中文空格搬移重开通过。评审修复后优化同源隔离探针重跑通过，不等于分发二进制/真实API/物理输入。Applications已安装运行0.1.22/build23，旧App和退出后配置备份，schema13全部原字段及AI目录保持；默认AI关闭、未读正式密钥或改登录项。来源520f298不受后续文档提交影响；仅本地codex/macos-deepseek-chat，未合并main或push/tag/Release。详见docs/deepseek-chat-validation.md与忽略证据目录。
 - 用户于2026-10-23随后反馈“验证通过”，并附实际聊天窗中知更鸟连续两轮问答截图：确认0.1.22本机聊天整体体验及真实DeepSeek对话往返，来源为用户反馈/截图，未另核对模型或安装来源。停止/失败/换角色/重开/组合输入/正式钥匙串提示、账户限速与系统/Intel等专项不由该整体反馈推定逐项通过；保留原自动化边界。仅更新本地验收文档，不读取个人密钥/聊天存档、不复制私人截图内容、不改App或配置；本条没有推送、标签或Release授权。
+- 用户确认聊天验收后认为跨度较大，应作为较大版本；本轮将功能里程碑升为0.2.0/build24，仅修改Info.plist及当前介绍，保留0.1.22原构建/安装/验收历史。重新从干净来源构建双架构包并做分发核验；当前Applications中0.1.22继续运行，不主动退出替换、不读取密钥/聊天档案。保持schema13、AI格式和Keychain标识，仍未授权push/tag/Release；实际结果见docs/milestone-0.2.0-validation.md。
