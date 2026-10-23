@@ -1,6 +1,6 @@
 # YeShunguangPet macOS
 
-为 Mac mini M4 日常使用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前源码版本 **0.2.0 / build24**，将 DeepSeek 角色聊天作为新的功能里程碑；聊天已在原0.1.22本机验收，372项原生功能回归与实际API对话记录保留。最低macOS14.0，本版尚未推送或发布。[版本提升记录](docs/milestone-0.2.0-validation.md)与[聊天验证记录](docs/deepseek-chat-validation.md)分别说明打包和功能验证范围。
+为 Mac mini M4 日常使用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前源码版本 **0.2.0 / build24**，将 DeepSeek 角色聊天作为新的功能里程碑；聊天已在原0.1.22本机验收，372项原生功能回归与实际API对话记录保留。最低macOS14.0；本轮普通同步已获用户授权，推送与云端结果见版本提升记录，未授权标签或Release。[版本提升记录](docs/milestone-0.2.0-validation.md)与[聊天验证记录](docs/deepseek-chat-validation.md)分别说明打包和功能验证范围。
 
 此前完成0.1.20待机、隐藏、安静与专注各10分钟同源资源采样，并发现真实跨日崩溃。原始条件、结果、失败复测和0.1.21修复验证见[资源调查记录](docs/resource-baseline-validation.md)；这些数据不代表功耗、过夜稳定性或新版性能提升。
 

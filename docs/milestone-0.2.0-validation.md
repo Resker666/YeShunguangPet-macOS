@@ -17,3 +17,7 @@
 安装包位于dist/YeShunguangPet-0.2.0-macOS-{arm64,x86_64}.{dmg,zip}，各有.sha256。正在使用的Applications App仍为0.1.22/build23，Info.plist与可执行文件哈希前后未变，没有退出/替换或访问个人配置/钥匙串。旧0.1.22版本化包和验收历史保留。
 
 原始构建、测试、签名/库存/摘要、搬移重开证据在本机忽略目录.build/chat-milestone-020-validation。后续收尾文档提交不改变0.2.0包的3747998来源。未推送、打标签或发布；Intel本版仍只交叉构建/分发检查，系统场景边界沿用原验证记录。
+
+## 推送授权
+
+用户随后明确要求“推送”，授权普通同步main与codex/macos-deepseek-chat并核对云端构建/产物。使用普通快进推送，不强推或附带标签；不触发手动prepare_release或发布Release。实际远端SHA、两路CI与Artifacts结果完成后补记。当前日用App继续保留，不因源码推送而替换。
