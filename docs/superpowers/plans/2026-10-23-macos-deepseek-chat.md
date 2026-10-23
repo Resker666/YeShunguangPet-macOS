@@ -97,12 +97,12 @@ XCTAssertEqual(state.messages.last?.content, "a13")
 - `ChatAtomicFile.write(_ data: Data, to url: URL) throws` 为存储内部实现，创建 0700 目录和 0600 临时文件，写入后同目录 rename；权限在提交前建立，不在 rename 成功后再抛出伪造的“未提交”错误。
 - 新增 `StrictJSON.validate(_ data: Data, maximumBytes: Int) throws`；既有 `validate(_:)` 及 `parse(_:)` 的默认 131072 字节和错误行为保持，内部复用同一个解析器、深度仍 64；仅聊天角色档案显式使用 2097152 字节。
 
-- [ ] **1. 写失败用例。** `testArchivesReopenAndPreserveMainSettings` 验证 v1、SHA-256 文件名、同 ID 共用/异 ID 隔离，重建 store 后 24 条记录一致，`settings.json` 原字节相等。`testLargeChineseArchiveRetainsSkinLimit` 构造 12 轮各 2000/8000 中文单元，断言序列化 >131072 且可保存重读；同一数据经默认 StrictJSON 必须拒绝。
-- [ ] **2. 补保护和写失败断言。** `testProtectedArchivesNeverOverwrite` 覆盖重复键、未知版本、错 ID、非法轮次、连接 >8192/角色 >2097152；原字节保持。`testAtomicWriteAndResetFailures` 注入 write/backup 失败，旧文件和保护状态保持，成功重置才解除；权限核对 0700/0600，无临时残留，失败错误不含聊天正文。
-- [ ] **3. 运行 RED。** `bash scripts/test.sh -only-testing:PetCoreTests/ChatStoreTests -only-testing:PetCoreTests/StrictJSONTests`，核对真实失败。
-- [ ] **4. 实现存储。** 角色封装为 `{schemaVersion: 1, conversation: ...}`；连接为 `{schemaVersion: 1, connection: ...}`。不因 missing 立即写文件；连接只存 enabled/model。先按各自上限验证字节和严格 JSON，再解码；坏文件只经确认备份重置。
-- [ ] **5. 运行同一命令 GREEN。** 连同默认皮肤/manifest 相关原生用例验证原 128 KiB 合同未放宽。
-- [ ] **6. 提交。** 精确暂存本任务文件与工程；`git commit -m "feat: persist isolated chat archives with protected atomic writes"`。
+- [x] **1. 写失败用例。** `testArchivesReopenAndPreserveMainSettings` 验证 v1、SHA-256 文件名、同 ID 共用/异 ID 隔离，重建 store 后 24 条记录一致，`settings.json` 原字节相等。`testLargeChineseArchiveRetainsSkinLimit` 构造 12 轮各 2000/8000 中文单元，断言序列化 >131072 且可保存重读；同一数据经默认 StrictJSON 必须拒绝。
+- [x] **2. 补保护和写失败断言。** `testProtectedArchivesNeverOverwrite` 覆盖重复键、未知版本、错 ID、非法轮次、连接 >8192/角色 >2097152；原字节保持。`testAtomicWriteAndResetFailures` 注入 write/backup 失败，旧文件和保护状态保持，成功重置才解除；权限核对 0700/0600，无临时残留，失败错误不含聊天正文。
+- [x] **3. 运行 RED。** `bash scripts/test.sh -only-testing:PetCoreTests/ChatStoreTests -only-testing:PetCoreTests/StrictJSONTests`，核对真实失败。
+- [x] **4. 实现存储。** 角色封装为 `{schemaVersion: 1, conversation: ...}`；连接为 `{schemaVersion: 1, connection: ...}`。不因 missing 立即写文件；连接只存 enabled/model。先按各自上限验证字节和严格 JSON，再解码；坏文件只经确认备份重置。
+- [x] **5. 运行同一命令 GREEN。** 连同默认皮肤/manifest 相关原生用例验证原 128 KiB 合同未放宽。
+- [x] **6. 提交。** 精确暂存本任务文件与工程；`git commit -m "feat: persist isolated chat archives with protected atomic writes"`。
 
 ## Task 3：DeepSeek 流式接口与钥匙串
 

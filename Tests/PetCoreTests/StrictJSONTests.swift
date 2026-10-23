@@ -10,5 +10,9 @@ final class StrictJSONTests: XCTestCase {
         let padding = Data(repeating:32,count:131072-SkinFixtures.minimalManifest.count)
         _ = try ManifestDecoder.decode(SkinFixtures.minimalManifest+padding)
         XCTAssertThrowsError(try ManifestDecoder.decode(SkinFixtures.minimalManifest+padding+Data([32])))
+        // Chat may opt into a larger byte budget; the shared grammar and depth stay strict.
+        try StrictJSON.validate(SkinFixtures.minimalManifest+padding+Data([32]), maximumBytes: 2097152)
+        XCTAssertThrowsError(try StrictJSON.validate(Data((String(repeating:"[",count:65)+"0"+String(repeating:"]",count:65)).utf8), maximumBytes: 2097152))
+        XCTAssertThrowsError(try StrictJSON.validate(Data("{\"x\":1,\"X\":2}".utf8), maximumBytes: 2097152))
     }
 }

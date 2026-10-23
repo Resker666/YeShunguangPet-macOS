@@ -12,8 +12,9 @@ indirect enum JSONValue {
 
 public enum StrictJSON {
     public static func validate(_ data: Data) throws { _ = try parse(data) }
-    static func parse(_ data: Data) throws -> JSONValue {
-        guard !data.isEmpty, data.count <= 131072 else { throw SkinError("JSON 为空或超过 128 KiB") }
+    public static func validate(_ data: Data, maximumBytes: Int) throws { _ = try parse(data, maximumBytes: maximumBytes) }
+    static func parse(_ data: Data, maximumBytes: Int = 131072) throws -> JSONValue {
+        guard !data.isEmpty, maximumBytes > 0, data.count <= maximumBytes else { throw SkinError(maximumBytes == 131072 ? "JSON 为空或超过 128 KiB" : "JSON 为空或超过允许大小") }
         var bytes = Array(data)
         if bytes.starts(with:[239,187,191]) { bytes.removeFirst(3) }
         guard String(bytes:bytes,encoding:.utf8) != nil else { throw SkinError("JSON 必须使用有效 UTF-8") }
