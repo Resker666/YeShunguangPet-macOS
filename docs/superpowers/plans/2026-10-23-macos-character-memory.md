@@ -146,13 +146,13 @@ Xcode 使用 XML plist 显式登记：每个新文件建立 PBXFileReference、r
 - internal `ChatRequestKind { case conversation, memoryExtraction }`，共享原 requestTask/generation/凭据/停止门控；`ChatState` 新增 `.extractingMemories`，同任务更新窗口 exhaustive switch 为「正在提炼记忆」。提炼不能操作聊天 draft/provisional input/partial reply 或 onFeedback。完成候选寿命靠批次id和上下文，不用后来普通聊天的网络 generation 否定已完成批次。
 - 夹具新 `ControlledMemoryClient: ChatMemoryExtracting`：线程安全 `count`、`snapshot(_ index: Int) -> MemoryExtractionSnapshot?`、`complete(_ index: Int, json: String)`（按该次快照走真实候选解码）、`fail(_ index: Int)`、`finishAll()`。能挂住请求直到测试明确完成，故可投递取消后的晚到结果；`ChatControllerFixture` 注入此假客户端并在 close 释放。原 `ControlledChatClient` 新增线程安全 `snapshot(_ index: Int) -> ChatPromptSnapshot?`，供用例检查普通发送范围，不读取私有数组或访问真实服务。
 
-- [ ] **1. 写失败用例。** `MemoryExtractionTests.testCandidatesRequireExplicitSelectionAndNeverEnterChatUntilSaved` 先保存一轮，提炼后断言 history/draft/磁盘/feedback 均未变、selectedIDs空；不选保存不写盘，选/编辑后保存才出现记忆。超过剩余数量、编辑后完全重复或过长时拒绝并保留编辑，不截断。已满20/无完整轮/待存/连接错误/模态等门控不触发读取密钥或请求。
-- [ ] **2. 写代次和寿命失败用例。** `testCompletedReviewSurvivesNormalChatButKeepsOriginalSources` 提炼后发送第13轮，断言候选批次和来源原话不变、普通 chat snapshot 不含候选；保存后下一请求含记忆。`testLateExtractionCannotReviveDiscardedBatch` 分别在凭据读取/提炼阶段停止、关闭、成功换肤含同ID、睡眠、关AI和退出后投递旧结果，断言不出现候选、不写档、不反馈、不自动再请求。最小化/隐藏角色/安静/专注与单纯页面切换不取消明确提炼。
-- [ ] **3. 写草稿与待存分离用例。** `testMemoryReviewInvalidationDoesNotLoseAcceptedIntent` 覆盖应用新人设/记忆变更/clear/reset/关窗/换肤/退出丢未确认批次，但确认保存失败的意图保留；已完成候选在睡眠/关AI后仍可本地确认（醒来后才可操作）。`testAIRequestKindsAreSingleFlight` 验证 chat↔提炼互斥、模型/密钥修改禁用、AIoff始终能取消、停止文案区分、取消退出不重启请求。
-- [ ] **4. 运行 RED。** `bash scripts/test.sh -only-testing:PetMacTests/MemoryExtractionTests -only-testing:PetMacTests/MemoryControllerTests -only-testing:PetMacTests/ChatControllerTests -only-testing:PetMacTests/ChatLifecycleTests`。
-- [ ] **5. 实现上述状态与桥接。** 提炼冻结当前已存轮次/记忆，经过按需凭据读取后发一次请求；成功只发布临时候选。确认时再检查批次/完整角色/记忆修订/当前门控，用 Task 4 保存入口登记完整新列表；每条新记忆由 App 分配UUID。保存失败的列表和批次草稿分离。再次提炼要求先明确丢旧候选；连接、主配置、桌宠调度不新增后台请求或计时器。
-- [ ] **6. 运行同一命令 GREEN。** 记录实际用例，重新核对仅三个生产/测试初始化调用点都显式传入对应客户端，无测试默认落到真实网络。
-- [ ] **7. 本地提交。** `git commit -m "feat: coordinate explicit extraction and user-approved memory batches"`，精确暂存。
+- [x] **1. 写失败用例。** `MemoryExtractionTests.testCandidatesRequireExplicitSelectionAndNeverEnterChatUntilSaved` 先保存一轮，提炼后断言 history/draft/磁盘/feedback 均未变、selectedIDs空；不选保存不写盘，选/编辑后保存才出现记忆。超过剩余数量、编辑后完全重复或过长时拒绝并保留编辑，不截断。已满20/无完整轮/待存/连接错误/模态等门控不触发读取密钥或请求。
+- [x] **2. 写代次和寿命失败用例。** `testCompletedReviewSurvivesNormalChatButKeepsOriginalSources` 提炼后发送第13轮，断言候选批次和来源原话不变、普通 chat snapshot 不含候选；保存后下一请求含记忆。`testLateExtractionCannotReviveDiscardedBatch` 分别在凭据读取/提炼阶段停止、关闭、成功换肤含同ID、睡眠、关AI和退出后投递旧结果，断言不出现候选、不写档、不反馈、不自动再请求。最小化/隐藏角色/安静/专注与单纯页面切换不取消明确提炼。
+- [x] **3. 写草稿与待存分离用例。** `testMemoryReviewInvalidationDoesNotLoseAcceptedIntent` 覆盖应用新人设/记忆变更/clear/reset/关窗/换肤/退出丢未确认批次，但确认保存失败的意图保留；已完成候选在睡眠/关AI后仍可本地确认（醒来后才可操作）。`testAIRequestKindsAreSingleFlight` 验证 chat↔提炼互斥、模型/密钥修改禁用、AIoff始终能取消、停止文案区分、取消退出不重启请求。
+- [x] **4. 运行 RED。** `bash scripts/test.sh -only-testing:PetMacTests/MemoryExtractionTests -only-testing:PetMacTests/MemoryControllerTests -only-testing:PetMacTests/ChatControllerTests -only-testing:PetMacTests/ChatLifecycleTests`。
+- [x] **5. 实现上述状态与桥接。** 提炼冻结当前已存轮次/记忆，经过按需凭据读取后发一次请求；成功只发布临时候选。确认时再检查批次/完整角色/记忆修订/当前门控，用 Task 4 保存入口登记完整新列表；每条新记忆由 App 分配UUID。保存失败的列表和批次草稿分离。再次提炼要求先明确丢旧候选；连接、主配置、桌宠调度不新增后台请求或计时器。
+- [x] **6. 运行同一命令 GREEN。** 记录实际用例，重新核对仅三个生产/测试初始化调用点都显式传入对应客户端，无测试默认落到真实网络。
+- [x] **7. 本地提交。** `git commit -m "feat: coordinate explicit extraction and user-approved memory batches"`，精确暂存。
 
 ## Task 6：原生记忆页、模态与说明
 

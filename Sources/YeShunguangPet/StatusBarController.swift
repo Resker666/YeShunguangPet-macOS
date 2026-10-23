@@ -56,7 +56,7 @@ import PetCore
         self.session=session; self.onQuit=onQuit; item=NSStatusBar.system.statusItem(withLength:NSStatusItem.squareLength)
         super.init()
         if let session {
-            self.chat = chat ?? ChatController(persistence:ChatArchiveWorker(settingsURL:session.settings.url),credentials:KeychainChatCredentialStore(),client:DeepSeekChatClient(),canDispatch:{ [weak self] in
+            self.chat = chat ?? ChatController(persistence:ChatArchiveWorker(settingsURL:session.settings.url),credentials:KeychainChatCredentialStore(),client:DeepSeekChatClient(),memoryClient:DeepSeekMemoryClient(),canDispatch:{ [weak self] in
                 guard let self else { return false }
                 return !self.terminating && self.session?.gate.exiting == false && self.settingsController?.hasBlockingSheet != true && self.chatWindow?.hasBlockingSheet != true && NSApp.modalWindow == nil
             },onFeedback:{ [weak session] text in session?.presentChatReply(text) })

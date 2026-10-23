@@ -95,6 +95,7 @@ final class ControlledChatClient: ChatStreaming, @unchecked Sendable {
     private var requests = [ChatPromptSnapshot]()
     private var continuations = [Int: AsyncThrowingStream<ChatStreamEvent, Error>.Continuation]()
     var count: Int { lock.withLock { requests.count } }
+    func snapshot(_ index: Int) -> ChatPromptSnapshot? { lock.withLock { requests.indices.contains(index) ? requests[index] : nil } }
     func stream(_ snapshot: ChatPromptSnapshot, apiKey: String) -> AsyncThrowingStream<ChatStreamEvent, Error> {
         AsyncThrowingStream { continuation in
             lock.withLock { let id = requests.count; requests.append(snapshot); continuations[id] = continuation }
@@ -119,11 +120,40 @@ final class ControlledChatClient: ChatStreaming, @unchecked Sendable {
     }
 }
 
+final class ControlledMemoryClient: ChatMemoryExtracting, @unchecked Sendable {
+    private let lock = NSLock()
+    private var requests = [MemoryExtractionSnapshot]()
+    private var continuations = [Int: CheckedContinuation<MemoryCandidateBatch, Error>]()
+    var count: Int { lock.withLock { requests.count } }
+    func snapshot(_ index: Int) -> MemoryExtractionSnapshot? { lock.withLock { requests.indices.contains(index) ? requests[index] : nil } }
+    func extract(_ snapshot: MemoryExtractionSnapshot, apiKey: String) async throws -> MemoryCandidateBatch {
+        try await withCheckedThrowingContinuation { continuation in
+            lock.withLock { let index = requests.count; requests.append(snapshot); continuations[index] = continuation }
+        }
+    }
+    func complete(_ index: Int, json: String) {
+        let entry = lock.withLock { () -> (CheckedContinuation<MemoryCandidateBatch, Error>, MemoryExtractionSnapshot)? in
+            guard let continuation = continuations.removeValue(forKey: index) else { return nil }
+            return (continuation, requests[index])
+        }
+        if let (continuation, snapshot) = entry {
+            do { continuation.resume(returning: try MemoryCandidateDecoder.decode(Data(json.utf8), for: snapshot)) }
+            catch { continuation.resume(throwing: error) }
+        }
+    }
+    func fail(_ index: Int) { lock.withLock { continuations.removeValue(forKey: index) }?.resume(throwing: SkinError("测试提炼失败。")) }
+    func finishAll() {
+        let pending = lock.withLock { let value = Array(continuations.values); continuations = [:]; return value }
+        pending.forEach { $0.resume(throwing: CancellationError()) }
+    }
+}
+
 @MainActor final class ChatControllerFixture {
     let root: URL
     let persistence: ControlledChatPersistence
     let credentials = ControlledChatCredentials()
     let client = ControlledChatClient()
+    let memoryClient = ControlledMemoryClient()
     let controller: ChatController
     let feedback: ChatFeedback
     init(canDispatch: @escaping () -> Bool = { true }) throws {
@@ -131,7 +161,7 @@ final class ControlledChatClient: ChatStreaming, @unchecked Sendable {
         try ChatConnectionStore(url: root.appendingPathComponent("AI/connection.json")).save(.init(enabled: true))
         persistence = ControlledChatPersistence(settingsURL: root.appendingPathComponent("settings.json"))
         let feedback = ChatFeedback(); self.feedback = feedback
-        controller = ChatController(persistence: persistence, credentials: credentials, client: client, canDispatch: canDispatch, onFeedback: { feedback.lines.append($0) })
+        controller = ChatController(persistence: persistence, credentials: credentials, client: client, memoryClient: memoryClient, canDispatch: canDispatch, onFeedback: { feedback.lines.append($0) })
     }
     func open(_ id: String = "robin", revision: UInt64 = 0) async throws {
         controller.activate(.init(id: id, name: id, description: "角色介绍", skinRevision: revision))
@@ -147,6 +177,7 @@ final class ControlledChatClient: ChatStreaming, @unchecked Sendable {
         controller.beginTermination()
         await credentials.releaseRead(); await credentials.releaseSave(); await persistence.releaseWrite(); await persistence.releaseAllLoads()
         client.finishAll()
+        memoryClient.finishAll()
         await controller.waitForPendingWrites()
         controller.dispose()
         try? FileManager.default.removeItem(at: root)

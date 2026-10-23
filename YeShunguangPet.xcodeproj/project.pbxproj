@@ -1501,6 +1501,7 @@
 				<string>104340F46CE7CA0F08209CC4</string>
 				<string>07E4B19C36AB97F2CFB2C692</string>
 				<string>52757E18ECCA890B9FFAFE42</string>
+				<string>39868642A24D0451FB0DBC4B</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1849,6 +1850,7 @@
 				<string>AFFC1F52C1E93F91D139DA11</string>
 				<string>D3DD1767B8E31C9986698F9F</string>
 				<string>A8028F13D865237706759E19</string>
+				<string>332C5853A6BB315594F058FE</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -3931,6 +3933,24 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>A8028F13D865237706759E19</string>
+		</dict>
+		<key>332C5853A6BB315594F058FE</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/MemoryExtractionTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>39868642A24D0451FB0DBC4B</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>332C5853A6BB315594F058FE</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>
