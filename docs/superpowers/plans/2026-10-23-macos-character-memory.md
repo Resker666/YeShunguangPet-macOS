@@ -177,17 +177,19 @@ Xcode 使用 XML plist 显式登记：每个新文件建立 PBXFileReference、r
 
 **Interfaces:** 复用既有 `bash scripts/test.sh`、`bash scripts/build-app.sh [arm64|x86_64]`、`bash scripts/package-app.sh [arm64|x86_64]`、`python3 scripts/smoke-app.py` 和发版离线检查；不新增用户可见测试模式或生产后台任务。
 
-- [ ] **1. 运行完整相关检查。** `bash scripts/test.sh` 与 `python3 -m unittest discover -s Tests/Release -v`。原生须 `TEST SUCCEEDED`、零失败且新类实际执行；离线发版预期现有13项。保存命令/退出码/实际数量，不能沿用0.2.0的372项作为新结果。环境失败先与行为失败区分，不删失败日志。
-- [ ] **2. 运行优化同源隔离探针。** 使用现有测试架构建立仅本地 `.build` 探针，假凭据/假网络、真实三套旧皮肤、临时配置；走提炼→来源/编辑/勾选→保存→超过12轮→重开读取、角色隔离/同ID共用、保存失败跨角色本地重试、满额、清空历史保记忆、清记忆保历史、取消晚到和退出等待。AppKit真实窗口控件与缓存渲染记录场景及source SHA；不读个人聊天/密钥，不发真实提炼请求。
-- [ ] **3. 一次最终独立整体评审。** 按已保留Native流程，用当时可用的最强合适评审模型，对产品基线 `2c15595` 到最终功能提交整体只读评审；重点为确认前不写盘、v1/v2、单飞/晚到/失败意图、模态、普通聊天回归。按证据处理问题，阻断项先新增失败回归再修，重跑受影响用例和完整原生/离线发版；不另开第二次独立代码评审。
-- [ ] **4. 固定干净来源并构建两个架构。** 将功能和必要修复本地提交，确认tracked无脏改；依次运行 `bash scripts/build-app.sh arm64`、`bash scripts/build-app.sh x86_64`，两者实际 `BUILD SUCCEEDED`。核对 build-info 的完整SHA/clean、0.3.0/build25、原生单架构及Mach-O14.0，不以旧dist冒充新构建。
-- [ ] **5. 打包与分发检查。** 依次运行 `bash scripts/package-app.sh arm64` / `bash scripts/package-app.sh x86_64`，再 `python3 -m unittest discover -s Tests/Distribution -v`；预期现有13项，若新增则据实计数。核对签名/依赖/原素材/许可证/库存/摘要和用户数据排除。将本次八份DMG/ZIP/sha256复制到专用空暂存目录，以 `python3 scripts/prepare-release.py --assets STAGING_DIR --version 0.3.0 --commit FULL_SHA --check-only` 离线检查；不调用任何远端写入。
-- [ ] **6. ARM 离工程实际启动/重开。** 从本次DMG复制到真正中文与空格目录，弹出DMG，以 `python3 scripts/smoke-app.py --app MOVED_APP_PATH --check-restore --output .build/character-memory-validation/moved-smoke.json` 验证启动、正常退出和再开；工具自己建立隔离设置路径并排除开发环境依赖。核对独立架构、版本、来源、主配置保留和基础窗口。记忆路径由Step2优化同源探针验证，不能把假网络探针写作分发二进制真实DeepSeek提炼通过。
-- [ ] **7. 本地日用安装。** 按准确路径正常退出 `/Applications/YeShunguangPet.app`，等待原已接受文件变更；备份原App和退出后的文件，再替换本次arm64 App。不解析/打印个人AI档案或读取正式Keychain；核对主schema13及既有偏好/皮肤/退出位置/快捷键/计时窗/时长/统计保留，原AI文件保持直到App按正常使用保存。若仍有未解决保存失败，不强杀覆盖。核对启动版本/自身PID/窗口，不自动改登录项或发API请求。
-- [ ] **8. 记录并交付。** 验证文档写清实际source、每项命令/数量/退出码、单次评审结果、原失败和修复、本地安装/备份、已测与未测；更新TODO/AGENTS/计划状态并本地提交。提供arm64 App/DMG绝对路径和用户验收要点：真实提炼、来源/修改/勾选、重开记忆、普通聊天能否参考记忆。用户未执行前标记未测；真实系统睡眠/输入法/焦点/Spaces/Gatekeeper和Intel/Sonoma仍按证据，不因旧版反馈自动通过。文档提交不改变干净包来源，不擅自推送/打标签/发布。
+- [x] **1. 运行完整相关检查。** `bash scripts/test.sh` 与 `python3 -m unittest discover -s Tests/Release -v`。原生须 `TEST SUCCEEDED`、零失败且新类实际执行；离线发版预期现有13项。保存命令/退出码/实际数量，不能沿用0.2.0的372项作为新结果。环境失败先与行为失败区分，不删失败日志。
+- [x] **2. 运行优化同源隔离探针。** 使用现有测试架构建立仅本地 `.build` 探针，假凭据/假网络、真实三套旧皮肤、临时配置；走提炼→来源/编辑/勾选→保存→超过12轮→重开读取、角色隔离/同ID共用、保存失败跨角色本地重试、满额、清空历史保记忆、清记忆保历史、取消晚到和退出等待。AppKit真实窗口控件与缓存渲染记录场景及source SHA；不读个人聊天/密钥，不发真实提炼请求。
+- [x] **3. 一次最终独立整体评审。** 按已保留Native流程，用当时可用的最强合适评审模型，对产品基线 `2c15595` 到最终功能提交整体只读评审；重点为确认前不写盘、v1/v2、单飞/晚到/失败意图、模态、普通聊天回归。按证据处理问题，阻断项先新增失败回归再修，重跑受影响用例和完整原生/离线发版；不另开第二次独立代码评审。
+- [x] **4. 固定干净来源并构建两个架构。** 将功能和必要修复本地提交，确认tracked无脏改；依次运行 `bash scripts/build-app.sh arm64`、`bash scripts/build-app.sh x86_64`，两者实际 `BUILD SUCCEEDED`。核对 build-info 的完整SHA/clean、0.3.0/build25、原生单架构及Mach-O14.0，不以旧dist冒充新构建。
+- [x] **5. 打包与分发检查。** 依次运行 `bash scripts/package-app.sh arm64` / `bash scripts/package-app.sh x86_64`，再 `python3 -m unittest discover -s Tests/Distribution -v`；预期现有13项，若新增则据实计数。核对签名/依赖/原素材/许可证/库存/摘要和用户数据排除。将本次八份DMG/ZIP/sha256复制到专用空暂存目录，以 `python3 scripts/prepare-release.py --assets STAGING_DIR --version 0.3.0 --commit FULL_SHA --check-only` 离线检查；不调用任何远端写入。
+- [x] **6. ARM 离工程实际启动/重开。** 从本次DMG复制到真正中文与空格目录，弹出DMG，以 `python3 scripts/smoke-app.py --app MOVED_APP_PATH --check-restore --output .build/character-memory-validation/moved-smoke.json` 验证启动、正常退出和再开；工具自己建立隔离设置路径并排除开发环境依赖。核对独立架构、版本、来源、主配置保留和基础窗口。记忆路径由Step2优化同源探针验证，不能把假网络探针写作分发二进制真实DeepSeek提炼通过。
+- [x] **7. 本地日用安装。** 按准确路径正常退出 `/Applications/YeShunguangPet.app`，等待原已接受文件变更；备份原App和退出后的文件，再替换本次arm64 App。不解析/打印个人AI档案或读取正式Keychain；核对主schema13及既有偏好/皮肤/退出位置/快捷键/计时窗/时长/统计保留，原AI文件保持直到App按正常使用保存。若仍有未解决保存失败，不强杀覆盖。核对启动版本/自身PID/窗口，不自动改登录项或发API请求。
+- [x] **8. 记录并交付。** 验证文档写清实际source、每项命令/数量/退出码、单次评审结果、原失败和修复、本地安装/备份、已测与未测；更新TODO/AGENTS/计划状态并本地提交。提供arm64 App/DMG绝对路径和用户验收要点：真实提炼、来源/修改/勾选、重开记忆、普通聊天能否参考记忆。用户未执行前标记未测；真实系统睡眠/输入法/焦点/Spaces/Gatekeeper和Intel/Sonoma仍按证据，不因旧版反馈自动通过。文档提交不改变干净包来源，不擅自推送/打标签/发布。
 
 ## Plan Self-Review / 审核与执行状态
 
 计划自审由主执行者完成，不另派计划评审代理。设计第1–4节由Task1/5/6覆盖，第5节由Task1/3覆盖，第6节由Task2/4覆盖，第7节由Task4/5/6覆盖，第8节及交付由Task7覆盖。Review Focus五项已各指定失败用例；检查了跨任务类型/签名、原夹具穷尽switch、三处初始化注入、App与未托管Mac测试的双重源码登记、私有网络夹具不可跨文件复用、元数据唯一来源与八附件隔离暂存。
 
 用户已认可计划，沿用本会话Native方式连续实施，不逐任务再确认；实际进度以任务勾选、当前计划ledger和验证文档为准。推送/标签/Release不在本计划授权内。
+
+本地实施与交付已完成：400项原生、13项离线发版、13项分发通过；一次最终评审0 Critical/0 Important/2 Minor，已记录延后及其用户影响。最终功能/包来源f3f2420，日用ARM已安装运行；真实提炼用户验收待确认。完整证据及判断见../../character-memory-validation.md，原ledger归档到.build/character-memory-validation/sdd-evidence。未推送、打标签或发布。
