@@ -27,3 +27,9 @@
 首次普通原子推送来源4c82f3061e444b55af4e948fd0b7579d42b7157f，两路main39912153124与开发39912153000均在原生测试阶段失败：Core137通过，Mac235中1项失败，均为ChatClientTests.testCancellationAndHTTPFailuresNeverRetry第157行停止次数仍为0。13项离线发版已通过，后续构建/分发/安装包上传跳过，仅有诊断产物，Release草稿跳过；原失败日志保留。
 
 测试取消消费者后，用固定1000次Task.yield假定URLSession异步停止回调已经到达；消费者结束并不等待独立worker完成。测试夹具改为由每个实际请求实例捕获停止观察者，等待真实stopLoading回调（3秒上限），继续断言已停止且仅请求1次。未延长固定睡眠、跳过或删除取消检查，App功能代码无修改。本地相关4项及完整372项原生测试实际通过；修正后的新推送/CI结果后续补记。
+
+## 旧调度回归的时间窗口修正
+
+03cf6e1新CI中，聊天取消用例已实际通过；开发分支原生测试与双架构构建成功。main39912873638的旧FrameSchedulerTests.testReplacingAndCancellingOnlyFiresLatest在固定150ms RunLoop轮询结束时回调尚未执行，fires0/pending1两条断言失败。保留cloud-main-second-failure.log，不用重跑成功抹去原失败。
+
+该用例改为异步等待真正的最新调度回调（3秒上限），保留仅触发1次/无待执行项断言；FrameScheduler生产实现未改。相关5项及完整372项原生回归再次通过，普通同步两个分支。最终来源、各路CI状态、真实测试计数与Artifacts元数据记录在本机.build/chat-milestone-020-validation/push-verification.json、cloud-main/dev日志与[项目Actions](https://github.com/Resker666/YeShunguangPet-macOS/actions)。本轮仅测试等待方式和文档变化，本地0.2.0包/日用App不因CI修正被替换，仍未打标签或发布。
