@@ -1057,6 +1057,8 @@
 				<string>FA7E23915D8A9A8597542333</string>
 				<string>8D0588F2F10E274F9FCCDDBB</string>
 				<string>292ED80994041F7C82B2B428</string>
+				<string>32A178F44E1AD4E6ACD7623E</string>
+				<string>9B8A24AD820A63709DDFF09A</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1493,6 +1495,9 @@
 				<string>5C2E426BB611931C0955AC53</string>
 				<string>224F68A1C6E843EFD31743DA</string>
 				<string>C504FE8E46E8A42E82529CD4</string>
+				<string>090332601D29AA87624329C2</string>
+				<string>52108DF259076F79C09E5D4E</string>
+				<string>104340F46CE7CA0F08209CC4</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1836,6 +1841,9 @@
 				<string>A489FFCECEDEB3D2D207A210</string>
 				<string>43FB7C4EE2C223613606441C</string>
 				<string>DFA81669331FEE8417EB8BF1</string>
+				<string>25B3F1964C660D538A9FFD3E</string>
+				<string>71BDFE50B6AFC35CDDE000C0</string>
+				<string>AFFC1F52C1E93F91D139DA11</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -3807,6 +3815,74 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>DFA81669331FEE8417EB8BF1</string>
+		</dict>
+		<key>25B3F1964C660D538A9FFD3E</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/MemoryClientTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>090332601D29AA87624329C2</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>25B3F1964C660D538A9FFD3E</string>
+		</dict>
+		<key>71BDFE50B6AFC35CDDE000C0</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Chat/DeepSeekTextTransport.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>32A178F44E1AD4E6ACD7623E</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>71BDFE50B6AFC35CDDE000C0</string>
+		</dict>
+		<key>52108DF259076F79C09E5D4E</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>71BDFE50B6AFC35CDDE000C0</string>
+		</dict>
+		<key>AFFC1F52C1E93F91D139DA11</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Chat/DeepSeekMemoryClient.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>9B8A24AD820A63709DDFF09A</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>AFFC1F52C1E93F91D139DA11</string>
+		</dict>
+		<key>104340F46CE7CA0F08209CC4</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>AFFC1F52C1E93F91D139DA11</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

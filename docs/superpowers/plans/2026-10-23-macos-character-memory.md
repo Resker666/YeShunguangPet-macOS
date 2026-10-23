@@ -113,12 +113,12 @@ Xcode 使用 XML plist 显式登记：每个新文件建立 PBXFileReference、r
 - 保留 `ChatStreaming`、`DeepSeekChatClient.init(configuration:)` / `configuration()` / `stream(_:apiKey:)`；普通聊天委托 format .text，不新增 response_format 或其他行为变化。
 - internal `protocol ChatMemoryExtracting: Sendable`：`extract(_ snapshot: MemoryExtractionSnapshot, apiKey: String) async throws -> MemoryCandidateBatch`。`DeepSeekMemoryClient.init(configuration: URLSessionConfiguration = DeepSeekTextTransport.configuration())` 实现该协议，调用 .jsonObject、累计文字并在 completed 后调用 Task 1 解码器。
 
-- [ ] **1. 写失败用例。** 新 `MemoryClientTests` 使用自己独立的私有 URLProtocol（不访问 ChatClientTests 的 file-private 静态夹具）。`testExtractionRequestUsesJSONModeAndFrozenSource` 检查固定 POST/来源、Bearer 假密钥、stream true/thinking disabled/max_tokens2048/response_format json_object、索引问答与旧记忆、无自定义人设/草稿/其他角色。分成7字节网络片段返回，断言候选与来源正确。
-- [ ] **2. 写传输失败用例。** `testExtractionRejectsEmptyTruncatedInvalidAndOversizedResults` 验证无 DONE/非stop/空content/非法候选/16KiB超限均失败；`testCancellationAndHTTPFailureNeverRetry` 等待实际 URLProtocol.stopLoading 的限时 expectation，断言请求数1。检查重定向/非官方最终来源、内容类型、断流和既有总量界限；不改用固定 Task.yield 次数判断取消。
-- [ ] **3. 运行 RED。** `bash scripts/test.sh -only-testing:PetMacTests/MemoryClientTests -only-testing:PetMacTests/ChatClientTests`。
-- [ ] **4. 实现传输提取和适配。** 从现有客户端搬移端点/认证/无缓存Cookie/重定向拒绝/超时/SSE/错误映射，保留终止取消机制。JSON 只是新增 body 选项；内存客户端仅完整完成后返回，不逐段发布候选，不自动回退或重试，不输出原始异常正文。
-- [ ] **5. 运行同一命令 GREEN。** 既有 ChatClientTests 全部通过，新增用例实际执行；新传输同时登记 App/PetMacTests。
-- [ ] **6. 本地提交。** `git commit -m "feat: extract memory candidates through shared DeepSeek transport"`，精确暂存。
+- [x] **1. 写失败用例。** 新 `MemoryClientTests` 使用自己独立的私有 URLProtocol（不访问 ChatClientTests 的 file-private 静态夹具）。`testExtractionRequestUsesJSONModeAndFrozenSource` 检查固定 POST/来源、Bearer 假密钥、stream true/thinking disabled/max_tokens2048/response_format json_object、索引问答与旧记忆、无自定义人设/草稿/其他角色。分成7字节网络片段返回，断言候选与来源正确。
+- [x] **2. 写传输失败用例。** `testExtractionRejectsEmptyTruncatedInvalidAndOversizedResults` 验证无 DONE/非stop/空content/非法候选/16KiB超限均失败；`testCancellationAndHTTPFailureNeverRetry` 等待实际 URLProtocol.stopLoading 的限时 expectation，断言请求数1。检查重定向/非官方最终来源、内容类型、断流和既有总量界限；不改用固定 Task.yield 次数判断取消。
+- [x] **3. 运行 RED。** `bash scripts/test.sh -only-testing:PetMacTests/MemoryClientTests -only-testing:PetMacTests/ChatClientTests`。
+- [x] **4. 实现传输提取和适配。** 从现有客户端搬移端点/认证/无缓存Cookie/重定向拒绝/超时/SSE/错误映射，保留终止取消机制。JSON 只是新增 body 选项；内存客户端仅完整完成后返回，不逐段发布候选，不自动回退或重试，不输出原始异常正文。
+- [x] **5. 运行同一命令 GREEN。** 既有 ChatClientTests 全部通过，新增用例实际执行；新传输同时登记 App/PetMacTests。
+- [x] **6. 本地提交。** `git commit -m "feat: extract memory candidates through shared DeepSeek transport"`，精确暂存。
 
 ## Task 4：本地记忆命令、保存失败及退出汇总
 
