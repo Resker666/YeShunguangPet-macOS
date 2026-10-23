@@ -62,3 +62,7 @@ Tasks1–6均记录计划内RED→GREEN（新API缺失编译失败，再实现�
 原始记录在忽略目录`.build/character-memory-validation/`：完整原生/离线发版/分发日志、两架构构建及打包日志、八附件暂存与离线检查、`final-delivery.json`、`moved-smoke.json`、优化探针与渲染PNG、`final-code-review.md`、`local-install.json`、`installed-window.json`。仅当前计划ledger及任务证据收尾归档到同目录`sdd-evidence/`，不删除其他计划工作区。
 
 ARM App：`dist/YeShunguangPet.app`；Intel App：`dist/x86_64/YeShunguangPet.app`。本次八份附件前缀为`dist/YeShunguangPet-0.3.0-macOS-`，均ad-hoc、未公证。
+
+## 后续普通推送授权
+
+用户在本地交付后明确「推送」，授权按既有流程快进同步main和codex/macos-character-memory、核对两路CI及双架构Artifacts；不触发prepare_release、不打标签或发布。该指令不记作真实提炼验收通过。已验证功能来源仍为f3f2420，后续仅同步文档，不重复无变化的本地测试；云端会按实际推送SHA重新构建，不能混同本地包来源。远端提交、两路运行ID、检查数量及附件元数据的实际结果保存于忽略目录.build/character-memory-validation/push-verification.json。

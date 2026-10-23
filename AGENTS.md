@@ -113,3 +113,5 @@
 - 用户已明确认可0.3.0七项计划并要求按本会话方式实施，授权连续本地开发、回归、一次最终独立整体评审与App交付；不逐任务再确认、不额外建工作树。当前计划ledger位于.superpowers/sdd/2026-10-23-macos-character-memory/progress.md，仅恢复此计划，不重做已记complete任务。仍不推送、打标签或发布；日用密钥和聊天资料不用于自动测试。
 
 - 0.3.0长期记忆已完成本地交付：400项原生（145Core/255Mac）、13项离线发版、13项分发及八附件离线核验通过；同一最终独立评审席位gpt-6-astra/high在额度恢复后完成2c15595..f3f2420，0 Critical/0 Important/2 Minor。两项非阻断UI问题延后见TODO（清历史/取消退出保留编辑，提炼时旧partial标签），不能宣称零已知问题。干净来源f3f2420的双架构App/DMG/ZIP、签名/最低14.0/素材/库存/摘要及ARM中文空格搬移重开通过。ARM已安装并运行/Applications/YeShunguangPet.app，旧0.1.22 App及退出后主配置/AI目录已备份；schema13、所有非位置字段和更新时位置保留，AI文件摘要不变，未解析私人AI内容或读正式Keychain、请求API、改登录项。真实提炼/物理输入法/焦点/睡眠/Spaces/Gatekeeper/本版Intel实机待验收，旧版反馈不扩展；详见docs/character-memory-validation.md。仅本地codex/macos-character-memory，无push/tag/Release授权；当前计划已完成，ledger证据归档.build/character-memory-validation/sdd-evidence，不重做已完成任务。
+
+- 用户随后明确「推送」，授权按既有流程普通同步0.3.0到main与codex/macos-character-memory，并核对两路CI及双架构Artifacts；不触发prepare_release，不打标签、创建草稿或发布。本次没有「验证通过」声明，真实提炼用户验收仍待确认，2项Minor和既有物理/系统/Intel边界保持。源码/测试/脚本/工程与已通过400项回归的f3f2420一致，仅追加同步文档，不重复无变化的本地测试；实际远端/云端事实记录于.build/character-memory-validation/push-verification.json，不以授权代替成功。

@@ -1,6 +1,6 @@
 # YeShunguangPet macOS
 
-为 Mac mini M4 日常使用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前源码版本 **0.3.0 / build25**，在 DeepSeek 角色聊天基础上增加需要用户确认的长期记忆；最低 macOS14.0。本版已完成本地回归、双架构打包及ARM日用App更新，尚未推送或发布；真实提炼体验待确认，结果与两项轻微已知问题见[记忆验证](docs/character-memory-validation.md)。原0.1.22聊天验收及0.2.0打包/云端记录保留在[聊天验证](docs/deepseek-chat-validation.md)和[版本提升记录](docs/milestone-0.2.0-validation.md)，不代替本版记忆提炼实测。
+为 Mac mini M4 日常使用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前源码版本 **0.3.0 / build25**，在 DeepSeek 角色聊天基础上增加需要用户确认的长期记忆；最低 macOS14.0。本版已完成本地回归、双架构打包及ARM日用App更新，用户已授权普通推送；未打标签或发布，真实提炼体验待确认，结果与两项轻微已知问题见[记忆验证](docs/character-memory-validation.md)。原0.1.22聊天验收及0.2.0打包/云端记录保留在[聊天验证](docs/deepseek-chat-validation.md)和[版本提升记录](docs/milestone-0.2.0-validation.md)，不代替本版记忆提炼实测。
 
 此前完成0.1.20待机、隐藏、安静与专注各10分钟同源资源采样，并发现真实跨日崩溃。原始条件、结果、失败复测和0.1.21修复验证见[资源调查记录](docs/resource-baseline-validation.md)；这些数据不代表功耗、过夜稳定性或新版性能提升。
 
