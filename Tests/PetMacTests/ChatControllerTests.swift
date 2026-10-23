@@ -22,7 +22,7 @@ import PetCore
             try await chatEventually { f.controller.state == .idle && !f.controller.hasPendingWrites }
         }
         let worker = ChatArchiveWorker(settingsURL: f.root.appendingPathComponent("settings.json"))
-        let reopened = ChatController(persistence: worker, credentials: f.credentials, client: f.client, memoryClient: f.memoryClient, canDispatch: { true }, onFeedback: { _ in })
+        let reopened = ChatController(persistence: worker, credentials: f.credentials, client: f.client, memoryClient: f.memoryClient, actions: ControlledChatActions(), canDispatch: { true }, onFeedback: { _ in })
         defer { reopened.dispose() }
         reopened.activate(.init(id: "robin", name: "robin", description: "", skinRevision: 0))
         try await chatEventually { reopened.conversation?.messages.count == 24 }

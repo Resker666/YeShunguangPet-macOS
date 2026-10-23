@@ -198,6 +198,7 @@ import PetCore
         switch controller.state {
         case .loading: phase = "正在读取本地资料"
         case .readingCredential: phase = "正在读取钥匙串"
+        case .awaitingAction: phase = "操作尚未执行，请确认或取消"
         case .streaming: phase = "正在回复"
         case .extractingMemories: phase = "正在提炼记忆"
         case .saving: phase = "正在保存本地资料"

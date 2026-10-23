@@ -6,12 +6,14 @@ struct ChatCharacter: Equatable, Sendable {
     let id, name, description: String
     let skinRevision: UInt64
 }
-enum ChatState: Equatable { case idle, loading, readingCredential, streaming, extractingMemories, saving, unsaved, unsavedMemory, failed }
+enum ChatState: Equatable { case idle, loading, readingCredential, streaming, extractingMemories, awaitingAction, saving, unsaved, unsavedMemory, failed }
 
 @MainActor final class ChatController: NSObject, ObservableObject {
     private struct PendingPair {
+        enum Kind { case modelReply, actionReceipt(ChatActionReceipt.Outcome) }
         let token = UUID()
         let user, assistant, originalDraft: String
+        var kind: Kind = .modelReply
     }
     private enum CredentialAvailability { case unknown, available, missing }
     @Published private(set) var character: ChatCharacter?
@@ -29,6 +31,10 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     @Published private(set) var profileEditRevision: UInt64 = 0
     @Published private(set) var memoryEditRevision: UInt64 = 0
     @Published private(set) var memoryReview: MemoryReviewState?
+
+    @Published private(set) var pendingAction: ChatActionProposal?
+    private var executingAction: ChatActionProposal?
+    private let actions: any ChatActionExecuting
 
     let persistence: any ChatPersisting
     private let credentials: any ChatCredentialStoring
@@ -61,8 +67,9 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
 
     var unsavedCharacterIDs: [String] { pendingPairs.keys.sorted() }
     var pendingMemoryCharacterIDs: [String] { pendingMemories.keys.sorted() }
-    var hasPendingWrites: Bool { writes.hasPending || credentialTask != nil }
+    var hasPendingWrites: Bool { writes.hasPending || credentialTask != nil || executingAction != nil }
     var isGenerating: Bool { requestTask != nil }
+    var isGeneratingConversation: Bool { activeRequestKind == .conversation && isGenerating }
     var isExtractingMemories: Bool { activeRequestKind == .memoryExtraction }
     var canExtractMemories: Bool {
         guard canEditMemories, let archive = conversation else { return false }
@@ -72,29 +79,30 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     }
     var canEditProfile: Bool {
         guard let id = character?.id else { return false }
-        return canMutate && activeRequest == nil && archives[id] != nil && protectedRoles[id] == nil
+        return canMutate && pendingAction == nil && executingAction == nil && activeRequest == nil && archives[id] != nil && protectedRoles[id] == nil
             && pendingPairs[id] == nil && pendingMemories[id] == nil && roleWrites[id, default: 0] == 0
     }
     var canEditMemories: Bool { canEditProfile }
     var canRetryMemorySave: Bool {
         canMutate && activeRequest == nil && character.map { pendingMemories[$0.id] != nil && roleWrites[$0.id, default: 0] == 0 } == true
     }
-    var canChangeConnection: Bool { canMutate && !isGenerating && !connectionWriting && credentialTask == nil && connectionLoaded }
+    var canChangeConnection: Bool { canMutate && pendingAction == nil && executingAction == nil && !isGenerating && !connectionWriting && credentialTask == nil && connectionLoaded }
     var canSend: Bool {
         guard let id = character?.id else { return false }
-        return canMutate && connectionLoaded && connection.enabled && connectionProtection == nil
+        return canMutate && pendingAction == nil && executingAction == nil && connectionLoaded && connection.enabled && connectionProtection == nil
             && connectionError == nil && !connectionWriting && credentialTask == nil && credentialMutationError == nil
             && credentialAvailability != .missing && requestTask == nil && archives[id] != nil
             && protectedRoles[id] == nil && pendingPairs[id] == nil && pendingMemories[id] == nil && roleWrites[id, default: 0] == 0
             && (try? ChatText.validate(draft, maxUTF16: 2000, allowEmpty: false)) != nil
     }
-    var canClearHistory: Bool { canMutate && character.flatMap { archives[$0.id] } != nil && character.flatMap { protectedRoles[$0.id] } == nil && character.flatMap { pendingMemories[$0.id] } == nil }
+    var canClearHistory: Bool { canMutate && executingAction == nil && character.flatMap { archives[$0.id] } != nil && character.flatMap { protectedRoles[$0.id] } == nil && character.flatMap { pendingMemories[$0.id] } == nil }
     var currentArchiveProtection: String? { character.flatMap { protectedRoles[$0.id] } }
     var canRetryPendingSave: Bool { canMutate && character.map { pendingPairs[$0.id] != nil && roleWrites[$0.id, default: 0] == 0 } == true }
     var canRetryConnectionSave: Bool { canChangeConnection && pendingConnection != nil }
     var canRetryTerminationSave: Bool { !pendingPairs.isEmpty || !pendingMemories.isEmpty || pendingConnection != nil }
     var terminationSaveError: String? {
         var messages = [String]()
+        if executingAction != nil { messages.append("操作正在执行，回执尚未保存。") }
         if !pendingPairs.isEmpty { messages.append("有 \(pendingPairs.count) 个角色的完整对话尚未保存。") }
         if !pendingMemories.isEmpty { messages.append("有 \(pendingMemories.count) 个角色的已确认记忆变更尚未保存。") }
         if let connectionError { messages.append(connectionError) }
@@ -103,13 +111,14 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     }
     private var canMutate: Bool { !disposed && !terminating && !sleeping && canDispatch() }
 
-    init(persistence: any ChatPersisting, credentials: any ChatCredentialStoring, client: any ChatStreaming, memoryClient: any ChatMemoryExtracting,
+    init(persistence: any ChatPersisting, credentials: any ChatCredentialStoring, client: any ChatStreaming, memoryClient: any ChatMemoryExtracting, actions: any ChatActionExecuting,
          canDispatch: @escaping () -> Bool, onFeedback: @escaping (String) -> Void) {
         self.persistence = persistence; self.credentials = credentials; self.client = client
-        self.memoryClient = memoryClient
+        self.memoryClient = memoryClient; self.actions = actions
         self.canDispatch = canDispatch; self.onFeedback = onFeedback
         writes = ChatWriteQueue(persistence: persistence)
         super.init()
+        actions.onChange = { [weak self] in self?.refreshActionAvailability() }
         startLifecycleObservers()
         connectionLoadTask = Task { [weak self, persistence] in
             let result = await persistence.loadConnection()
@@ -159,10 +168,12 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         guard canSend, let context = character, let archive = archives[context.id] else { return }
         let snapshot: ChatPromptSnapshot
         do {
-            snapshot = try .init(characterID: context.id, characterName: context.name, conversation: archive, model: connection.model, input: draft)
+            let runtime = actions.snapshot()
+            guard canSend, character == context else { return }
+            snapshot = try .init(characterID: context.id, characterName: context.name, conversation: archive, model: connection.model, input: draft, appSnapshot: runtime)
         } catch { roleErrors[context.id] = "输入或人设无效，请检查后再发送。"; refreshCurrent(); return }
         generation &+= 1
-        let current = generation, original = draft, input = snapshot.messages.last!.content
+        let current = generation, connectionEpoch = connectionGeneration, original = draft, input = snapshot.messages.last!.content
         activeRequest = context; activeRequestKind = .conversation; readingCredential = true; provisionalInputs[context.id] = input
         roleErrors[context.id] = nil; partials[context.id] = ""
         let credentials = credentials, client = client
@@ -184,7 +195,16 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
                         guard answer.utf16.count + text.utf16.count <= 8000 else { throw SkinError("AI 回复超长，未记入记录。") }
                         answer += text; self.partials[context.id] = answer
                         self.scheduleFlush()
-                    case .action: throw SkinError("操作提议尚未启用，未执行任何操作。")
+                    case .action(let action):
+                        let expected = self.actions.snapshot()
+                        guard self.isCurrent(current, context), self.connectionGeneration == connectionEpoch else { return }
+                        self.requestTask = nil; self.activeRequest = nil; self.activeRequestKind = nil; self.readingCredential = false
+                        self.flushTask?.cancel(); self.flushTask = nil; self.partials[context.id] = nil
+                        self.pendingAction = .init(id: UUID(), context: context, requestGeneration: current, connectionGeneration: connectionEpoch, originalDraft: original, userInput: input, action: action, expectedSnapshot: expected)
+                        // A Published subscriber can synchronously close/switch the host.
+                        if self.generation != current || self.character != context || self.terminating || self.sleeping || self.disposed { self.pendingAction = nil }
+                        self.refreshCurrent()
+                        return
                     case .completed:
                         try ChatText.validate(answer, maxUTF16: 8000, allowEmpty: false)
                         self.requestTask = nil; self.activeRequest = nil; self.activeRequestKind = nil; self.readingCredential = false
@@ -222,6 +242,8 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         }
     }
     private func cancelRequest() {
+        if let card = pendingAction { roleErrors[card.context.id] = "操作提议已失效，未执行；可重新发送。" }
+        pendingAction = nil
         generation &+= 1
         requestTask?.cancel(); requestTask = nil
         flushTask?.cancel(); flushTask = nil
@@ -229,6 +251,51 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         activeRequest = nil; activeRequestKind = nil; readingCredential = false
     }
     func stop() { guard !disposed else { return }; cancelRequest(); refreshCurrent() }
+
+    var canDecideAction: Bool {
+        guard let card = pendingAction, let context = character else { return false }
+        return canMutate && executingAction == nil && card.context == context && card.requestGeneration == generation
+            && card.connectionGeneration == connectionGeneration && connection.enabled && !connectionWriting && credentialTask == nil
+            && activeRequest == nil && pendingPairs[context.id] == nil && pendingMemories[context.id] == nil && roleWrites[context.id, default: 0] == 0
+    }
+    func refreshActionAvailability() {
+        guard let card = pendingAction, executingAction == nil else { return }
+        let current = actions.snapshot()
+        guard pendingAction?.id == card.id else { return }
+        if current.commandStamp != card.expectedSnapshot.commandStamp {
+            pendingAction = nil
+            roleErrors[card.context.id] = "专注或安静状态已经变化，操作提议已失效，未执行。请重新发送。"
+        }
+        refreshCurrent()
+    }
+    func confirmAction(id: UUID, for context: ChatCharacter) { decideAction(id: id, context: context, cancel: false) }
+    func cancelAction(id: UUID, for context: ChatCharacter) { decideAction(id: id, context: context, cancel: true) }
+    private func decideAction(id: UUID, context: ChatCharacter, cancel: Bool) {
+        guard canDecideAction, let card = pendingAction, card.id == id, card.context == context,
+              provisionalInputs[context.id] == card.userInput else { return }
+        let current = actions.snapshot()
+        guard canDecideAction, pendingAction?.id == id else { return }
+        guard current.commandStamp == card.expectedSnapshot.commandStamp else { refreshActionAvailability(); return }
+        // This private accepted intent precedes Published callbacks and the actual side effect.
+        executingAction = card
+        pendingAction = nil
+        let result: ChatActionExecutionResult = cancel
+            ? .finished(try! ChatActionReceipt(action: card.action, outcome: .cancelled, detail: "本次操作已取消，未执行。"))
+            : actions.execute(card.action, expected: card.expectedSnapshot)
+        switch result {
+        case .expired(let reason):
+            executingAction = nil
+            roleErrors[context.id] = reason; partials[context.id] = nil
+            refreshCurrent()
+        case .finished(let receipt):
+            let pair = PendingPair(user: card.userInput, assistant: receipt.assistantText, originalDraft: card.originalDraft, kind: .actionReceipt(receipt.outcome))
+            pendingPairs[context.id] = pair
+            partials[context.id] = receipt.assistantText
+            enqueuePair(pair, id: context.id, feedback: nil)
+            executingAction = nil
+            refreshCurrent()
+        }
+    }
 
     func extractMemories() {
         guard canExtractMemories, let context = character, let archive = archives[context.id] else { return }
@@ -263,11 +330,11 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         refreshCurrent()
     }
     func setMemoryCandidateText(id: UUID, text: String) {
-        guard canMutate, !isGenerating, memoryReview?.context == character, memoryReview?.editedTexts[id] != nil else { return }
+        guard canEditMemories, !isGenerating, memoryReview?.context == character, memoryReview?.editedTexts[id] != nil else { return }
         memoryReview?.editedTexts[id] = text
     }
     func setMemoryCandidateSelected(id: UUID, selected: Bool) {
-        guard canMutate, !isGenerating, memoryReview?.context == character, memoryReview?.editedTexts[id] != nil else { return }
+        guard canEditMemories, !isGenerating, memoryReview?.context == character, memoryReview?.editedTexts[id] != nil else { return }
         if selected { memoryReview?.selectedIDs.insert(id) } else { memoryReview?.selectedIDs.remove(id) }
     }
     func saveSelectedMemories(reviewID: UUID, for context: ChatCharacter) {
@@ -281,7 +348,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         } catch { roleErrors[context.id] = "候选文字无效，请检查内容和 200 个 UTF-16 单元上限。"; refreshCurrent() }
     }
     func discardMemoryReview() {
-        guard canMutate, !isGenerating else { return }
+        guard canEditMemories, !isGenerating else { return }
         memoryReview = nil; refreshCurrent()
     }
     private func invalidateMemoryReview(for id: String) {
@@ -321,7 +388,17 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
                     self.onFeedback(pair.assistant)
                 }
             case .failure:
-                self.roleErrors[id] = "本次对话尚未保存，可重试本地保存或明确丢弃。"
+                switch pair.kind {
+                case .modelReply: self.roleErrors[id] = "本次对话尚未保存，可重试本地保存或明确丢弃。"
+                case .actionReceipt(let outcome):
+                    let prefix: String
+                    switch outcome {
+                    case .applied, .alreadySatisfied: prefix = "操作已执行或目标已满足"
+                    case .failed: prefix = "操作未完成"
+                    case .cancelled: prefix = "操作已取消，未执行"
+                    }
+                    self.roleErrors[id] = prefix + "，但聊天回执尚未保存。重试仅保存本地回执；丢弃不会撤销操作。"
+                }
             }
         }
     }
@@ -407,12 +484,13 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
             case .success:
                 self.pendingPairs[context.id] = nil; self.partials[context.id] = nil; self.provisionalInputs[context.id] = nil; self.roleErrors[context.id] = nil
                 self.invalidateMemoryReview(for: context.id)
+                if self.character == context { self.memoryEditRevision &+= 1 }
             case .failure: self.roleErrors[context.id] = "记录未能清空，原历史与待存结果保留。"
             }
         }
     }
     func resetCharacterArchive() {
-        guard canMutate, let context = character, roleWrites[context.id, default: 0] == 0, pendingMemories[context.id] == nil else { return }
+        guard canMutate, executingAction == nil, let context = character, roleWrites[context.id, default: 0] == 0, pendingMemories[context.id] == nil else { return }
         cancelRequest()
         enqueueCharacter(.reset(characterID: context.id, profile: .init(background: context.description)), id: context.id) { [weak self] result in
             guard let self else { return }
@@ -431,7 +509,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         if !value.enabled {
             // Disabling is a new intent even while an older preference/key write is pending.
             cancelRequest(); connection.enabled = false
-        } else if connectionWriting || credentialTask != nil || isGenerating { refreshCurrent(); return }
+        } else if pendingAction != nil || executingAction != nil || connectionWriting || credentialTask != nil || isGenerating { refreshCurrent(); return }
         guard connectionProtection == nil else { refreshCurrent(); return }
         enqueueConnection(value)
     }
@@ -459,7 +537,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         enqueueConnection(value)
     }
     func resetConnectionArchive() {
-        guard canMutate, !isGenerating, !connectionWriting else { return }
+        guard canMutate, pendingAction == nil, executingAction == nil, !isGenerating, !connectionWriting else { return }
         connectionGeneration &+= 1
         let intent = connectionGeneration
         connectionWriteCount += 1
@@ -478,7 +556,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     }
 
     func saveCredential(_ secret: String) {
-        guard canMutate, !isGenerating, credentialTask == nil else { return }
+        guard canMutate, pendingAction == nil, executingAction == nil, !isGenerating, credentialTask == nil else { return }
         let normalized: String
         do { normalized = try ChatSecret.normalize(secret) }
         catch { credentialMutationError = "API 密钥为空、过长或含有无效字符。"; refreshCurrent(); return }
@@ -498,7 +576,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         refreshCurrent()
     }
     func removeCredential() {
-        guard canMutate, !isGenerating, credentialTask == nil else { return }
+        guard canMutate, pendingAction == nil, executingAction == nil, !isGenerating, credentialTask == nil else { return }
         credentialFeedback = nil; credentialMutationError = nil
         let credentials = credentials
         credentialTask = Task { [weak self] in
@@ -521,13 +599,14 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         if sleeping { cancelRequest() }
         refreshCurrent()
     }
-    func beginTermination() { guard !disposed else { return }; terminating = true; cancelRequest(); memoryReview = nil; refreshCurrent() }
+    func beginTermination() { guard !disposed else { return }; terminating = true; cancelRequest(); memoryReview = nil; memoryEditRevision &+= 1; refreshCurrent() }
     func cancelTermination() { guard !disposed else { return }; terminating = false; refreshCurrent() }
     func waitForPendingWrites() async {
         while true {
             if let credentialTask { await credentialTask.value }
             await writes.waitForPending()
-            if credentialTask == nil && !writes.hasPending { return }
+            if credentialTask == nil && !writes.hasPending && executingAction == nil { return }
+            await Task.yield()
         }
     }
     func retryAllPendingSaves() async -> Bool {
@@ -543,6 +622,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         guard !disposed else { return }
         cancelRequest(); disposed = true; presented = false
         roleLoadTask?.cancel(); connectionLoadTask?.cancel()
+        actions.dispose()
         stopLifecycleObservers()
     }
 
@@ -555,6 +635,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         error = id.flatMap { roleErrors[$0] ?? protectedRoles[$0] } ?? connectionProtection ?? connectionError ?? credentialMutationError
         if !connectionLoaded || (id != nil && conversation == nil && currentArchiveProtection == nil) { state = .loading }
         else if activeRequest != nil { state = readingCredential ? .readingCredential : (isExtractingMemories ? .extractingMemories : .streaming) }
+        else if pendingAction != nil { state = .awaitingAction }
         else if id.map({ roleWrites[$0, default: 0] > 0 }) == true { state = .saving }
         else if id.flatMap({ pendingPairs[$0] }) != nil { state = .unsaved }
         else if id.flatMap({ pendingMemories[$0] }) != nil { state = .unsavedMemory }

@@ -106,6 +106,10 @@ final class ControlledChatClient: ChatStreaming, @unchecked Sendable {
         let continuation = lock.withLock { continuations.removeValue(forKey: id) }
         continuation?.yield(.delta(answer)); continuation?.yield(.completed); continuation?.finish()
     }
+    func propose(_ index: Int, action: ChatAction) {
+        let continuation = lock.withLock { continuations.removeValue(forKey: index) }
+        continuation?.yield(.action(action)); continuation?.finish()
+    }
     func finishAll() {
         let remaining = lock.withLock { let values = Array(continuations.values); continuations = [:]; return values }
         remaining.forEach { $0.finish(throwing: CancellationError()) }
@@ -148,12 +152,34 @@ final class ControlledMemoryClient: ChatMemoryExtracting, @unchecked Sendable {
     }
 }
 
+@MainActor final class ControlledChatActions: ChatActionExecuting {
+    var onChange: (() -> Void)?
+    var onExecute: (() -> Void)?
+    var value = ChatAppSnapshot(focusRevision: 0, quietRevision: 0, phase: .focus, status: .ready, focusMinutes: 25, breakMinutes: 5, remainingSeconds: 1500, manualQuiet: false, focusQuiet: false)
+    var outcome = ChatActionReceipt.Outcome.applied
+    var expires = false
+    private(set) var executions = [ChatAction]()
+    private(set) var snapshotCount = 0
+    func snapshot() -> ChatAppSnapshot { snapshotCount += 1; return value }
+    func execute(_ action: ChatAction, expected: ChatAppSnapshot) -> ChatActionExecutionResult {
+        guard !expires else { return .expired("状态已过期。") }
+        executions.append(action); onExecute?()
+        return .finished(try! ChatActionReceipt(action: action, outcome: outcome, detail: outcome == .failed ? "操作未能完成。" : "本地操作已执行。"))
+    }
+    func change() {
+        value = .init(focusRevision: value.focusRevision + 1, quietRevision: value.quietRevision, phase: value.phase, status: value.status, focusMinutes: value.focusMinutes, breakMinutes: value.breakMinutes, remainingSeconds: value.remainingSeconds, manualQuiet: value.manualQuiet, focusQuiet: value.focusQuiet)
+        onChange?()
+    }
+    func dispose() { onChange = nil }
+}
+
 @MainActor final class ChatControllerFixture {
     let root: URL
     let persistence: ControlledChatPersistence
     let credentials = ControlledChatCredentials()
     let client = ControlledChatClient()
     let memoryClient = ControlledMemoryClient()
+    let actions = ControlledChatActions()
     let controller: ChatController
     let feedback: ChatFeedback
     init(canDispatch: @escaping () -> Bool = { true }) throws {
@@ -161,7 +187,7 @@ final class ControlledMemoryClient: ChatMemoryExtracting, @unchecked Sendable {
         try ChatConnectionStore(url: root.appendingPathComponent("AI/connection.json")).save(.init(enabled: true))
         persistence = ControlledChatPersistence(settingsURL: root.appendingPathComponent("settings.json"))
         let feedback = ChatFeedback(); self.feedback = feedback
-        controller = ChatController(persistence: persistence, credentials: credentials, client: client, memoryClient: memoryClient, canDispatch: canDispatch, onFeedback: { feedback.lines.append($0) })
+        controller = ChatController(persistence: persistence, credentials: credentials, client: client, memoryClient: memoryClient, actions: actions, canDispatch: canDispatch, onFeedback: { feedback.lines.append($0) })
     }
     func open(_ id: String = "robin", revision: UInt64 = 0) async throws {
         controller.activate(.init(id: id, name: id, description: "角色介绍", skinRevision: revision))

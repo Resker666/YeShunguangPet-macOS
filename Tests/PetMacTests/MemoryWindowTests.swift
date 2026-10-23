@@ -109,4 +109,19 @@ import PetCore
         XCTAssertTrue(try button(view, "编辑").isEnabled)
         XCTAssertFalse(try button(view, "提炼记忆").isEnabled)
     }
+    func testClearAndTerminationDiscardUnconfirmedMemoryEditor() async throws {
+        let f = try await fixture()
+        let view = ChatMemoryView(controller: f.controller, hasBlockingModal: { false }, confirm: { _, _, action in action() })
+        view.render(); try click(button(view, "编辑"))
+        let field = try editor(view); field.string = "未保存编辑"
+        await f.persistence.failNext("clear:robin")
+        f.controller.clearHistory(); await f.controller.waitForPendingWrites(); view.render()
+        XCTAssertEqual(field.string, "未保存编辑", "failed clear keeps draft")
+        f.controller.clearHistory(); await f.controller.waitForPendingWrites(); view.render()
+        XCTAssertEqual(field.string, "", "successful clear resets unsaved editor")
+        try click(button(view, "编辑")); field.string = "退出前编辑"
+        f.controller.beginTermination(); f.controller.cancelTermination(); view.render()
+        XCTAssertEqual(field.string, "", "cancelled exit does not revive unsaved editor")
+    }
+
 }
