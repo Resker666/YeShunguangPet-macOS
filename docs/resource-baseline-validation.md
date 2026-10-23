@@ -83,3 +83,7 @@ CPU=累计CPU时间差÷单调时间差×100，100%代表一核。`ps`累计CPU�
 八份安装/校验文件已放入仓库`dist`，旧App保存在本机`previous-installed-0.1.20.app`，个人配置备份仅留忽略目录。日用App继续运行，无临时测量进程或防睡眠断言需保持。
 
 临时探针不作为产品启动参数、常驻服务或遥测保留。Windows和Minimal Sleep只读，正式登录项未改；本轮仅本地开发/提交/交付，未获推送、标签或Release授权。
+
+## 后续推送授权
+
+用户随后明确“推送”，授权按既有流程普通同步main和`codex/macos-resource-baseline`，并核对Actions构建与产物。此前本地交付记录中的“未授权”保留为历史状态；此次不触发prepare_release，不打标签或创建/发布Release。用户没有在本次声明整体体验或下一次真实午夜通过，相关待测项保持。推送及云端结果按实际引用、运行日志与Artifact元数据记录于本机`push-verification.json`等证据。
