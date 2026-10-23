@@ -4,7 +4,8 @@ import PetCore
 
 @MainActor final class ChatWindowController: NSWindowController, NSWindowDelegate {
     let controller: ChatController
-    let pages = NSSegmentedControl(labels:["对话","人设","连接"],trackingMode:.selectOne,target:nil,action:nil)
+    let pages = NSSegmentedControl(labels:["对话","人设","记忆","连接"],trackingMode:.selectOne,target:nil,action:nil)
+    private var memoryView: ChatMemoryView!
     let pageScroll = NSScrollView()
     let transcript = NSTextView()
     let composer = ChatComposer()
@@ -14,7 +15,7 @@ import PetCore
     private let retryButton = NSButton(), discardButton = NSButton(), resetButton = NSButton()
     private let applyProfileButton = NSButton()
     private let profileFields = (0..<4).map { _ in NSTextView() }
-    private let enabled = NSButton(checkboxWithTitle:"开启 AI 聊天",target:nil,action:nil)
+    private let enabled = NSButton(checkboxWithTitle:"开启 AI 对话与记忆提炼",target:nil,action:nil)
     private let model = NSPopUpButton()
     private let applyConnectionButton = NSButton(), retryConnectionButton = NSButton(), resetConnectionButton = NSButton()
     private let key = NSSecureTextField()
@@ -36,6 +37,9 @@ import PetCore
         window.contentMinSize = CGSize(width:440,height:420)
         window.isReleasedWhenClosed = false
         super.init(window:window)
+        memoryView = ChatMemoryView(controller: controller, hasBlockingModal: { [weak self] in
+            guard let self else { return true }; return self.terminating || self.disposed || self.hasBlockingSheet
+        }, confirm: { [weak self] title, detail, action in self?.confirm(title, detail, perform: action) })
         window.delegate = self; window.center()
         let root = NSStackView(); root.orientation = .vertical; root.alignment = .leading; root.spacing = 12
         root.edgeInsets = NSEdgeInsets(top:16,left:16,bottom:16,right:16)
@@ -140,18 +144,19 @@ import PetCore
                 add(label(title)); add(textBox(profileFields[index],height:84))
             }
             add(applyProfileButton)
+        case 2: add(memoryView)
         default:
             add(label("DeepSeek 官方接口 · https://api.deepseek.com"))
             add(enabled); add(label("模型")); add(model); add(applyConnectionButton); add(retryConnectionButton)
             add(label("API 密钥")); add(key); add(row(saveKeyButton,removeKeyButton)); add(connectionLabel)
-            add(label("仅点击发送才会联网，将当前人设、最近 12 轮完整对话和本次文字交给 DeepSeek，按你的 API 账户计费。打开窗口或保存设置不会发送测试请求。"))
+            add(label("点击发送会将人设、已确认长期记忆、最近 12 轮完整对话和本次文字交给 DeepSeek。点击提炼记忆会额外发送当前角色已保存问答和记忆；均按你的 API 账户计费。打开窗口或保存设置不会发送测试请求。"))
             add(label("密钥保存在 macOS 钥匙串；连接偏好单独保存。关闭 AI 会立即停止当前请求，取消不能撤回服务商已经收到的内容。"))
             add(resetConnectionButton)
         }
         content.layoutSubtreeIfNeeded()
     }
     func selectPage(_ value:Int) {
-        guard (0..<3).contains(value) else { return }
+        guard (0..<4).contains(value) else { return }
         if page == 1 || value == 1 { reloadProfile() }
         page = value; pages.selectedSegment = value; rebuildPage(); render()
     }
@@ -222,6 +227,7 @@ import PetCore
         resetConnectionButton.isHidden = controller.connectionProtection == nil
         resetConnectionButton.isEnabled = !terminating && controller.canChangeConnection
         connectionLabel.stringValue = [controller.connectionProtection,controller.connectionError,controller.credentialMutationError,controller.credentialFeedback].compactMap{$0}.joined(separator:"\n")
+        memoryView.render()
     }
     func present() {
         guard !disposed, !terminating, !hasBlockingSheet else { return }
@@ -236,7 +242,7 @@ import PetCore
     func windowDidDeminiaturize(_ notification:Notification) { updatePresentation() }
     func windowDidEndSheet(_ notification:Notification) { render() }
     func windowWillClose(_ notification:Notification) {
-        controller.windowClosed(); key.stringValue = ""; reloadProfile()
+        controller.windowClosed(); key.stringValue = ""; reloadProfile(); memoryView.resetDrafts()
         controller.setPresented(false); onPresentationChange(false)
     }
     func beginTermination() { terminating = true; render() }
@@ -263,7 +269,7 @@ import PetCore
     }
     @objc private func clear() {
         guard let context = controller.character else { return }
-        confirm("清空当前角色的本机记录？","保留人设。成功清空也会丢弃完整待存问答；不会删除服务商已经收到的数据。") { controller.clearHistory(for:context) }
+        confirm("清空当前角色的本机记录？","保留人设与已确认长期记忆。成功清空也会丢弃完整待存问答和未确认候选；不会删除服务商已经收到的数据。") { controller.clearHistory(for:context) }
     }
     @objc private func retry() { controller.retryPendingSave() }
     @objc private func discard() {
@@ -272,7 +278,7 @@ import PetCore
     }
     @objc private func resetRole() {
         let context = controller.character
-        confirm("备份并重置角色资料？","原文件先保留备份，然后重置此角色人设与历史。") { if controller.character == context { controller.resetCharacterArchive() } }
+        confirm("备份并重置角色资料？","原文件先保留备份，然后重置此角色人设、聊天历史与全部长期记忆。") { if controller.character == context { controller.resetCharacterArchive() } }
     }
     @objc private func applyProfile() {
         guard let context = editorContext else { return }

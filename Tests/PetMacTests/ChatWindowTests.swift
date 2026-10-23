@@ -26,7 +26,7 @@ import PetCore
         let native = try XCTUnwrap(window.window)
         XCTAssertEqual(native.contentLayoutRect.size,CGSize(width:520,height:620))
         XCTAssertEqual(native.contentMinSize,CGSize(width:440,height:420))
-        XCTAssertEqual(window.pages.segmentCount,3)
+        XCTAssertEqual(window.pages.segmentCount,4)
         try await f.send("你好",answer:"<script>alert('literal')</script>\n" + String(repeating:"长回复",count:100),index:0)
         window.render()
         XCTAssertFalse(window.transcript.isRichText)
@@ -37,7 +37,7 @@ import PetCore
         for appearance in [NSAppearance.Name.aqua,.darkAqua] {
             native.appearance = NSAppearance(named:appearance)
             native.setContentSize(native.contentMinSize)
-            for page in 0..<3 {
+            for page in 0..<4 {
                 window.selectPage(page)
                 native.contentView?.layoutSubtreeIfNeeded()
                 XCTAssertTrue(window.pageScroll.hasVerticalScroller)

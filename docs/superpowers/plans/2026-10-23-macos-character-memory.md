@@ -163,13 +163,13 @@ Xcode 使用 XML plist 显式登记：每个新文件建立 PBXFileReference、r
 - 四页次序「对话 / 人设 / 记忆 / 连接」，保留原窗口520×620/最小440×420和单一外层滚动。页面切换不重建服务或丢候选；人设仍遵循原切页弃草稿规则。旧索引测试随页面语义更新，不误将连接页当人设页。
 - 记忆页用纯文字原生控件，列表单项进入编辑；候选有勾选、编辑、可展开用户原话来源。点击删除/全部清除时调用现有 confirm helper，modal结束后用捕获 context/revision 再调用控制器。保存按钮须检查所有相关 NSTextView.hasMarkedText，且 action本身再次检查，不只按钮enabled。
 
-- [ ] **1. 写失败用例。** `MemoryWindowTests.testFourPagesAndAsyncArchiveLoadNeverOverwriteEditor` 挂起初次load再放行已存记忆，断言新页面展示正确；后续状态刷新不覆盖用户编辑，同ID skinRevision变化和关窗则重置未确认编辑。`testMemorySaveRejectsMarkedTextAtActionBoundary` 给候选/已有条目构造marked text，按钮及直接action均不写盘，unmark后才能保存；NFC/200单元边界沿用Task1。
-- [ ] **2. 写模态及状态失败用例。** `testDeleteDispatchesOnlyAfterModalEndsAndRevalidatesContext` 模态时禁止普通发送/提炼/保存，结束后重新检查身份/修订，模拟换角色或睡眠则不接受旧动作。`testReviewSelectionSourcesAndFailureRecovery` 验证默认未勾选、来源为本地快照、满额/重复/保存失败清晰、retry只本地、AIoff可编辑本地、提炼中显示停止而非JSON、普通聊天原输入/复制/停止保持。
-- [ ] **3. 运行 RED。** `bash scripts/test.sh -only-testing:PetMacTests/MemoryWindowTests -only-testing:PetMacTests/ChatWindowTests -only-testing:PetMacTests/ChatIntegrationTests`。
-- [ ] **4. 实现原生页与生命周期渲染。** 仅当context、memoryEditRevision或批次结构变化时重建编辑控件；普通状态/每段流式更新不覆盖光标和草稿。候选文字变化不反复重建行。完成态和error状态区分聊天/记忆，关闭、换肤、成功变更按设计清草稿，确认后失败意图仍从控制器展示。来源原话不进诊断或剪贴板自动复制。
-- [ ] **5. 更新使用说明及版本。** 连接页说明普通发送包含人设/已确认记忆/12轮/本次输入，提炼会额外发送当前已存问答和记忆；按钮旁说明额外计费与候选寿命。帮助解释删除独立记忆不移除历史里的同文、清空/重置范围、v2回退旧版保护。Info.plist改0.3.0/build25，仅更新当前介绍，不改历史验收/版本比较夹具。
-- [ ] **6. 运行同一命令 GREEN。** 隔离原生浅深色、最小尺寸和长来源滚动渲染；程序化操作与缓存不能记作实际物理鼠标/输入法/焦点实测。
-- [ ] **7. 本地提交。** `git commit -m "feat: manage and confirm character memories in the native chat window"`，精确暂存。
+- [x] **1. 写失败用例。** `MemoryWindowTests.testFourPagesAndAsyncArchiveLoadNeverOverwriteEditor` 挂起初次load再放行已存记忆，断言新页面展示正确；后续状态刷新不覆盖用户编辑，同ID skinRevision变化和关窗则重置未确认编辑。`testMemorySaveRejectsMarkedTextAtActionBoundary` 给候选/已有条目构造marked text，按钮及直接action均不写盘，unmark后才能保存；NFC/200单元边界沿用Task1。
+- [x] **2. 写模态及状态失败用例。** `testDeleteDispatchesOnlyAfterModalEndsAndRevalidatesContext` 模态时禁止普通发送/提炼/保存，结束后重新检查身份/修订，模拟换角色或睡眠则不接受旧动作。`testReviewSelectionSourcesAndFailureRecovery` 验证默认未勾选、来源为本地快照、满额/重复/保存失败清晰、retry只本地、AIoff可编辑本地、提炼中显示停止而非JSON、普通聊天原输入/复制/停止保持。
+- [x] **3. 运行 RED。** `bash scripts/test.sh -only-testing:PetMacTests/MemoryWindowTests -only-testing:PetMacTests/ChatWindowTests -only-testing:PetMacTests/ChatIntegrationTests`。
+- [x] **4. 实现原生页与生命周期渲染。** 仅当context、memoryEditRevision或批次结构变化时重建编辑控件；普通状态/每段流式更新不覆盖光标和草稿。候选文字变化不反复重建行。完成态和error状态区分聊天/记忆，关闭、换肤、成功变更按设计清草稿，确认后失败意图仍从控制器展示。来源原话不进诊断或剪贴板自动复制。
+- [x] **5. 更新使用说明及版本。** 连接页说明普通发送包含人设/已确认记忆/12轮/本次输入，提炼会额外发送当前已存问答和记忆；按钮旁说明额外计费与候选寿命。帮助解释删除独立记忆不移除历史里的同文、清空/重置范围、v2回退旧版保护。Info.plist改0.3.0/build25，仅更新当前介绍，不改历史验收/版本比较夹具。
+- [x] **6. 运行同一命令 GREEN。** 隔离原生浅深色、最小尺寸和长来源滚动渲染；程序化操作与缓存不能记作实际物理鼠标/输入法/焦点实测。
+- [x] **7. 本地提交。** `git commit -m "feat: manage and confirm character memories in the native chat window"`，精确暂存。
 
 ## Task 7：回归、一次整体评审与本地交付
 
