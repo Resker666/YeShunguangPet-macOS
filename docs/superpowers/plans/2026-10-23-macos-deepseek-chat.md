@@ -115,14 +115,14 @@ XCTAssertEqual(state.messages.last?.content, "a13")
 - `protocol ChatCredentialStoring: Sendable`：`read() async throws -> String?`、`save(_ secret: String) async throws`、`remove() async throws`。
 - `actor KeychainChatCredentialStore` 实现协议，`init(service: String = "io.github.resker666.yeshunguangpet.macos.deepseek", account: String = "api.deepseek.com")`；错误映射只含固定类别/OSStatus。测试以内存实现为默认，禁止用上述正式标识做试验。
 
-- [ ] **1. 写网络失败用例。** `testOfficialRequestContract` 断言精确 URL/POST/Bearer 测试凭据、无 Cookie、stream true、thinking disabled、max_tokens 2048、无 tools/图片、仅冻结消息；配置为 30/120 秒、无 cache/cookie。
-- [ ] **2. 写流和取消失败用例。** `testSSEAllByteBoundariesAndCompletion` 把包含中文/emoji/CRLF/keep-alive/空 choices 的合法 SSE 在每个字节位置切开，合并文本相同且只有一次 completed。`testSSERejectsTruncationAndLimits` 对无 DONE、无 stop、错误结束、非法 JSON/UTF-8、空回复、>8000 单元、单行/单事件 >65536 字节或总响应 >1048576 字节断言抛错。`testCancellationAndHTTPFailuresNeverRetry` 覆盖停止后 stopLoading、晚到分段、401/402/429/400/422/500/503、302、错误来源、超时/断网，网络请求计数保持 1。
-- [ ] **3. 写凭据失败用例。** `testCredentialFailureMappingAndNoFileStorage` 验证用户取消/拒绝/缺失映射、保存/删除结果独立，无普通文件；key 为空/含控制字符/超过 4096 UTF-8 字节拒绝。
-- [ ] **4. 运行 RED。** `bash scripts/test.sh -only-testing:PetMacTests/ChatClientTests -only-testing:PetMacTests/ChatCredentialTests`，确认新客户端/凭据行为尚未实现的失败。
-- [ ] **5. 实现客户端和解码器。** 先复核设计链接的官方模型/接口文档，不用用户密钥发请求；固定官方源、拒绝重定向。增量处理 data，忽略 reasoning/保活，只有 stop + DONE + 非空才 completed，不自动 fallback 再请求。对请求 1 MiB、响应 1 MiB、每行/事件 64 KiB 分别限制；原始错误体不进日志。流只通过 Sendable 事件跨线程。
-- [ ] **6. 实现凭据适配。** SecItem 通用密码读/替换/移除在 actor 内，密钥输入只修剪首尾空白；不启动时读 key，不回显已存值。真实随机命名钥匙串探针另记人工/隔离证据，失败不以替身结果替代。
-- [ ] **7. 运行 GREEN。** 同 RED 命令，核对本任务新增的两类实际用例均执行且零失败。
-- [ ] **8. 提交。** 精确暂存本任务生产/测试/工程文件；`git commit -m "feat: connect bounded DeepSeek streams and Keychain credentials"`。
+- [x] **1. 写网络失败用例。** `testOfficialRequestContract` 断言精确 URL/POST/Bearer 测试凭据、无 Cookie、stream true、thinking disabled、max_tokens 2048、无 tools/图片、仅冻结消息；配置为 30/120 秒、无 cache/cookie。
+- [x] **2. 写流和取消失败用例。** `testSSEAllByteBoundariesAndCompletion` 把包含中文/emoji/CRLF/keep-alive/空 choices 的合法 SSE 在每个字节位置切开，合并文本相同且只有一次 completed。`testSSERejectsTruncationAndLimits` 对无 DONE、无 stop、错误结束、非法 JSON/UTF-8、空回复、>8000 单元、单行/单事件 >65536 字节或总响应 >1048576 字节断言抛错。`testCancellationAndHTTPFailuresNeverRetry` 覆盖停止后 stopLoading、晚到分段、401/402/429/400/422/500/503、302、错误来源、超时/断网，网络请求计数保持 1。
+- [x] **3. 写凭据失败用例。** `testCredentialFailureMappingAndNoFileStorage` 验证用户取消/拒绝/缺失映射、保存/删除结果独立，无普通文件；key 为空/含控制字符/超过 4096 UTF-8 字节拒绝。
+- [x] **4. 运行 RED。** `bash scripts/test.sh -only-testing:PetMacTests/ChatClientTests -only-testing:PetMacTests/ChatCredentialTests`，确认新客户端/凭据行为尚未实现的失败。
+- [x] **5. 实现客户端和解码器。** 先复核设计链接的官方模型/接口文档，不用用户密钥发请求；固定官方源、拒绝重定向。增量处理 data，忽略 reasoning/保活，只有 stop + DONE + 非空才 completed，不自动 fallback 再请求。对请求 1 MiB、响应 1 MiB、每行/事件 64 KiB 分别限制；原始错误体不进日志。流只通过 Sendable 事件跨线程。
+- [x] **6. 实现凭据适配。** SecItem 通用密码读/替换/移除在 actor 内，密钥输入只修剪首尾空白；不启动时读 key，不回显已存值。真实随机命名钥匙串探针另记人工/隔离证据，失败不以替身结果替代。
+- [x] **7. 运行 GREEN。** 同 RED 命令，核对本任务新增的两类实际用例均执行且零失败。
+- [x] **8. 提交。** 精确暂存本任务生产/测试/工程文件；`git commit -m "feat: connect bounded DeepSeek streams and Keychain credentials"`。
 
 ## Task 4：有序文件事务与跨角色待存结果
 
