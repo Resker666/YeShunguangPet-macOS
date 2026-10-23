@@ -196,6 +196,7 @@ import PetCore
         case .streaming: phase = "正在回复"
         case .saving: phase = "正在保存本地资料"
         case .unsaved: phase = "完整回复尚未保存"
+        case .unsavedMemory: phase = "记忆变更尚未保存"
         case .failed: phase = "需要处理"
         case .idle: phase = controller.connection.enabled ? "就绪" : "AI 已关闭，请在连接页配置"
         }

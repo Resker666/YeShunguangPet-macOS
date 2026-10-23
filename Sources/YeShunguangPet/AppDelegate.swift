@@ -53,7 +53,7 @@ import Darwin
     private func confirmChatTermination(_ chat:ChatController?) async -> Bool {
         guard let chat else { return true }
         while let message=chat.terminationSaveError {
-            let alert=NSAlert(); alert.messageText="聊天资料尚未保存"; alert.informativeText=message
+            let alert=NSAlert(); alert.messageText="聊天与记忆资料尚未保存"; alert.informativeText=message
             let canRetry=chat.canRetryTerminationSave
             if canRetry { alert.addButton(withTitle:"重试本地保存") }
             alert.addButton(withTitle:"继续退出"); alert.addButton(withTitle:"取消退出")

@@ -129,12 +129,12 @@ Xcode 使用 XML plist 显式登记：每个新文件建立 PBXFileReference、r
 - `ChatController` 新增只读 `canEditMemories: Bool` / `canRetryMemorySave: Bool` / `pendingMemoryCharacterIDs: [String]` / `memoryEditRevision: UInt64`；`saveMemory(id: UUID, text: String, for context: ChatCharacter, expectedRevision: UInt64)`、`deleteMemory(id: UUID, for context: ChatCharacter, expectedRevision: UInt64)`、`clearMemories(for context: ChatCharacter, expectedRevision: UInt64)`、`retryPendingMemorySave()`、`discardPendingMemorySave()`。Task 5 的候选确认也复用同一个私有登记入口。
 - 扩展原 `hasPendingWrites` / `terminationSaveError` / `canRetryTerminationSave` / `retryAllPendingSaves()`，汇总所有角色失败意图；已有已接受写入等待和请求取消规则保持。`ChatState` 增加 `.unsavedMemory`，同任务更新 ChatWindowController 的 exhaustive switch 为「记忆变更尚未保存」，不能误标为完整聊天回复未保存或留到Task6才修复编译。
 
-- [ ] **1. 写失败用例。** `MemoryControllerTests.testMemoryMutationsCommitBeforeBecomingEffective` 使用真实 worker/临时目录与受控写入，确认写完成前 conversation 仍旧、成功后 revision+1；改/删/全部清除保留 profile/history。错误 context/skinRevision/expectedRevision 不接受写入。离线/AI关闭可编辑已有记忆，受保护/模态/睡眠/退出/角色待存时拒收。
-- [ ] **2. 写退出失败用例。** `testFailedConfirmedChangeSurvivesWindowCloseSkinChangeAndTermination` 注入 `memories:robin` 失败，关窗→hutao→同ID不同revision重开，断言 robin 意图仍在，旧有效记忆不变，其他角色仍可用；retryAllPendingSaves 无新增凭据读取或网络请求、只写目标角色一次且清除退出错误。`testAcceptedMemoryWriteFinishesAfterClosing` 挂起写入后关闭/换角色，再放行，保存属于旧角色且当前窗口不显示旧内容。
-- [ ] **3. 运行 RED。** `bash scripts/test.sh -only-testing:PetMacTests/MemoryControllerTests -only-testing:PetMacTests/ChatPersistenceTests -only-testing:PetMacTests/ChatControllerTests`。
-- [ ] **4. 实现命令和失败意图。** 接受前同步登记；worker 回执按角色/ticket/token 处理，成功才有效，失败保留精确列表及修订。未处理前禁当前角色发送/提炼/资料修改；retry 复用原意图，discard 保旧有效值。既有 profile/history/credential 回执不能误清 memory pending。初次异步读档及成功记忆变更推进 memoryEditRevision，以免空编辑覆盖新资料。
-- [ ] **5. 运行同一命令 GREEN。** 既有完整问答、本地重试及退出用例保持；AppDelegate 继续调用原汇总方法，只调整提示覆盖记忆，不新增独立循环/网络重试。
-- [ ] **6. 本地提交。** `git commit -m "feat: preserve confirmed memory save intents across lifecycle changes"`，精确暂存。
+- [x] **1. 写失败用例。** `MemoryControllerTests.testMemoryMutationsCommitBeforeBecomingEffective` 使用真实 worker/临时目录与受控写入，确认写完成前 conversation 仍旧、成功后 revision+1；改/删/全部清除保留 profile/history。错误 context/skinRevision/expectedRevision 不接受写入。离线/AI关闭可编辑已有记忆，受保护/模态/睡眠/退出/角色待存时拒收。
+- [x] **2. 写退出失败用例。** `testFailedConfirmedChangeSurvivesWindowCloseSkinChangeAndTermination` 注入 `memories:robin` 失败，关窗→hutao→同ID不同revision重开，断言 robin 意图仍在，旧有效记忆不变，其他角色仍可用；retryAllPendingSaves 无新增凭据读取或网络请求、只写目标角色一次且清除退出错误。`testAcceptedMemoryWriteFinishesAfterClosing` 挂起写入后关闭/换角色，再放行，保存属于旧角色且当前窗口不显示旧内容。
+- [x] **3. 运行 RED。** `bash scripts/test.sh -only-testing:PetMacTests/MemoryControllerTests -only-testing:PetMacTests/ChatPersistenceTests -only-testing:PetMacTests/ChatControllerTests`。
+- [x] **4. 实现命令和失败意图。** 接受前同步登记；worker 回执按角色/ticket/token 处理，成功才有效，失败保留精确列表及修订。未处理前禁当前角色发送/提炼/资料修改；retry 复用原意图，discard 保旧有效值。既有 profile/history/credential 回执不能误清 memory pending。初次异步读档及成功记忆变更推进 memoryEditRevision，以免空编辑覆盖新资料。
+- [x] **5. 运行同一命令 GREEN。** 既有完整问答、本地重试及退出用例保持；AppDelegate 继续调用原汇总方法，只调整提示覆盖记忆，不新增独立循环/网络重试。
+- [x] **6. 本地提交。** `git commit -m "feat: preserve confirmed memory save intents across lifecycle changes"`，精确暂存。
 
 ## Task 5：单飞提炼、候选确认和生命周期
 

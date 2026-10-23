@@ -126,12 +126,12 @@ final class ControlledChatClient: ChatStreaming, @unchecked Sendable {
     let client = ControlledChatClient()
     let controller: ChatController
     let feedback: ChatFeedback
-    init() throws {
+    init(canDispatch: @escaping () -> Bool = { true }) throws {
         root = FileManager.default.temporaryDirectory.appendingPathComponent("chat-controller-" + UUID().uuidString)
         try ChatConnectionStore(url: root.appendingPathComponent("AI/connection.json")).save(.init(enabled: true))
         persistence = ControlledChatPersistence(settingsURL: root.appendingPathComponent("settings.json"))
         let feedback = ChatFeedback(); self.feedback = feedback
-        controller = ChatController(persistence: persistence, credentials: credentials, client: client, canDispatch: { true }, onFeedback: { feedback.lines.append($0) })
+        controller = ChatController(persistence: persistence, credentials: credentials, client: client, canDispatch: canDispatch, onFeedback: { feedback.lines.append($0) })
     }
     func open(_ id: String = "robin", revision: UInt64 = 0) async throws {
         controller.activate(.init(id: id, name: id, description: "角色介绍", skinRevision: revision))
