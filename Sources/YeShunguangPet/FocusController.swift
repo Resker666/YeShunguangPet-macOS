@@ -38,7 +38,8 @@ struct FocusPresetCommand:Hashable {let minutes:Int,generation:UInt64}
     private let wallNow:()->Date,timeZone:()->TimeZone
     private var displaySources=Set<String>()
     private var sleeping=false,terminating=false,disposed=false
-    private var commandGeneration:UInt64=0
+    @Published private(set) var actionRevision:UInt64=0
+    private var cachedFocusMinutes:Int?,cachedBreakMinutes:Int?
     private var suppressCompletionSound=false
     private let playCompletionSound:()->Void
     var canPlayCompletionSound:()->Bool = {NSApp.modalWindow==nil}
@@ -46,11 +47,11 @@ struct FocusPresetCommand:Hashable {let minutes:Int,generation:UInt64}
     var phase:FocusPhase {snapshot.phase}
     var status:FocusStatus {snapshot.status}
     var remainingSeconds:Int {snapshot.remainingSeconds}
-    var primaryCommand:FocusCommand {.init(kind:status == .running ? .pause : .startOrResume,generation:commandGeneration)}
-    func presetCommand(minutes:Int)->FocusPresetCommand {.init(minutes:minutes,generation:commandGeneration)}
+    var primaryCommand:FocusCommand {.init(kind:status == .running ? .pause : .startOrResume,generation:actionRevision)}
+    func presetCommand(minutes:Int)->FocusPresetCommand {.init(minutes:minutes,generation:actionRevision)}
     var canStartPreset:Bool {canOperate && !sleeping && session?.gate.sleeping==false && canPlayCompletionSound() && policy.status == .ready}
     func startPreset(_ command:FocusPresetCommand) {
-        guard canStartPreset,command.generation==commandGeneration,Self.presetMinutes.contains(command.minutes) else{return}
+        guard canStartPreset,command.generation==actionRevision,Self.presetMinutes.contains(command.minutes) else{return}
         do {
             try applyDurations(focusMinutes:command.minutes,breakMinutes:breakMinutes)
             presetError=nil;startOrResume()
@@ -59,7 +60,7 @@ struct FocusPresetCommand:Hashable {let minutes:Int,generation:UInt64}
     }
     func perform(_ command:FocusCommand) {
         guard canOperate else{return}
-        guard command.generation==commandGeneration else{refreshTime();return}
+        guard command.generation==actionRevision else{refreshTime();return}
         switch command.kind{case .pause:pause();case .startOrResume:startOrResume()}
     }
     var focusMinutes:Int {session?.preferences.focusMinutes ?? 25}
@@ -84,8 +85,8 @@ struct FocusPresetCommand:Hashable {let minutes:Int,generation:UInt64}
         refreshStatistics()
         let sound=session?.preferences.focusCompletionSound ?? false
         if completionSoundEnabled != sound{completionSoundEnabled=sound}
-        guard canOperate,policy.status == .ready else{return}
-        try? policy.configure(focusMinutes:focusMinutes,breakMinutes:breakMinutes)
+        guard canOperate else{return}
+        if policy.status == .ready {try? policy.configure(focusMinutes:focusMinutes,breakMinutes:breakMinutes)}
         publishAndSchedule()
     }
     func startOrResume() {guard canOperate else{return};settle(policy.startOrResume(at:now()))}
@@ -136,15 +137,17 @@ struct FocusPresetCommand:Hashable {let minutes:Int,generation:UInt64}
         let seconds=Double(remaining.components.seconds)+Double(remaining.components.attoseconds)/1e18
         let value=FocusSnapshot(phase:policy.phase,status:policy.status,remainingSeconds:max(0,Int(ceil(seconds))),durationSeconds:Int(policy.duration.components.seconds))
         let changed=value != snapshot
-        if value.phase != snapshot.phase || value.status != snapshot.status || value.durationSeconds != snapshot.durationSeconds {commandGeneration &+= 1}
+        let commandChanged=value.phase != snapshot.phase || value.status != snapshot.status || value.durationSeconds != snapshot.durationSeconds || cachedFocusMinutes != focusMinutes || cachedBreakMinutes != breakMinutes
+        cachedFocusMinutes=focusMinutes;cachedBreakMinutes=breakMinutes
         if changed{snapshot=value}
+        if commandChanged{actionRevision &+= 1}
         session?.setFocusQuiet(policy.phase == .focus && policy.status == .running && !disposed)
         scheduler.cancel()
         if canOperate,!sleeping,policy.status == .running,let deadline=policy.deadline {
             let remaining=max(.zero,deadline-now())
             scheduler.schedule(after:displaySources.isEmpty ? remaining : min(remaining,.seconds(1)))
         }
-        if changed{onChange?()}
+        if changed || commandChanged{onChange?()}
     }
     func setDisplayVisible(_ visible:Bool,source:String) {
         guard !disposed else{return}

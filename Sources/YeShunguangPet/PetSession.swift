@@ -30,6 +30,8 @@ import PetCore
     var isVisible: Bool { gate.visible }
     private(set) var isQuiet=false
     private(set) var focusQuiet=false
+    private(set) var quietRevision:UInt64=0
+    var onQuietChange:(()->Void)?
     var effectiveQuiet:Bool {isQuiet || focusQuiet}
     private var gaze=MouseGaze()
     private var nextGazeSample: Duration?
@@ -58,13 +60,14 @@ import PetCore
     var canPresentFocusCompletion:Bool {gate.shouldRunFrames && !effectiveQuiet && !menuOpen && !settingsOpen && !interaction.isPointerBusy && action == .idle}
     func setFocusQuiet(_ enabled:Bool) {
         guard !gate.exiting,focusQuiet != enabled else{return}
-        focusQuiet=enabled
+        focusQuiet=enabled;quietRevision &+= 1
+        onQuietChange?()
         if enabled{cancelInput()}else{reschedule()}
         onStatusChange?()
     }
     func setQuiet(_ quiet:Bool) {
         guard !gate.exiting,quiet != isQuiet else{return}
-        isQuiet=quiet;cancelInput();onStatusChange?()
+        isQuiet=quiet;quietRevision &+= 1;onQuietChange?();cancelInput();onStatusChange?()
     }
     func setMenuOpen(_ open: Bool) {
         guard !gate.exiting,menuOpen != open else { return }; menuOpen=open; cancelInput()
