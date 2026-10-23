@@ -73,7 +73,7 @@ Xcode 使用 XML plist 显式登记：每个新文件建立 PBXFileReference、r
 - public `MemorySourceRound: Equatable, Sendable`：只读 `number: Int` / `user: String` / `assistant: String`。public `MemoryExtractionSnapshot: Equatable, Sendable`：`init(conversation: ChatConversation, model: ChatModel) throws`，只读 `characterID/model/memoryRevision/rounds/memories/messages`；要求1–12轮完整问答，messages 仅固定提炼规则和 JSON 编码的轮次/已存记忆，不能把自定义人设当提炼指令。
 - public `ChatMemoryCandidate: Equatable, Sendable`：App 分配的 `id: UUID`、正文 `text: String`、`sourceRounds: [Int]`。public `MemoryCandidateBatch: Equatable, Sendable`：`candidates: [ChatMemoryCandidate]`、`duplicateCount: Int`；通过 public `MemoryCandidateDecoder.decode(_ data: Data, for snapshot: MemoryExtractionSnapshot) throws -> MemoryCandidateBatch` 产生，不由模型决定 ID。
 
-- [ ] **1. 写失败用例。** `ChatMemoryTests.testCanonicalTextAndLimits` 核心断言：
+- [x] **1. 写失败用例。** `ChatMemoryTests.testCanonicalTextAndLimits` 核心断言：
   ```swift
   XCTAssertEqual(try ChatMemory(text: " e\u{301} \n").text, "é")
   XCTAssertNoThrow(try ChatMemory(text: String(repeating: "😀", count: 100)))
@@ -82,11 +82,11 @@ Xcode 使用 XML plist 显式登记：每个新文件建立 PBXFileReference、r
   XCTAssertThrowsError(try ChatMemory(text: "a\0b"))
   ```
   `testListCapacityDuplicatesAndRevision` 验证 20/21 条、重复 UUID、NFC 等价正文、修订匹配+1/不匹配/UInt64.max 拒绝。`testPromptsKeepMemoriesAfterThirteenRounds` 验证历史首轮变 u2、24条历史、memoryRevision 不变、确认记忆仍在普通 system 中，提炼 messages 不含人设标记或输入草稿。
-- [ ] **2. 写候选失败用例。** `testCandidateJSONContractAndGroundedSource` 验证 0/5 条可用、6 条拒绝、有效来源 1…实际轮数、重复来源去重、空/0/越界/错误类型来源拒绝；未知/重复键、空/超长/控制正文、任一无效项整批拒绝，16KiB+1 拒绝。`testExactDuplicateCandidatesAreReported` 断言与旧记忆/同批规范化重复只留第一项且 duplicateCount 正确，不做语义去重。
-- [ ] **3. 运行 RED。** `bash scripts/test.sh -only-testing:PetCoreTests/ChatMemoryTests -only-testing:PetCoreTests/ChatConversationTests`，确认失败来自新行为缺失而非零用例/环境错误，保存日志与退出码。
-- [ ] **4. 实现上列接口。** 保留旧输入/人设/12轮上限；StrictJSON 在提炼 content 使用 16384 字节参数，校验确切字段后再解码，避免 JSONDecoder 默认忽略未知字段。规范化与去重使用同一函数。
-- [ ] **5. 运行同一命令 GREEN。** 必须列出新增用例且零失败；原会话用例继续通过。
-- [ ] **6. 本地提交。** 精确暂存本任务文件与工程，`git commit -m "feat: model confirmed memories and grounded extraction candidates"`。
+- [x] **2. 写候选失败用例。** `testCandidateJSONContractAndGroundedSource` 验证 0/5 条可用、6 条拒绝、有效来源 1…实际轮数、重复来源去重、空/0/越界/错误类型来源拒绝；未知/重复键、空/超长/控制正文、任一无效项整批拒绝，16KiB+1 拒绝。`testExactDuplicateCandidatesAreReported` 断言与旧记忆/同批规范化重复只留第一项且 duplicateCount 正确，不做语义去重。
+- [x] **3. 运行 RED。** `bash scripts/test.sh -only-testing:PetCoreTests/ChatMemoryTests -only-testing:PetCoreTests/ChatConversationTests`，确认失败来自新行为缺失而非零用例/环境错误，保存日志与退出码。
+- [x] **4. 实现上列接口。** 保留旧输入/人设/12轮上限；StrictJSON 在提炼 content 使用 16384 字节参数，校验确切字段后再解码，避免 JSONDecoder 默认忽略未知字段。规范化与去重使用同一函数。
+- [x] **5. 运行同一命令 GREEN。** 必须列出新增用例且零失败；原会话用例继续通过。
+- [x] **6. 本地提交。** 精确暂存本任务文件与工程，`git commit -m "feat: model confirmed memories and grounded extraction candidates"`。
 
 ## Task 2：角色档案 v2 与有序记忆事务
 
