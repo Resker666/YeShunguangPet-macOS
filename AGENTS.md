@@ -123,3 +123,5 @@
 - 0.4.0设计已完成一次新只读可实施性检查，结论nothing important left；已补明新草稿不被覆盖、手动/专注安静、执行中意图跨同步回调保留、操作与记忆候选共存及DONE读取终点。仅设计检查不等于书面批准或功能验证；当前等待用户审核此设计，通过后才写实施计划。
 
 - 用户于2026-10-23明确认可0.4.0书面设计并要求进入实施计划。八项计划docs/superpowers/plans/2026-10-23-macos-quick-chat-actions.md已由主执行者自审，依次覆盖操作模型、三模式SSE、真实操作桥/修订、单次确认与原角色回执、呈现协调/完整窗、角色旁轻窗、生产菜单/帮助和回归本地交付；现等待用户审核计划，不重问已选Native/本会话原地/一次最终整体评审方式。明确保留FocusMenus原onChange、两个窗口真正关闭与交接分离、执行后仅重试回执、v2/schema13与个人状态；本轮仅文档，未写产品代码或替换日用App，未授权push/tag/Release。计划获准后的独立ledger仅.superpowers/sdd/2026-10-23-macos-quick-chat-actions/progress.md。
+
+- 用户已明确认可0.4.0八项计划并要求本会话原地实施（2026-10-24记录）；主执行者连续TDD与本地提交，最后一次独立整体评审，不逐任务确认、不新增工作树。仅恢复本计划ledger：.superpowers/sdd/2026-10-23-macos-quick-chat-actions/progress.md；仍无push/tag/Release授权，个人AI/Keychain不用于自动验证。
