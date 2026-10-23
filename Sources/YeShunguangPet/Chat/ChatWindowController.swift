@@ -159,7 +159,7 @@ import PetCore
             add(label("DeepSeek 官方接口 · https://api.deepseek.com"))
             add(enabled); add(label("模型")); add(model); add(applyConnectionButton); add(retryConnectionButton)
             add(label("API 密钥")); add(key); add(row(saveKeyButton,removeKeyButton)); add(connectionLabel)
-            add(label("点击发送会将人设、已确认长期记忆、最近 12 轮完整对话和本次文字交给 DeepSeek。点击提炼记忆会额外发送当前角色已保存问答和记忆；均按你的 API 账户计费。打开窗口或保存设置不会发送测试请求。"))
+            add(label("点击发送会将人设、已确认长期记忆、最近 12 轮完整对话、本App专注/安静运行状态和本次文字交给 DeepSeek，并附4个工具定义，增加输入 tokens。操作尚未执行，须卡片确认；确认或取消由App生成本地回执，不再请求模型。点击提炼记忆会额外发送当前角色已保存问答和记忆；均按你的 API 账户计费。打开窗口或保存设置不会发送测试请求。"))
             add(label("密钥保存在 macOS 钥匙串；连接偏好单独保存。关闭 AI 会立即停止当前请求，取消不能撤回服务商已经收到的内容。"))
             add(resetConnectionButton)
         }
@@ -226,7 +226,7 @@ import PetCore
         retryButton.isHidden = !controller.canRetryPendingSave; discardButton.isHidden = retryButton.isHidden
         resetButton.isHidden = controller.currentArchiveProtection == nil
         resetButton.isEnabled = !terminating && !controller.hasPendingWrites
-        composer.isEditable = !terminating && !controller.isGenerating && controller.state != .unsaved && controller.state != .saving
+        composer.isEditable = !terminating && controller.state != .unsaved && controller.state != .saving
         applyProfileButton.isEnabled = !terminating && controller.canEditProfile
         for field in profileFields { field.isEditable = !terminating && controller.canEditProfile }
         enabled.isEnabled = !terminating && controller.connectionLoaded && (controller.connection.enabled || controller.canChangeConnection)

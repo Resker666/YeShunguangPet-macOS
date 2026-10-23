@@ -129,11 +129,11 @@
 
 **Interfaces:** StatusBar拥有唯一`chatPresentation:ChatPresentationCoordinator?`并注册完整与快速host；现有`chatWindow`引用可保留供兼容，但所有sheet/退出判断只问聚合所有者。新`openQuickChat()`入口；原openChat显示full。`PetSession.presentChatReply(_ text:String,showBubble:Bool = true)`仅让quick可见时抑制重复气泡，挥手仍用原条件，不改变其它反馈。协议桥由Controller持有并dispose；状态订阅不能覆盖FocusMenus.onChange或session.onStatusChange。
 
-- [ ] **1. 写失败用例。** `testBothMenusOpenCorrectHostAndShareOneRequestGate`两套真实NSMenu入口、普通聊天与提炼/卡片单飞、隐藏桌宠时菜单可打开quick、换肤正确档案。`testEveryGlobalCommandSeesQuickModalAndTermination`逐个现有门控（快捷键/换肤/专注菜单/设置/帮助/诊断/退出）在quick模态拒绝，非模态继续原语义；退出仅调用一次Controller.beginTermination并等原已接受回执，取消退出不恢复卡。`testQuickReplySuppressesOnlyDuplicateBubble`原反馈可挥手、quick无额外摘要气泡、full沿旧逻辑，App整体隐藏时不以回复重新显示任何窗或气泡；安静/专注/隐藏条件维持，工具回执无普通反馈。
-- [ ] **2. 运行RED。** `bash scripts/test.sh -only-testing:PetMacTests/QuickChatIntegrationTests -only-testing:PetMacTests/ChatIntegrationTests -only-testing:PetMacTests/QuickSkinMenuTests -only-testing:PetMacTests/FocusWindowTests`。
-- [ ] **3. 实现生产接线。** 遍历现有chatWindow.hasBlockingSheet使用处统一替换聚合门控；完整与quick仅一个可见来源，真正关闭才取消。桥观察及host.dispose释放自身资源，不清别人的回调；原快捷键/皮肤/计时保存逻辑不绕过。两个窗口均按退出/取消退出同步按钮状态；App整体隐藏时抑制回复UI反馈，不能用orderFrontRegardless把隐藏App的气泡弹回。
-- [ ] **4. 更新帮助与元数据。** 0.4.0/build26；说明4种操作、确认/取消、开始会保存常用时长、单轮一卡/状态过期、API发送范围/输入token增加、结果本地生成/失败只存盘、关闭与交接区别、轻窗跟随及隐藏独立；main schema13/v2保持。完整连接页同步发送范围，历史验收版本不改。TODO两项Minor只有对应RED/GREEN实际通过后勾选。
-- [ ] **5. 同命令GREEN并提交。** 说明/版本变更后本次Green包含最终源码；`git commit -m "feat: integrate quick chat and scoped actions into app menus"`。
+- [x] **1. 写失败用例。** `testBothMenusOpenCorrectHostAndShareOneRequestGate`两套真实NSMenu入口、普通聊天与提炼/卡片单飞、隐藏桌宠时菜单可打开quick、换肤正确档案。`testEveryGlobalCommandSeesQuickModalAndTermination`逐个现有门控（快捷键/换肤/专注菜单/设置/帮助/诊断/退出）在quick模态拒绝，非模态继续原语义；退出仅调用一次Controller.beginTermination并等原已接受回执，取消退出不恢复卡。`testQuickReplySuppressesOnlyDuplicateBubble`原反馈可挥手、quick无额外摘要气泡、full沿旧逻辑，App整体隐藏时不以回复重新显示任何窗或气泡；安静/专注/隐藏条件维持，工具回执无普通反馈。
+- [x] **2. 运行RED。** `bash scripts/test.sh -only-testing:PetMacTests/QuickChatIntegrationTests -only-testing:PetMacTests/ChatIntegrationTests -only-testing:PetMacTests/QuickSkinMenuTests -only-testing:PetMacTests/FocusWindowTests`。
+- [x] **3. 实现生产接线。** 遍历现有chatWindow.hasBlockingSheet使用处统一替换聚合门控；完整与quick仅一个可见来源，真正关闭才取消。桥观察及host.dispose释放自身资源，不清别人的回调；原快捷键/皮肤/计时保存逻辑不绕过。两个窗口均按退出/取消退出同步按钮状态；App整体隐藏时抑制回复UI反馈，不能用orderFrontRegardless把隐藏App的气泡弹回。
+- [x] **4. 更新帮助与元数据。** 0.4.0/build26；说明4种操作、确认/取消、开始会保存常用时长、单轮一卡/状态过期、API发送范围/输入token增加、结果本地生成/失败只存盘、关闭与交接区别、轻窗跟随及隐藏独立；main schema13/v2保持。完整连接页同步发送范围，历史验收版本不改。TODO两项Minor只有对应RED/GREEN实际通过后勾选。
+- [x] **5. 同命令GREEN并提交。** 说明/版本变更后本次Green包含最终源码；`git commit -m "feat: integrate quick chat and scoped actions into app menus"`。
 
 ## Task 8：完整回归、一次整体评审与本地交付
 
@@ -152,4 +152,4 @@
 
 主执行者已自审而未另派计划评审：设计1/2/4/6节对应Task1–4，3节对应Task5–7，5节和存档兼容对应Task4及原FIFO，7/8节对应Task7/8；五项Review Focus已分配具体失败用例。逐项核对了新终态的全部switch、三个Controller初始化、FocusMenus独占onChange、Published先发通知、原selectPage/windowWillClose清编辑、副作用回调重入、原角色回执及两个UI聚合模态；无未定义的后续类型接口。
 
-该计划保留用户已选本会话Native/原地/一次最终评审。当前等待用户审核计划是否符合预期，通过后才按executing-plans逐任务实施；不重新要求选择执行方式。本轮仅文档，不运行新增功能测试、改个人App或触碰私人AI/Keychain；本版push/tag/Release仍无授权。
+该计划保留用户已选本会话Native/原地/一次最终评审。用户已明确批准计划及本会话实施，Tasks1–7已按executing-plans完成；当前进入Task8完整回归、一次最终评审与本地交付。测试仅临时资料与假凭据，不触碰私人AI/Keychain；本版push/tag/Release仍无授权。

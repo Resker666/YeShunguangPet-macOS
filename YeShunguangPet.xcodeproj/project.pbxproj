@@ -1528,6 +1528,8 @@
 				<string>BE5F2FEF390BCF5CFD73E877</string>
 				<string>F4055AD4C417A7B997B3B7D6</string>
 				<string>B7D00418472E18D499DA0FA4</string>
+				<string>6C2CBDCD83548A6DDB2CF138</string>
+				<string>D9EAE75DE244EB35EDD642A4</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1896,6 +1898,7 @@
 				<string>9FEE7B9DFEA17532CEB2D6C5</string>
 				<string>706883BF9D59693E6C8CD7EE</string>
 				<string>7CDC293A3D2110A017FDEE92</string>
+				<string>7AA749A9CB0B35678EF38B99</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -4387,6 +4390,31 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>7CDC293A3D2110A017FDEE92</string>
+		</dict>
+		<key>7AA749A9CB0B35678EF38B99</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/QuickChatIntegrationTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>6C2CBDCD83548A6DDB2CF138</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>7AA749A9CB0B35678EF38B99</string>
+		</dict>
+		<key>D9EAE75DE244EB35EDD642A4</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>251F45C0E1840C689B7772AB</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

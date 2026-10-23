@@ -30,6 +30,7 @@ import Darwin
     }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         if terminationPending { return .terminateLater }
+        if status?.chatPresentation?.hasBlockingSheet == true || status?.settingsController?.hasBlockingSheet == true || NSApp.modalWindow != nil { return .terminateCancel }
         status?.beginTermination()
         let model=status?.skinModel
         let chat=status?.chat

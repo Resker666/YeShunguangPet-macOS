@@ -1,6 +1,6 @@
 # YeShunguangPet macOS
 
-为 Mac mini M4 日常使用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前源码版本 **0.3.0 / build25**，在 DeepSeek 角色聊天基础上增加需要用户确认的长期记忆；最低 macOS14.0。本版已完成本地回归、双架构打包及ARM日用App更新，用户已授权普通推送；未打标签或发布，真实提炼体验待确认，结果与两项轻微已知问题见[记忆验证](docs/character-memory-validation.md)。原0.1.22聊天验收及0.2.0打包/云端记录保留在[聊天验证](docs/deepseek-chat-validation.md)和[版本提升记录](docs/milestone-0.2.0-validation.md)，不代替本版记忆提炼实测。
+为 Mac mini M4 日常使用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前源码版本 **0.4.0 / build26**，增加角色旁轻聊天与经用户确认的App专注/手动安静操作，最低macOS14.0。实现与本地交付验证进行中；实际结果见后续验证文档，不以功能代码代替真实API或用户验收。未授权本版推送、标签或Release。
 
 此前完成0.1.20待机、隐藏、安静与专注各10分钟同源资源采样，并发现真实跨日崩溃。原始条件、结果、失败复测和0.1.21修复验证见[资源调查记录](docs/resource-baseline-validation.md)；这些数据不代表功耗、过夜稳定性或新版性能提升。
 
@@ -18,7 +18,15 @@
 
 备用ZIP含对应架构的App和安装说明；安装、更新、卸载及配置保留说明见 [安装说明](docs/installation.txt)。0.1.1分发记录见 [分发记录](docs/distribution-validation.md)；双架构构建证据和限制见 [Intel测试包记录](docs/intel-validation.md)。
 
-## 0.3.0 角色聊天与长期记忆
+## 0.4.0 轻聊天与确认操作
+
+菜单栏和角色右键提供「快速聊天…」与「完整聊天…」。轻窗跟随角色，约360×300，最小320×240，可调整大小、失焦保留；隐藏桌宠后仍可用。最近一轮及本轮用原生纯文字分句显示；两窗共享草稿、光标、请求和候选，展开/交接不断流。真正关闭会停止未接受请求并丢弃未确认卡片/记忆编辑，已接受写入照常完成。Enter换行、⌘Enter发送；输入法组合中禁止提交、交接及Esc关闭。
+
+自然语言每轮最多提议一项：开始明确的1–120分钟专注（先保存为常用时长，休息时长不变，仅准备专注时可用）、暂停或继续当前专注、设置手动安静目标。操作卡始终先显示「尚未执行」，确认时复核真实状态；状态改走又改回也不会恢复旧卡。继续不能开始休息，关闭手动安静不会解除专注安静。
+
+发送会增加4个工具定义和本App专注/安静运行资料，增加输入tokens。确认/取消不再请求API或钥匙串，结果由App生成「App操作回执」并保存为一轮完整问答。执行后回执保存失败只重试本地，不重复操作；丢弃记录不会撤销已执行结果。历史和人设文字不能自动执行操作；不支持App以外的操作。主配置schema13、角色档案v2、人设/12轮/记忆保持。
+
+## 角色聊天与长期记忆
 
 从菜单栏爪印或角色右键打开「聊天…」，在独立窗口的「连接」页开启 AI、选择 DeepSeek 模型并保存 API 密钥。密钥只在 App 中填写并保存到钥匙串，不写入配置或日志；启动和保存设置不会自动请求模型。
 
@@ -136,7 +144,7 @@ python3 scripts/smoke-app.py --app /绝对路径/YeShunguangPet.app --check-rest
 
 构建需要 Xcode；使用 App 不需要。默认ARM App在`dist/YeShunguangPet.app`，Intel App在`dist/x86_64/YeShunguangPet.app`。两者主程序和嵌入框架架构必须一致；打包核对所选架构、Info.plist声明和两个Mach-O的实际macOS 14.0最低版本，拒绝错误标签、混合框架或最低版本不符的包。
 
-打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.3.0-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.19已公开发布八份附件，标签及云端包来源为`37a73f0cd163dbb172300d0df269a4b7575180b5`，两路CI通过并获本台黑苹果整体体验通过反馈；本地历史交付包来源仍为`5164ba9`。0.1.20从干净来源`e15b739`本地交付，后续已普通同步`a90c5e1`且两路CI通过。0.1.21本地App/八附件来自干净`76f9c615563b42359041f12ea38999ba516dfd6e`，已安装运行；用户已授权普通同步和云端核验，未授权标签或Release。
+打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.4.0-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.19已公开发布八份附件，标签及云端包来源为`37a73f0cd163dbb172300d0df269a4b7575180b5`，两路CI通过并获本台黑苹果整体体验通过反馈；本地历史交付包来源仍为`5164ba9`。0.1.20从干净来源`e15b739`本地交付，后续已普通同步`a90c5e1`且两路CI通过。0.1.21本地App/八附件来自干净`76f9c615563b42359041f12ea38999ba516dfd6e`，已安装运行；用户已授权普通同步和云端核验，未授权标签或Release。
 
 App 图标由原仓库 ICO 转换，原图256×256；大尺寸仅作缩放，不新增绘制细节。需要重新生成时运行 `bash tools/make-icon.sh`，使用系统 sips/iconutil，无外部图像工具依赖。
 

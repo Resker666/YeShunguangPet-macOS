@@ -346,10 +346,10 @@ import PetCore
         if speechBubble==nil {speechBubble=SpeechBubble()}
         if speechBubble?.show(text,owner:panel,area:area)==true {speech=candidate;speechDeadline=now() + .seconds(6);speechShownCount += 1}
     }
-    func presentChatReply(_ text: String) {
-        guard canPresentFocusCompletion else { return }
+    func presentChatReply(_ text: String,showBubble:Bool = true) {
+        guard !NSApp.isHidden,canPresentFocusCompletion else { return }
         play(.waving)
-        guard preferences.speechEnabled,
+        guard showBubble,preferences.speechEnabled,
               let area=WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens())?.visibleFrame else { return }
         if speechBubble == nil { speechBubble = SpeechBubble() }
         if speechBubble?.show(ChatText.excerpt(text),owner:panel,area:area) == true {

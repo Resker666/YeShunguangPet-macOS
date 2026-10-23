@@ -139,8 +139,8 @@ struct FocusPresetCommand:Hashable {let minutes:Int,generation:UInt64}
         let changed=value != snapshot
         let commandChanged=value.phase != snapshot.phase || value.status != snapshot.status || value.durationSeconds != snapshot.durationSeconds || cachedFocusMinutes != focusMinutes || cachedBreakMinutes != breakMinutes
         cachedFocusMinutes=focusMinutes;cachedBreakMinutes=breakMinutes
-        if changed{snapshot=value}
         if commandChanged{actionRevision &+= 1}
+        if changed{snapshot=value}
         session?.setFocusQuiet(policy.phase == .focus && policy.status == .running && !disposed)
         scheduler.cancel()
         if canOperate,!sleeping,policy.status == .running,let deadline=policy.deadline {
