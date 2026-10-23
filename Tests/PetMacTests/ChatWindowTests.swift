@@ -142,4 +142,15 @@ import PetCore
         await f.close()
     }
 
+    func testExtractionDoesNotLabelStoppedPartialAsGenerating() async throws {
+        let f = try ChatControllerFixture(); addTeardownBlock { await f.close() }; try await f.open()
+        try await f.send("已保存问题", answer: "已保存回答", index: 0)
+        let window = ChatWindowController(controller: f.controller, onPresentationChange: { _ in }); defer { window.dispose() }
+        f.controller.setDraft("中断问题"); f.controller.send(); try await chatEventually { f.client.count == 2 }
+        f.client.emit(1, "中断的半条回复"); try await chatEventually { !f.controller.partialReply.isEmpty }; f.controller.stop()
+        f.controller.extractMemories(); try await chatEventually { f.memoryClient.count == 1 }; window.render()
+        XCTAssertTrue(window.transcript.string.contains("未完成，不计入历史"))
+        XCTAssertFalse(window.transcript.string.contains("生成中"))
+    }
+
 }

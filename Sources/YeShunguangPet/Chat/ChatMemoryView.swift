@@ -82,6 +82,7 @@ import PetCore
     private func empty(_ stack: NSStackView) {
         for view in stack.arrangedSubviews { stack.removeArrangedSubview(view); view.removeFromSuperview() }
     }
+    var hasMarkedInput: Bool { editor.hasMarkedText() || candidateFields.values.contains { $0.hasMarkedText() } }
     func resetDrafts() {
         editingID = nil; editorContext = nil; editor.string = ""; editorSection.isHidden = true
     }

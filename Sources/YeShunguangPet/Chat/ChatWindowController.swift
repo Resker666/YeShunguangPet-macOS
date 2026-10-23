@@ -2,10 +2,14 @@ import AppKit
 import Combine
 import PetCore
 
-@MainActor final class ChatWindowController: NSWindowController, NSWindowDelegate {
+@MainActor final class ChatWindowController: NSWindowController, NSWindowDelegate, ChatPresentationHosting {
     let controller: ChatController
     let pages = NSSegmentedControl(labels:["对话","人设","记忆","连接"],trackingMode:.selectOne,target:nil,action:nil)
     private var memoryView: ChatMemoryView!
+    private var actionCard: ChatActionCardView!
+    var onQuickChat: (() -> Void)?
+    private var presentationClose: (() -> Void)?, presentationVisibility: (() -> Void)?
+    private var managed: Bool { presentationClose != nil }
     let pageScroll = NSScrollView()
     let transcript = NSTextView()
     let composer = ChatComposer()
@@ -40,6 +44,9 @@ import PetCore
         memoryView = ChatMemoryView(controller: controller, hasBlockingModal: { [weak self] in
             guard let self else { return true }; return self.terminating || self.disposed || self.hasBlockingSheet
         }, confirm: { [weak self] title, detail, action in self?.confirm(title, detail, perform: action) })
+        actionCard = ChatActionCardView(controller: controller, hasBlockingModal: { [weak self] in
+            guard let self else { return true }; return self.terminating || self.disposed || self.hasBlockingSheet || self.hasMarkedInput
+        })
         window.delegate = self; window.center()
         let root = NSStackView(); root.orientation = .vertical; root.alignment = .leading; root.spacing = 12
         root.edgeInsets = NSEdgeInsets(top:16,left:16,bottom:16,right:16)
@@ -133,7 +140,10 @@ import PetCore
         for view in content.arrangedSubviews { content.removeArrangedSubview(view); view.removeFromSuperview() }
         switch page {
         case 0:
+            let quick = NSButton(title: "轻聊天…", target: self, action: #selector(openQuickChat))
+            quick.bezelStyle = .rounded; add(quick)
             add(textBox(transcript,height:240))
+            add(actionCard)
             add(label("输入最多 2000 个 UTF-16 单元。Enter 换行，⌘Enter 发送。"))
             add(textBox(composer,height:76))
             add(row(sendButton,stopButton,copyButton))
@@ -184,7 +194,7 @@ import PetCore
         var text = messages.map { ($0.role == .user ? "你" : context?.name ?? "角色") + "：\n" + $0.content }.joined(separator:"\n\n")
         if let input=controller.currentProvisionalInput { text += "\n\n你（本次）：\n" + input }
         if !controller.partialReply.isEmpty {
-            text += "\n\n本次回复（\(controller.state == .unsaved ? "完整但尚未保存" : controller.isGenerating ? "生成中" : "未完成，不计入历史")）：\n" + controller.partialReply
+            text += "\n\n本次回复（\(controller.state == .unsaved ? "完整但尚未保存" : controller.isGeneratingConversation ? "生成中" : "未完成，不计入历史")）：\n" + controller.partialReply
         }
         let oldSelection = transcript.selectedRange()
         if transcript.string != text {
@@ -228,30 +238,63 @@ import PetCore
         resetConnectionButton.isHidden = controller.connectionProtection == nil
         resetConnectionButton.isEnabled = !terminating && controller.canChangeConnection
         connectionLabel.stringValue = [controller.connectionProtection,controller.connectionError,controller.credentialMutationError,controller.credentialFeedback].compactMap{$0}.joined(separator:"\n")
-        memoryView.render()
+        memoryView.render(); actionCard.render()
     }
+    var isPresentationVisible: Bool { !disposed && window?.isVisible == true && window?.isMiniaturized == false && !NSApp.isHidden }
+    var hasMarkedInput: Bool {
+        composer.hasMarkedText() || profileFields.contains { $0.hasMarkedText() } || memoryView.hasMarkedInput
+            || (window?.firstResponder as? NSTextView)?.hasMarkedText() == true
+    }
+    var inputSelection: NSRange {
+        get { composer.selectedRange() }
+        set { composer.setSelectedRange(ChatInputSelection.clamped(newValue, in: composer.string)) }
+    }
+    func setPresentationCallbacks(onClose: @escaping () -> Void, onVisibility: @escaping () -> Void) {
+        presentationClose = onClose; presentationVisibility = onVisibility
+    }
+    func presentForHandoff(selection: NSRange) {
+        guard !disposed, !terminating, !hasBlockingSheet, !hasMarkedInput else { return }
+        // Returning to conversation must not run selectPage's persona-reset rule.
+        if page != 0 { page = 0; pages.selectedSegment = 0; rebuildPage() }
+        render(); inputSelection = selection
+        window?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
+        window?.makeFirstResponder(composer); updatePresentation()
+    }
+    func hideForHandoff() { window?.orderOut(nil); updatePresentation() }
+    func resetLogicalDrafts() { key.stringValue = ""; reloadProfile(); memoryView.resetDrafts() }
+    func windowShouldClose(_ sender: NSWindow) -> Bool { !terminating && !hasBlockingSheet && !hasMarkedInput }
+    override func cancelOperation(_ sender: Any?) {
+        guard !hasMarkedInput, !hasBlockingSheet, !terminating else { return }
+        if managed { presentationClose?() } else { close() }
+    }
+    @objc private func openQuickChat() { guard !hasMarkedInput, !hasBlockingSheet, !terminating else { return }; onQuickChat?() }
     func present() {
         guard !disposed, !terminating, !hasBlockingSheet else { return }
         render(); window?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps:true); updatePresentation()
     }
     private func updatePresentation() {
         let visible = !disposed && window?.isVisible == true && window?.isMiniaturized == false && !NSApp.isHidden
-        controller.setPresented(visible); onPresentationChange(visible)
+        if managed { presentationVisibility?() }
+        else { controller.setPresented(visible); onPresentationChange(visible) }
     }
     @objc private func appVisibilityChanged(_ notification:Notification) { updatePresentation() }
     func windowDidMiniaturize(_ notification:Notification) { updatePresentation() }
     func windowDidDeminiaturize(_ notification:Notification) { updatePresentation() }
     func windowDidEndSheet(_ notification:Notification) { render() }
     func windowWillClose(_ notification:Notification) {
-        controller.windowClosed(); key.stringValue = ""; reloadProfile(); memoryView.resetDrafts()
-        controller.setPresented(false); onPresentationChange(false)
+        if managed { presentationClose?() }
+        else {
+            controller.windowClosed(); resetLogicalDrafts()
+            controller.setPresented(false); onPresentationChange(false)
+        }
     }
     func beginTermination() { terminating = true; render() }
     func cancelTermination() { terminating = false; render() }
     func dispose() {
         guard !disposed else { return }; disposed = true; observation = nil
         NotificationCenter.default.removeObserver(self)
-        window?.delegate = nil; window?.orderOut(nil); onPresentationChange(false); controller.setPresented(false)
+        window?.delegate = nil; window?.orderOut(nil)
+        if !managed { onPresentationChange(false); controller.setPresented(false) }
         key.stringValue = ""
     }
     @objc private func send() { guard !terminating, !hasBlockingSheet, !composer.hasMarkedText() else { return }; controller.send() }

@@ -1067,6 +1067,8 @@
 				<string>69A57F64A063D7863276D38E</string>
 				<string>7EFE9F2728C337D3D4B73555</string>
 				<string>7C99D4190C8F5E403DC220A6</string>
+				<string>BE3C6DB1C8416F0041C27AEF</string>
+				<string>2A76E14C0A7C182AE4FF041B</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1517,6 +1519,10 @@
 				<string>313D13B1E2158DA9335125F7</string>
 				<string>6903B619AFB13805046098BE</string>
 				<string>EB82033CC2B94E07AA4E2448</string>
+				<string>A7EDE3868DC60DAD318CF503</string>
+				<string>2A9E91E5A965C944D38AD875</string>
+				<string>74F5417A0FC8C1D858C2913D</string>
+				<string>BE5F2FEF390BCF5CFD73E877</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1877,6 +1883,10 @@
 				<string>5D58D81D710C70437274C729</string>
 				<string>F76D434AB77056E3A7179FD2</string>
 				<string>CF329C0605DA95DD0E0F8BFD</string>
+				<string>5A7BA1AB625EED5B239BDA36</string>
+				<string>12584FBAADC628F426EB7D4B</string>
+				<string>5BA0E13E9FEC9A8DC6E34DFC</string>
+				<string>DFE6A6A5E1DD47D77E32B620</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -4203,6 +4213,92 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>CF329C0605DA95DD0E0F8BFD</string>
+		</dict>
+		<key>5A7BA1AB625EED5B239BDA36</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/ChatPresentationTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>A7EDE3868DC60DAD318CF503</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>5A7BA1AB625EED5B239BDA36</string>
+		</dict>
+		<key>12584FBAADC628F426EB7D4B</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/ChatActionWindowTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>2A9E91E5A965C944D38AD875</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>12584FBAADC628F426EB7D4B</string>
+		</dict>
+		<key>5BA0E13E9FEC9A8DC6E34DFC</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Chat/ChatPresentationCoordinator.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>BE3C6DB1C8416F0041C27AEF</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>5BA0E13E9FEC9A8DC6E34DFC</string>
+		</dict>
+		<key>74F5417A0FC8C1D858C2913D</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>5BA0E13E9FEC9A8DC6E34DFC</string>
+		</dict>
+		<key>DFE6A6A5E1DD47D77E32B620</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Chat/ChatActionCardView.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>2A76E14C0A7C182AE4FF041B</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>DFE6A6A5E1DD47D77E32B620</string>
+		</dict>
+		<key>BE5F2FEF390BCF5CFD73E877</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>DFE6A6A5E1DD47D77E32B620</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>
