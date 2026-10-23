@@ -185,10 +185,10 @@ XCTAssertEqual(state.messages.last?.content, "a13")
 
 **Files:** 创建 `docs/deepseek-chat-validation.md`；更新 `README.md` / `TODO.md` / `AGENTS.md` 和本计划复选框；如需把包内排除聊天资料作为回归，修改 `Tests/Distribution/test_distribution.py`，不写仅检查实现字符串的用例。隔离探针/截图/日志放忽略目录 `.build/deepseek-chat-validation`。
 
-- [ ] **1. 完整验证。** `bash scripts/test.sh`；`python3 -m unittest discover -s Tests/Release -v`。报告实际原生数量和 13 项离线发版结果；新失败先定位，不预填通过数字。复核官方当前模型/API 合同，只查文档，不用任何日用密钥发请求。
-- [ ] **2. 隔离原生探针。** 用临时 YSGPET_SETTINGS_PATH、假凭据及可控流跑三套旧皮肤/12 轮重开/坏档案/晚到流/保存失败/清空/双窗口/退出；优化 Bundle 验证窗口与气泡可见和资源关闭，截图用原生缓存或可用 UI 工具并准确注明。真实 SecItem 仅随机测试 namespace，若不可用留未测；不触碰正式凭据或登录项。
-- [ ] **3. 单次独立整体代码评审。** 审核 `7e87dd5..当前实现提交` 的设计覆盖、线程、状态、文件与网络边界。Important/Critical 先复现再修复、跑相关与必要完整回归；不自动派第二次独立整体评审。修复/验证记录与交付说明先本地提交，随后用于干净构建。
-- [ ] **4. 干净双架构构建和打包。** 确认 git status 干净，顺序运行：
+- [x] **1. 完整验证。** `bash scripts/test.sh`；`python3 -m unittest discover -s Tests/Release -v`。报告实际原生数量和 13 项离线发版结果；新失败先定位，不预填通过数字。复核官方当前模型/API 合同，只查文档，不用任何日用密钥发请求。
+- [x] **2. 隔离原生探针。** 用临时 YSGPET_SETTINGS_PATH、假凭据及可控流跑三套旧皮肤/12 轮重开/坏档案/晚到流/保存失败/清空/双窗口/退出；优化 Bundle 验证窗口与气泡可见和资源关闭，截图用原生缓存或可用 UI 工具并准确注明。真实 SecItem 仅随机测试 namespace，若不可用留未测；不触碰正式凭据或登录项。
+- [x] **3. 单次独立整体代码评审。** 审核 `7e87dd5..当前实现提交` 的设计覆盖、线程、状态、文件与网络边界。Important/Critical 先复现再修复、跑相关与必要完整回归；不自动派第二次独立整体评审。修复/验证记录与交付说明先本地提交，随后用于干净构建。
+- [x] **4. 干净双架构构建和打包。** 确认 git status 干净，顺序运行：
 ```bash
 bash scripts/build-app.sh arm64
 bash scripts/build-app.sh x86_64
@@ -197,9 +197,9 @@ bash scripts/package-app.sh x86_64
 python3 -m unittest discover -s Tests/Distribution -v
 ```
   核对干净来源 SHA、0.1.22/build23、架构/最低14.0/签名/原素材/依赖/库存/八文件摘要；包不含 AI 个人档案或凭据。用 `scripts/prepare-release.py --help` 核对现有参数，再按现有 `--check-only` 路径离线核验八附件，不触发远端草稿。
-- [ ] **5. ARM 离工程重开。** 从最终 DMG 复制到真正包含中文与空格的临时路径，弹出 DMG 后 `python3 scripts/smoke-app.py --app <实际绝对路径> --check-restore`，配置和素材均隔离；核对 App/DMG/ZIP 库存一致。失败保留日志，未查清不能记已修复；Intel 交叉构建不记作运行通过。
-- [ ] **6. 本机安装。** 按准确路径正常退出旧 App，保留旧 App 与退出后配置备份；安装最终干净 ARM App 到 /Applications 并启动。对比 schema13 的全部既有字段、素材选择与位置；本次 AI 默认关闭，不登记登录项或读取/填写密钥。证据不输出个人字段原文。
-- [ ] **7. 交付与验收入口。** 记录来源 SHA、真实通过/失败/未测项与回滚备份位置，提交文档收尾。用户在 App 的连接页自行填写 DeepSeek 密钥并发送，检查流式回复、停止、换角色与重开；没有该实际操作就写“真实 DeepSeek 往返未测”。中文输入法、物理交互/焦点、实际钥匙串提示、系统睡眠/Spaces/多屏/Gatekeeper/本版 Intel 仍按观察范围记录，不推送或发布。
+- [x] **5. ARM 离工程重开。** 从最终 DMG 复制到真正包含中文与空格的临时路径，弹出 DMG 后 `python3 scripts/smoke-app.py --app <实际绝对路径> --check-restore`，配置和素材均隔离；核对 App/DMG/ZIP 库存一致。失败保留日志，未查清不能记已修复；Intel 交叉构建不记作运行通过。
+- [x] **6. 本机安装。** 按准确路径正常退出旧 App，保留旧 App 与退出后配置备份；安装最终干净 ARM App 到 /Applications 并启动。对比 schema13 的全部既有字段、素材选择与位置；本次 AI 默认关闭，不登记登录项或读取/填写密钥。证据不输出个人字段原文。
+- [x] **7. 交付与验收入口。** 记录来源 SHA、真实通过/失败/未测项与回滚备份位置，提交文档收尾。用户在 App 的连接页自行填写 DeepSeek 密钥并发送，检查流式回复、停止、换角色与重开；没有该实际操作就写“真实 DeepSeek 往返未测”。中文输入法、物理交互/焦点、实际钥匙串提示、系统睡眠/Spaces/多屏/Gatekeeper/本版 Intel 仍按观察范围记录，不推送或发布。
 
 ## 计划自审记录
 

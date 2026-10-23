@@ -42,3 +42,22 @@
 真实 DeepSeek 完整往返、账户权限/余额/限速、正式钥匙串保存/替换提示与更新授权，均未测。请在本地 App 的连接页自行填写密钥，验证流式回复、停止、换角色及重开续聊；不要把密钥粘贴到聊天或提交到仓库。
 
 真实中文输入法、物理键鼠与焦点、睡眠/唤醒、Spaces、多屏、Gatekeeper、下一次真实午夜和本版 Intel/Sonoma 运行仍按实际证据确认。程序化 marked-text/通知/窗口动作不等于这些系统场景已通过。未装Xcode外机、强制结束/断电的未保存草稿耐久也不作通过承诺。
+
+## 最终分发与本机安装
+
+最终干净来源 **520f29801580233ef43f5fd7c9a40bdb66f9bd70**。arm64与x86_64 App均为0.1.22/build23，App与PetCore Mach-O最低14.0；签名、系统依赖、原JSON/PNG哈希、DMG/ZIP完整库存及八份附件摘要通过。包内仅有随附皮肤和build-info两份JSON，无个人AI档案或凭据。13项真实分发回归、八附件离线发版校验通过；未联系GitHub创建草稿或发布。
+
+ARM从最终DMG复制到真正含中文与空格的临时路径，弹出DMG后在离工程、无有效开发工具路径的环境独立启动、保存并重开恢复位置通过。这是本机搬移验证；不当作另一台Mac、Gatekeeper首开或Intel运行通过。Intel本版仅交叉构建和分发检查。
+
+日用App已更新至 **/Applications/YeShunguangPet.app** 并运行。按准确可执行文件路径正常退出旧0.1.21后备份，再安装最终ARM；安装库存与干净分发App逐文件一致。第一次正常启动/退出核对schema13→13，所有原偏好、皮肤选择、迁移时位置、快捷键、个人台词、专注时长/窗口和已存统计保留。AI目录未变，默认关闭，未访问正式钥匙串或登记/撤销正式登录项。
+
+回滚备份在本机忽略目录：
+
+- .build/deepseek-chat-validation/previous-installed-0.1.21.app
+- .build/deepseek-chat-validation/personal-settings-migration-baseline.json（旧App正常退出后）
+
+若需回滚，先正常退出当前App，再用备份App恢复到Applications；配置恢复应先另存后续新增设置。证据含个人配置备份，不进入Git或安装包。
+
+原始证据、修复RED/GREEN、单次评审摘要、优化验证器与原生缓存、最终包核对和安装布尔报告保存在 .build/deepseek-chat-validation（执行账本/日志另存其中sdd-evidence）。后续收尾文档提交不改变上述App/包的520f298来源。当前分支codex/macos-deepseek-chat只本地保留，未合并main、推送、打标签或发布。
+
+流程决定：遵循计划第7任务，在干净打包前完成单次整体评审与修复，使最终包包含修正；若打包另有问题，该阶段不再有独立代码评审，由分发回归和离工程重开把关。

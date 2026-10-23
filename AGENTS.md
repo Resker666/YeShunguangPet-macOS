@@ -101,3 +101,4 @@
 
 - 0.1.22聊天功能已依用户批准计划本会话原地实施：固定DeepSeek官方API、默认关闭/非思考模式、独立AppKit三页窗、manifest.id隔离最近12轮；主schema13与原皮肤字节不变。AI目录随settings.url隔离；密钥仅App UI→Keychain，自动化用假凭据/网络，不访问正式项。独立FIFO负责已接受写入，网络代次只取消未接受结果；所有角色待存结果纳入退出，本地重试不再调用API。
 - 0.1.22单次最终只读评审7e87dd5..d35086e为0Critical/3Important/0Minor；异步人设初始渲染、写入中关闭AI和发送按钮组合输入三项均先真实回归复现后单轮修复，16项相关及完整372项原生（137Core/235Mac）、13项离线发版通过，无第二次独立评审。最终干净包/本地安装与未测项以docs/deepseek-chat-validation.md实际补记为准。未授权本版push/tag/Release，真实API与正式钥匙串/物理输入/系统/本版Intel仍待验证。
+- 0.1.22本地交付完成：干净520f298双架构App/八附件，13项分发、八附件离线校验、最低14.0/签名/原素材/依赖/库存/数据排除及ARM真正中文空格搬移重开通过。评审修复后优化同源隔离探针重跑通过，不等于分发二进制/真实API/物理输入。Applications已安装运行0.1.22/build23，旧App和退出后配置备份，schema13全部原字段及AI目录保持；默认AI关闭、未读正式密钥或改登录项。来源520f298不受后续文档提交影响；仅本地codex/macos-deepseek-chat，未合并main或push/tag/Release。详见docs/deepseek-chat-validation.md与忽略证据目录。
