@@ -12,7 +12,7 @@
 
 **执行方式:** 保留用户此前明确选择的 Native：本会话由主执行者依次实施、按任务自测提交，最后安排一次独立整体代码评审。辅助代理仅作只读事实核对，不按任务另开实现/评审会话，不额外建工作树。
 
-**状态:** 用户已认可书面设计并要求进入实施计划；本计划等待审核，尚未开始产品代码。仓库 `/Users/resker/develop/github/YeShunguangPet-macOS`；分支 `codex/macos-deepseek-chat`；产品基线 `7e87dd5`，设计提交 `3f37718`。相对路径均从仓库根起算。
+**状态:** 用户已认可书面设计并要求进入实施计划；用户已于2026-10-23明确批准本计划并要求按本会话方式实施，现按任务执行。仓库 `/Users/resker/develop/github/YeShunguangPet-macOS`；分支 `codex/macos-deepseek-chat`；产品基线 `7e87dd5`，设计提交 `3f37718`。相对路径均从仓库根起算。
 
 ## Global Constraints
 
@@ -72,7 +72,7 @@ Xcode 工程使用 XML plist 显式登记，没有目录自动同步或生成器
 - `ChatPromptSnapshot(characterID: String, characterName: String, conversation: ChatConversation, model: ChatModel, input: String) throws`，产生只读 `characterID/model/messages`，校验角色一致后冻结 system/完整历史/current user。
 - `ChatText.validate(_ text: String, maxUTF16: Int, allowEmpty: Bool) throws`、`ChatText.excerpt(_ text: String, limit: Int = 80) -> String`；统一受控的本地错误文案，不拼接服务端原文。
 
-- [ ] **1. 写失败用例。** `testThirteenPairsRetainsNewestTwelve` 的核心断言：
+- [x] **1. 写失败用例。** `testThirteenPairsRetainsNewestTwelve` 的核心断言：
 ```swift
 var state = try ChatConversation(characterID: "ye-shunguang")
 for i in 1...13 { state = try state.appending(user: "u\(i)", assistant: "a\(i)") }
@@ -81,10 +81,10 @@ XCTAssertEqual(state.messages.first?.content, "u2")
 XCTAssertEqual(state.messages.last?.content, "a13")
 ```
   加入 `testUTF16AndWholeGraphemeLimits`：1000 个普通 emoji 用户输入可用、1001 个拒绝；回复 8000 单元可用、8001 拒绝；80 单元摘录不切断家庭组合 emoji。`testProfileAndPromptContract` 断言四项上限 2000/1000/1000/2000、允许空人设/普通换行、拒绝 NUL/空输入/错角色/奇数或错误角色序列，提示只含人设、历史与当前输入。
-- [ ] **2. 运行 RED。** `bash scripts/test.sh -only-testing:PetCoreTests/ChatConversationTests`；确认缺少新行为/类型导致失败，而非测试未登记。
-- [ ] **3. 实现上述模型和函数。** 角色 ID 使用清单的小写 ID 合同，档案不允许 system 消息；以整轮截断，当前草稿不加入会话；摘录包含省略号也不超过 80 UTF-16 单元。
-- [ ] **4. 运行同一命令验证 GREEN。** 日志列出该类全部实际用例且零失败。
-- [ ] **5. 提交。** `git add Sources/PetCore/Chat/ChatModels.swift Sources/PetCore/Chat/ChatText.swift Tests/PetCoreTests/ChatConversationTests.swift YeShunguangPet.xcodeproj/project.pbxproj`；`git commit -m "feat: model bounded character conversations and persona prompts"`。
+- [x] **2. 运行 RED。** `bash scripts/test.sh -only-testing:PetCoreTests/ChatConversationTests`；确认缺少新行为/类型导致失败，而非测试未登记。
+- [x] **3. 实现上述模型和函数。** 角色 ID 使用清单的小写 ID 合同，档案不允许 system 消息；以整轮截断，当前草稿不加入会话；摘录包含省略号也不超过 80 UTF-16 单元。
+- [x] **4. 运行同一命令验证 GREEN。** 日志列出该类全部实际用例且零失败。
+- [x] **5. 提交。** `git add Sources/PetCore/Chat/ChatModels.swift Sources/PetCore/Chat/ChatText.swift Tests/PetCoreTests/ChatConversationTests.swift YeShunguangPet.xcodeproj/project.pbxproj`；`git commit -m "feat: model bounded character conversations and persona prompts"`。
 
 ## Task 2：独立档案、保护与原子保存
 
@@ -207,4 +207,4 @@ python3 -m unittest discover -s Tests/Distribution -v
 - 接口：Task 1 先定义不可变 Sendable 值，Task 2 同步 store 仅由 Task 4 后台 worker 持有；Task 5 消费统一 ChatPersisting/ChatStreaming/ChatCredentialStoring，Task 6 不另建第二份会话或替换已有回调。
 - 比例：七个可独立验证的交付任务；工程登记/夹具跟随各自任务，未拆出无产物的 setup 任务，也未预写实现函数体。
 - Review Focus 五项均映射到具名用例；StrictJSON 现有上限、逻辑测试重复编译 App 源码、无状态回调的睡眠与主循环初始化顺序已明确处理。
-- 本文为待审核实施计划；复选框未执行，未声称测试/构建/真实服务或新 App 已通过。审核后保留 Native、本会话执行与单次独立最终评审方式。
+- 本文已获用户审核；复选框按实际执行更新，测试/构建/真实服务或新 App 状态以日志为准。保留 Native、本会话执行与单次独立最终评审方式。
