@@ -201,7 +201,7 @@ import PetCore
         }
         statusLabel.stringValue = "\(context?.name ?? "") · \(context?.id ?? "")\n" + (controller.error ?? phase)
         statusLabel.textColor = controller.error == nil ? .secondaryLabelColor : .systemRed
-        sendButton.isEnabled = !terminating && !hasBlockingSheet && controller.canSend
+        sendButton.isEnabled = !terminating && !hasBlockingSheet && !composer.hasMarkedText() && controller.canSend
         stopButton.isEnabled = !terminating && controller.isGenerating
         copyButton.isEnabled = !terminating && (!controller.partialReply.isEmpty || messages.last != nil)
         clearButton.isEnabled = !terminating && controller.canClearHistory
@@ -211,7 +211,7 @@ import PetCore
         composer.isEditable = !terminating && !controller.isGenerating && controller.state != .unsaved && controller.state != .saving
         applyProfileButton.isEnabled = !terminating && controller.canEditProfile
         for field in profileFields { field.isEditable = !terminating && controller.canEditProfile }
-        enabled.isEnabled = !terminating && controller.connectionLoaded && (!controller.isGenerating || controller.connection.enabled)
+        enabled.isEnabled = !terminating && controller.connectionLoaded && (controller.connection.enabled || controller.canChangeConnection)
         model.isEnabled = !terminating && controller.canChangeConnection
         applyConnectionButton.isEnabled = !terminating && controller.canChangeConnection && controller.connectionProtection == nil
         retryConnectionButton.isHidden = !controller.canRetryConnectionSave
@@ -245,7 +245,7 @@ import PetCore
         window?.delegate = nil; window?.orderOut(nil); onPresentationChange(false); controller.setPresented(false)
         key.stringValue = ""
     }
-    @objc private func send() { guard !terminating, !hasBlockingSheet else { return }; controller.send() }
+    @objc private func send() { guard !terminating, !hasBlockingSheet, !composer.hasMarkedText() else { return }; controller.send() }
     @objc private func stop() { controller.stop() }
     @objc func copyReply() {
         guard !terminating, !hasBlockingSheet else { return }

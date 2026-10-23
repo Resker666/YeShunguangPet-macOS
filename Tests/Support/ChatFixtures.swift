@@ -58,6 +58,13 @@ actor ControlledChatCredentials: ChatCredentialStoring {
     private var held = false, failSave = false
     private var release: CheckedContinuation<Void, Never>?
     private var waiters = [(Int, CheckedContinuation<Void, Never>)]()
+    private var holdSave = false
+    private var saveRelease: CheckedContinuation<Void,Never>?
+    private var saveStarted: CheckedContinuation<Void,Never>?
+    private var saves = 0
+    func holdNextSave() { holdSave = true }
+    func waitForSave() async { if saves == 0 { await withCheckedContinuation { saveStarted = $0 } } }
+    func releaseSave() { saveRelease?.resume(); saveRelease = nil }
     private var readFailure: String?
     private(set) var reads = 0
     func holdNextRead() { held = true }
@@ -74,6 +81,8 @@ actor ControlledChatCredentials: ChatCredentialStoring {
         return key
     }
     func save(_ secret: String) async throws {
+        saves += 1; saveStarted?.resume(); saveStarted = nil
+        if holdSave { holdSave = false; await withCheckedContinuation { saveRelease = $0 } }
         if failSave { failSave = false; throw SkinError("注入的密钥保存失败。") }
         key = secret
     }
@@ -135,7 +144,7 @@ final class ControlledChatClient: ChatStreaming, @unchecked Sendable {
     }
     func close() async {
         controller.beginTermination()
-        await credentials.releaseRead(); await persistence.releaseWrite(); await persistence.releaseAllLoads()
+        await credentials.releaseRead(); await credentials.releaseSave(); await persistence.releaseWrite(); await persistence.releaseAllLoads()
         client.finishAll()
         await controller.waitForPendingWrites()
         controller.dispose()

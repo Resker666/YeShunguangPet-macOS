@@ -40,7 +40,10 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, sa
     private var protectedRoles = [String: String](), roleErrors = [String: String]()
     private var pendingPairs = [String: PendingPair](), roleWrites = [String: Int](), lastReceipts = [String: UInt64]()
     private(set) var connectionProtection: String?
-    private var pendingConnection: ChatConnection?, connectionWriting = false
+    private var pendingConnection: ChatConnection?
+    private var connectionWriteCount = 0
+    private var connectionGeneration: UInt64 = 0
+    private var connectionWriting: Bool { connectionWriteCount > 0 }
     private var credentialAvailability = CredentialAvailability.unknown
     private var requestTask: Task<Void, Never>?, roleLoadTask: Task<Void, Never>?, connectionLoadTask: Task<Void, Never>?
     private var credentialTask: Task<Void, Never>?, flushTask: Task<Void, Never>?
@@ -120,7 +123,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, sa
             case .loaded(let archive): self.archives[value.id] = archive
             case .protectedFile(let message): self.protectedRoles[value.id] = message
             }
-            self.roleLoadTask = nil; self.refreshCurrent()
+            self.roleLoadTask = nil; self.profileEditRevision &+= 1; self.refreshCurrent()
         }
     }
 
@@ -291,17 +294,23 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, sa
     }
 
     func saveConnection(_ value: ChatConnection) {
-        guard canMutate, connectionLoaded, !connectionWriting, credentialTask == nil else { return }
-        if !value.enabled { cancelRequest(); connection.enabled = false }
-        else if isGenerating { return }
+        guard canMutate, connectionLoaded else { return }
+        if !value.enabled {
+            // Disabling is a new intent even while an older preference/key write is pending.
+            cancelRequest(); connection.enabled = false
+        } else if connectionWriting || credentialTask != nil || isGenerating { refreshCurrent(); return }
         guard connectionProtection == nil else { refreshCurrent(); return }
         enqueueConnection(value)
     }
     private func enqueueConnection(_ value: ChatConnection) {
-        connectionWriting = true
+        connectionGeneration &+= 1
+        let intent = connectionGeneration
+        connectionWriteCount += 1
         writes.enqueue(.connection(value)) { [weak self] _, result in
             guard let self else { return }
-            self.connectionWriting = false
+            self.connectionWriteCount -= 1
+            // FIFO still commits every accepted write, but an old receipt cannot undo newer UI intent.
+            guard intent == self.connectionGeneration else { self.refreshCurrent(); return }
             switch result {
             case .success(.connection(let saved)):
                 self.connection = saved; self.connectionError = nil; self.pendingConnection = nil
@@ -318,10 +327,13 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, sa
     }
     func resetConnectionArchive() {
         guard canMutate, !isGenerating, !connectionWriting else { return }
-        connectionWriting = true
+        connectionGeneration &+= 1
+        let intent = connectionGeneration
+        connectionWriteCount += 1
         writes.enqueue(.resetConnection) { [weak self] _, result in
             guard let self else { return }
-            self.connectionWriting = false
+            self.connectionWriteCount -= 1
+            guard intent == self.connectionGeneration else { self.refreshCurrent(); return }
             switch result {
             case .success(.connection(let value)):
                 self.connection = value; self.connectionProtection = nil; self.connectionError = nil; self.pendingConnection = nil

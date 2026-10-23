@@ -67,4 +67,79 @@ import PetCore
         XCTAssertNil(f.controller.connectionError)
         await f.close()
     }
+    private func descendants<T:NSView>(_ view:NSView,_ type:T.Type) -> [T] {
+        (view as? T).map { [$0] } ?? view.subviews.flatMap { descendants($0,type) }
+    }
+    func testDelayedArchivePopulatesPersonaOnceAndPreservesUnappliedEdits() async throws {
+        let f=try ChatControllerFixture();try await f.open()
+        let profile=ChatProfile(background:"saved background",personality:"saved personality",speakingStyle:"saved style",examples:"saved examples")
+        _ = try await f.persistence.worker.apply(.profile(characterID:"march7",profile:profile))
+        let window=ChatWindowController(controller:f.controller,onPresentationChange:{_ in})
+        window.selectPage(1)
+        await f.persistence.holdNextLoad("march7")
+        f.controller.activate(.init(id:"march7",name:"三月七",description:"",skinRevision:1))
+        await f.persistence.waitForLoad("march7");window.render()
+        XCTAssertNil(f.controller.conversation)
+        await f.persistence.releaseLoad("march7")
+        try await chatEventually { f.controller.conversation != nil };window.render()
+        let fields=descendants(try XCTUnwrap(window.pageScroll.documentView),NSTextView.self)
+        XCTAssertEqual(fields.count,4)
+        XCTAssertEqual(fields[0].string,profile.background)
+        XCTAssertEqual(fields[1].string,profile.personality)
+        fields[1].string="edited personality";window.render()
+        XCTAssertEqual(fields[1].string,"edited personality")
+        let apply=try XCTUnwrap(descendants(try XCTUnwrap(window.pageScroll.documentView),NSButton.self).first { $0.title == "应用人设" })
+        NSApp.sendAction(try XCTUnwrap(apply.action),to:apply.target,from:apply)
+        await f.controller.waitForPendingWrites()
+        XCTAssertEqual(f.controller.conversation?.profile.background,profile.background)
+        XCTAssertEqual(f.controller.conversation?.profile.personality,"edited personality")
+        window.dispose();await f.close()
+    }
+    func testSendButtonCannotTransmitNativeMarkedText() async throws {
+        let f=try ChatControllerFixture();try await f.open()
+        let window=ChatWindowController(controller:f.controller,onPresentationChange:{_ in})
+        window.composer.setMarkedText("尚未确认",selectedRange:NSRange(location:4,length:0),replacementRange:NSRange(location:NSNotFound,length:0))
+        XCTAssertTrue(window.composer.hasMarkedText())
+        f.controller.setDraft(window.composer.string);window.render()
+        let button=try XCTUnwrap(descendants(try XCTUnwrap(window.pageScroll.documentView),NSButton.self).first { $0.title.hasPrefix("发送") })
+        XCTAssertFalse(button.isEnabled)
+        NSApp.sendAction(try XCTUnwrap(button.action),to:button.target,from:button)
+        for _ in 0..<20 { await Task.yield() }
+        XCTAssertEqual(f.client.count,0)
+        window.composer.unmarkText();f.controller.setDraft("已确认");window.render()
+        NSApp.sendAction(try XCTUnwrap(button.action),to:button.target,from:button)
+        try await chatEventually { f.client.count == 1 }
+        window.close();window.dispose();await f.close()
+    }
+    func testDisablingAIDuringCredentialSaveIsImmediateAndPersisted() async throws {
+        let f=try ChatControllerFixture();try await f.open()
+        await f.credentials.holdNextSave()
+        f.controller.saveCredential("NEW-TEST-ONLY")
+        await f.credentials.waitForSave()
+        f.controller.saveConnection(.init(enabled:false))
+        XCTAssertFalse(f.controller.connection.enabled)
+        await f.credentials.releaseSave();await f.controller.waitForPendingWrites()
+        XCTAssertFalse(f.controller.connection.enabled)
+        guard case .loaded(let saved)=await ChatArchiveWorker(settingsURL:f.root.appendingPathComponent("settings.json")).loadConnection() else { return XCTFail("missing") }
+        XCTAssertFalse(saved.enabled)
+        await f.close()
+    }
+    func testDisablingAIQueuesBehindPreferenceWriteAndOldReceiptCannotReenable() async throws {
+        let f=try ChatControllerFixture();try await f.open()
+        await f.persistence.holdNextWrite()
+        f.controller.saveConnection(.init(enabled:true,model:.pro))
+        await f.persistence.waitForOperations(1)
+        f.controller.saveConnection(.init(enabled:false,model:.pro))
+        XCTAssertFalse(f.controller.connection.enabled)
+        await f.persistence.holdNextWrite();await f.persistence.releaseWrite()
+        let deadline=ContinuousClock.now + .seconds(3)
+        while await f.persistence.operations.count < 2 && f.controller.hasPendingWrites && ContinuousClock.now < deadline { await Task.yield() }
+        let operations=await f.persistence.operations
+        XCTAssertEqual(operations.count,2)
+        XCTAssertFalse(f.controller.connection.enabled)
+        await f.persistence.releaseWrite();await f.controller.waitForPendingWrites()
+        XCTAssertEqual(f.controller.connection,.init(enabled:false,model:.pro))
+        await f.close()
+    }
+
 }
