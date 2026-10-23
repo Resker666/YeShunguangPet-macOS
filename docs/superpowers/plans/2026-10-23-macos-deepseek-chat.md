@@ -154,14 +154,14 @@ XCTAssertEqual(state.messages.last?.content, "a13")
 - 生命周期：`setPresented(_ presented: Bool)`、`windowClosed()`、`setSleeping(_ sleeping: Bool)`、`beginTermination()`、`cancelTermination()`、`waitForPendingWrites() async`、`retryAllPendingSaves() async -> Bool`、`dispose()`。setPresented 仅记录实际呈现，最小化/App 隐藏不等于关闭；windowClosed 才取消生成并丢弃未应用人设编辑。只读 key 由显式 send 发起；初始凭据状态未知，第一次发送先检查，缺失时不发 HTTP 并提示连接页。
 - `ChatController+Lifecycle` 单独监听 NSWorkspace 睡眠/屏幕睡眠；selector 非隔离并安全转 MainActor，dispose 后忽略。不能依赖 PetSession.setSleeping 的状态栏回调，它目前不会发 onStatusChange。
 
-- [ ] **1. 写请求和角色失败用例。** `testManualSingleFlightAndTwelveRoundReopen` 断言启动/activate/改连接不调用 read/网络，重复 send 仅 1 次；完成后可经新 controller 读取。`testRoleSwitchRejectsStaleStreamAndLoad` 先挂起 A 的加载/流，切 B 后完成 A，B 窗口/历史不变；同 ID 新 skinRevision 也停止旧请求，档案仍共用。
-- [ ] **2. 写保存失败断言。** `testPendingPairSurvivesSwitchAndLocalRetryDoesNotRequestAgain`：失败完整问答归 A，B 可用，切回 A 可恢复，重试只增加 write 不增加 read/HTTP；A 禁止下一条和人设应用。`testClearAfterAcceptedAppendCannotResurrectHistory` 覆盖 Task 4 顺序在 controller 的窗口/缓存表现。
-- [ ] **3. 写生命周期与部分成功断言。** `testBackgroundSleepAndCancelledTerminationNeverResumeRequest` 在凭据读取和流阶段发后台睡眠通知，断言无 actor 崩溃、旧结果不落盘、取消退出/唤醒不重发。`testCloseAndExitPreserveAllPendingRoles` 覆盖关窗后待存、退出等待全部角色。`testCredentialAndPreferencePartialResultsAreReported`：key 成功/偏好失败不冒充全成功，拒绝/取消 key 不发 HTTP；仅 AI 关闭可在生成中立即应用。
-- [ ] **4. 运行 RED。** `bash scripts/test.sh -only-testing:PetMacTests/ChatControllerTests -only-testing:PetMacTests/ChatLifecycleTests`，核对相应新行为的失败。
-- [ ] **5. 实现控制器。** 以角色 ID 缓存 draft/pending；请求冻结全部输入，正常结束且代次有效后同步登记 append ticket。ticket 的完成始终更新所属角色；只有当前角色、有效请求且首次保存成功才调用 onFeedback，本地重试不调用。流文本最多约 50ms 合并发布，取消/结束立即更新，不增加常驻轮询。
-- [ ] **6. 实现退出边界。** beginTermination 立即取消网络，wait 只等文件，不重新请求；retryAllPendingSaves 返回实际总结果。模态/退出门控覆盖所有保存、清空与重置命令，退出专用本地重试走受控路径；三类编辑草稿按设计保留或丢弃。
-- [ ] **7. 运行同命令 GREEN。** 确认角色、存储、请求和生命周期各具名用例实际执行并零失败。
-- [ ] **8. 提交。** 精确暂存本任务文件；`git commit -m "feat: manage character chat cancellation and recoverable saves"`。
+- [x] **1. 写请求和角色失败用例。** `testManualSingleFlightAndTwelveRoundReopen` 断言启动/activate/改连接不调用 read/网络，重复 send 仅 1 次；完成后可经新 controller 读取。`testRoleSwitchRejectsStaleStreamAndLoad` 先挂起 A 的加载/流，切 B 后完成 A，B 窗口/历史不变；同 ID 新 skinRevision 也停止旧请求，档案仍共用。
+- [x] **2. 写保存失败断言。** `testPendingPairSurvivesSwitchAndLocalRetryDoesNotRequestAgain`：失败完整问答归 A，B 可用，切回 A 可恢复，重试只增加 write 不增加 read/HTTP；A 禁止下一条和人设应用。`testClearAfterAcceptedAppendCannotResurrectHistory` 覆盖 Task 4 顺序在 controller 的窗口/缓存表现。
+- [x] **3. 写生命周期与部分成功断言。** `testBackgroundSleepAndCancelledTerminationNeverResumeRequest` 在凭据读取和流阶段发后台睡眠通知，断言无 actor 崩溃、旧结果不落盘、取消退出/唤醒不重发。`testCloseAndExitPreserveAllPendingRoles` 覆盖关窗后待存、退出等待全部角色。`testCredentialAndPreferencePartialResultsAreReported`：key 成功/偏好失败不冒充全成功，拒绝/取消 key 不发 HTTP；仅 AI 关闭可在生成中立即应用。
+- [x] **4. 运行 RED。** `bash scripts/test.sh -only-testing:PetMacTests/ChatControllerTests -only-testing:PetMacTests/ChatLifecycleTests`，核对相应新行为的失败。
+- [x] **5. 实现控制器。** 以角色 ID 缓存 draft/pending；请求冻结全部输入，正常结束且代次有效后同步登记 append ticket。ticket 的完成始终更新所属角色；只有当前角色、有效请求且首次保存成功才调用 onFeedback，本地重试不调用。流文本最多约 50ms 合并发布，取消/结束立即更新，不增加常驻轮询。
+- [x] **6. 实现退出边界。** beginTermination 立即取消网络，wait 只等文件，不重新请求；retryAllPendingSaves 返回实际总结果。模态/退出门控覆盖所有保存、清空与重置命令，退出专用本地重试走受控路径；三类编辑草稿按设计保留或丢弃。
+- [x] **7. 运行同命令 GREEN。** 确认角色、存储、请求和生命周期各具名用例实际执行并零失败。
+- [x] **8. 提交。** 精确暂存本任务文件；`git commit -m "feat: manage character chat cancellation and recoverable saves"`。
 
 ## Task 6：独立 AppKit 窗口、菜单与桌宠接入
 
