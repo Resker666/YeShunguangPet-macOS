@@ -66,3 +66,5 @@ ARM App：`dist/YeShunguangPet.app`；Intel App：`dist/x86_64/YeShunguangPet.ap
 ## 后续普通推送授权
 
 用户在本地交付后明确「推送」，授权按既有流程快进同步main和codex/macos-character-memory、核对两路CI及双架构Artifacts；不触发prepare_release、不打标签或发布。该指令不记作真实提炼验收通过。已验证功能来源仍为f3f2420，后续仅同步文档，不重复无变化的本地测试；云端会按实际推送SHA重新构建，不能混同本地包来源。远端提交、两路运行ID、检查数量及附件元数据的实际结果保存于忽略目录.build/character-memory-validation/push-verification.json。
+
+首轮推送f087d9e的main39969417155及开发39969417212均在测试构建阶段失败：云端Xcode26.6 / Swift6.3.3无法为ChatMemoryTests.swift:61的混合嵌套数组推断泛型，本机Swift6.4可编译。原生400项尚未执行，Release13通过，后续构建/打包跳过，仅上传诊断。完整原失败日志和元数据保留cloud-main-initial-failure.*与cloud-dev-initial-failure.*。最小修正仅把6组非法来源夹具显式声明为[[Any]]，输入语义与断言保持；相关5项、完整400项本地回归再次通过（ci-array-type-targeted.log / ci-array-type-full-native.log）。App生产代码与本地已交付包不变，无需替换个人App；新云端构建仍须按实际结果核验。

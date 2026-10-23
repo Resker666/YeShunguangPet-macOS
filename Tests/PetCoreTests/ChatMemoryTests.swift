@@ -58,7 +58,8 @@ final class ChatMemoryTests: XCTestCase {
         XCTAssertEqual(try decode(five).candidates.count, 5)
         XCTAssertEqual(try decode(five).candidates[0].sourceRounds, [1, 2])
         XCTAssertThrowsError(try decode(five + [["text": "六", "sourceRounds": [1]]]))
-        for sources: Any in [[], [0], [3], ["1"], [true], [1.5]] {
+        let invalidSources: [[Any]] = [[], [0], [3], ["1"], [true], [1.5]]
+        for sources in invalidSources {
             XCTAssertThrowsError(try decode([["text": "候选", "sourceRounds": sources]]))
         }
         for text in [" ", "\0", String(repeating: "字", count: 201)] {
