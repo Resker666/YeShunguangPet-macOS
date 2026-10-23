@@ -117,11 +117,11 @@
 
 **Interfaces:** `QuickChatPlacement.frame(anchor:CGRect,size:CGSize,screens:[ScreenArea])->CGRect?`纯几何：右/左/上择位、8点屏边距、夹取尺寸/位置、负坐标屏幕。`@MainActor final class QuickChatWindowController:NSWindowController,ChatPresentationHosting`，初始化`init(controller:ChatController,session:PetSession,onExpand:@escaping()->Void,canDispatch:@escaping()->Bool)`；拥有ChatComposer、滚动内容、Task5卡片及状态/重试/停止，不拥有网络/Keychain/存储。`render()`和`reposition()`可由原生测试调用；订阅自身/角色frame和屏幕通知并在dispose移除，不新增定时器。
 
-- [ ] **1. 写几何失败用例。** `testPlacementFitsRightLeftTopAndRemovedScreen`断言边缘翻转/夹取、负坐标、多屏/移除屏幕、缩放/大尺寸仍位于选定visibleFrame内；无有效屏幕返回nil，不制造假坐标。输入size超过可用区域时几何缩小到屏内，UI保持内容可滚动。
-- [ ] **2. 写原生失败用例。** `testQuickViewSharesComposerAndHandoffWithoutDoubleSending`实际两个host接Task5协调器，Enter换行/⌘Enter单次发送、marked text禁止快捷提交/交接/Esc，跨窗草稿/选择/流式/卡不丢；输入新草稿后render不覆盖。`testLongReplyCardAndErrorRemainReachableAtMinimum`360×300/320×240、浅深色、8000单元回复/长错误/回执失败/操作卡，滚动到底确认入口可达，用户离底时新分片不拉走。`testHiddenPetAndFrameEventsDoNotCloseOrTakeFocus`隐藏桌宠保持轻窗，失焦不关闭、后续reposition不makeKey，换肤重新定位；仅记录程序化证据。
-- [ ] **3. 运行RED。** `bash scripts/test.sh -only-testing:PetCoreTests/QuickChatPlacementTests -only-testing:PetMacTests/QuickChatWindowTests -only-testing:PetMacTests/ChatPresentationTests -only-testing:PetMacTests/ChatActionWindowTests`。
-- [ ] **4. 实现轻窗。** 独立可key窗口、非角色child，明确打开时取焦点；跟随角色/visibleFrame，失焦不抢回，尺寸仅本次运行保留、无自由拖走/位置保存。最近一轮及本轮正文以原生纯文字分句呈现，半句也可见，50ms既有流式合并仍用controller；不把分句当新历史。复用Task5卡片，终止/保存/保护/无连接有可达状态与完整窗入口；逻辑关闭/交接委托协调器。
-- [ ] **5. 同命令GREEN并提交。** 验证真实输入控件而非镜像源字符串；缓存图片/合成事件不标物理输入或焦点通过；`git commit -m "feat: add anchored quick chat with shared conversation state"`。
+- [x] **1. 写几何失败用例。** `testPlacementFitsRightLeftTopAndRemovedScreen`断言边缘翻转/夹取、负坐标、多屏/移除屏幕、缩放/大尺寸仍位于选定visibleFrame内；无有效屏幕返回nil，不制造假坐标。输入size超过可用区域时几何缩小到屏内，UI保持内容可滚动。
+- [x] **2. 写原生失败用例。** `testQuickViewSharesComposerAndHandoffWithoutDoubleSending`实际两个host接Task5协调器，Enter换行/⌘Enter单次发送、marked text禁止快捷提交/交接/Esc，跨窗草稿/选择/流式/卡不丢；输入新草稿后render不覆盖。`testLongReplyCardAndErrorRemainReachableAtMinimum`360×300/320×240、浅深色、8000单元回复/长错误/回执失败/操作卡，滚动到底确认入口可达，用户离底时新分片不拉走。`testHiddenPetAndFrameEventsDoNotCloseOrTakeFocus`隐藏桌宠保持轻窗，失焦不关闭、后续reposition不makeKey，换肤重新定位；仅记录程序化证据。
+- [x] **3. 运行RED。** `bash scripts/test.sh -only-testing:PetCoreTests/QuickChatPlacementTests -only-testing:PetMacTests/QuickChatWindowTests -only-testing:PetMacTests/ChatPresentationTests -only-testing:PetMacTests/ChatActionWindowTests`。
+- [x] **4. 实现轻窗。** 独立可key窗口、非角色child，明确打开时取焦点；跟随角色/visibleFrame，失焦不抢回，尺寸仅本次运行保留、无自由拖走/位置保存。最近一轮及本轮正文以原生纯文字分句呈现，半句也可见，50ms既有流式合并仍用controller；不把分句当新历史。复用Task5卡片，终止/保存/保护/无连接有可达状态与完整窗入口；逻辑关闭/交接委托协调器。
+- [x] **5. 同命令GREEN并提交。** 验证真实输入控件而非镜像源字符串；缓存图片/合成事件不标物理输入或焦点通过；`git commit -m "feat: add anchored quick chat with shared conversation state"`。
 
 ## Task 7：生产菜单、全局门控与使用说明
 

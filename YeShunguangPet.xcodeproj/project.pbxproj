@@ -271,6 +271,7 @@
 				<string>C072F21F6800004692FBFFCE</string>
 				<string>22AED268ED6F43CDF57CF1DD</string>
 				<string>8949671AA6498A6613BD2684</string>
+				<string>CF701357C02D5E1A5CC1B93A</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -627,6 +628,7 @@
 				<string>900D03273F751F2972BFEF11</string>
 				<string>442B258D1F7982E6545F3C27</string>
 				<string>E49FB8B75A86944A1F0958F1</string>
+				<string>028B54B375C95CC29F95B588</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1069,6 +1071,7 @@
 				<string>7C99D4190C8F5E403DC220A6</string>
 				<string>BE3C6DB1C8416F0041C27AEF</string>
 				<string>2A76E14C0A7C182AE4FF041B</string>
+				<string>A4BA3FE9D92F1E95EFC892FA</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1523,6 +1526,8 @@
 				<string>2A9E91E5A965C944D38AD875</string>
 				<string>74F5417A0FC8C1D858C2913D</string>
 				<string>BE5F2FEF390BCF5CFD73E877</string>
+				<string>F4055AD4C417A7B997B3B7D6</string>
+				<string>B7D00418472E18D499DA0FA4</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1887,6 +1892,10 @@
 				<string>12584FBAADC628F426EB7D4B</string>
 				<string>5BA0E13E9FEC9A8DC6E34DFC</string>
 				<string>DFE6A6A5E1DD47D77E32B620</string>
+				<string>0D57FA2D69E1E1F90CE93CB7</string>
+				<string>9FEE7B9DFEA17532CEB2D6C5</string>
+				<string>706883BF9D59693E6C8CD7EE</string>
+				<string>7CDC293A3D2110A017FDEE92</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -4299,6 +4308,85 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>DFE6A6A5E1DD47D77E32B620</string>
+		</dict>
+		<key>0D57FA2D69E1E1F90CE93CB7</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetCoreTests/QuickChatPlacementTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>028B54B375C95CC29F95B588</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>0D57FA2D69E1E1F90CE93CB7</string>
+		</dict>
+		<key>9FEE7B9DFEA17532CEB2D6C5</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/QuickChatWindowTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>F4055AD4C417A7B997B3B7D6</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>9FEE7B9DFEA17532CEB2D6C5</string>
+		</dict>
+		<key>706883BF9D59693E6C8CD7EE</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/PetCore/Placement/QuickChatPlacement.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>CF701357C02D5E1A5CC1B93A</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>706883BF9D59693E6C8CD7EE</string>
+		</dict>
+		<key>7CDC293A3D2110A017FDEE92</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Chat/QuickChatWindowController.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>A4BA3FE9D92F1E95EFC892FA</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>7CDC293A3D2110A017FDEE92</string>
+		</dict>
+		<key>B7D00418472E18D499DA0FA4</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>7CDC293A3D2110A017FDEE92</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>
