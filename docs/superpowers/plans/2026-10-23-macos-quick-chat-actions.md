@@ -12,7 +12,7 @@
 
 **执行方式:** 保留Native：主执行者在本会话原地逐任务TDD、自测和本地提交，最后一次独立整体代码评审；辅助代理仅做只读事实核对，不逐任务派实现/评审代理、不再询问执行方式、不新增工作树。
 
-**状态:** 用户已明确认可八项实施计划并要求本会话原地连续实施（2026-10-24记录）；执行中，验证结果按任务记账。仓库`/Users/resker/develop/github/YeShunguangPet-macOS`，分支`codex/macos-quick-chat-actions`，产品基线`b154e6bd347f858730ff171fc8a265abc8bd523b`，设计初稿`2700550`；下列路径从仓库根起算。计划获准后仅建立本计划执行账本`.superpowers/sdd/2026-10-23-macos-quick-chat-actions/progress.md`，不得恢复/删除已归档0.3.0或其它计划工作区。
+**状态:** 用户已明确认可八项实施计划并要求本会话原地连续实施（2026-10-24记录）；已完成八项实施和本地交付，实际结果见docs/quick-chat-actions-validation.md。仓库`/Users/resker/develop/github/YeShunguangPet-macOS`，分支`codex/macos-quick-chat-actions`，产品基线`b154e6bd347f858730ff171fc8a265abc8bd523b`，设计初稿`2700550`；下列路径从仓库根起算。计划获准后仅建立本计划执行账本`.superpowers/sdd/2026-10-23-macos-quick-chat-actions/progress.md`，不得恢复/删除已归档0.3.0或其它计划工作区。
 
 ## Global Constraints
 
@@ -139,17 +139,17 @@
 
 **Files:** 新docs/quick-chat-actions-validation.md；更新README/TODO/AGENTS/设计计划状态。日志/探针/ledger备份仅忽略`.build/quick-chat-actions-validation/`，产物仅dist。必要修复才改对应源与测试。
 
-- [ ] **1. 完整回归。** `bash scripts/test.sh`、`python3 -m unittest discover -s Tests/Release -v`，保存命令/退出码/实际总数和新类执行；基线400仅作对照，不能当新结果。原生须TEST SUCCEEDED、零失败，离线现有13项；保留任何失败。来源代码变化后重跑受影响用例及全原生，不重复无变化检查。
-- [ ] **2. 优化同源隔离探针。** 假网络/凭据、三套原素材与临时配置，走流式→quick/full交接→proposal→真实计时/安静执行→回执存档/重开；卡片过期/ABA/双击、执行中同步关窗换角色、回执失败本地重试、已完成记忆候选共存、退出等待及输入/窗口边缘。浅深色/最小窗/长文/长错误/卡片滚动及原记忆草稿。记录生产source SHA/源码摘要/优化参数，若为构造探针需先ARM Release提供框架，则记Ruling，最终源变更必须重建/重跑受影响探针；不把探针写作分发二进制真实API通过。
-- [ ] **3. 一次最终独立整体评审。** 已选Native，使用当时最强合适可用模型单一只读席位，审基线b154e6b至功能最终提交，携带本计划/spec/Review Focus/测试与探针证据。阻断项先回归复现再单轮修复，完整相关/原生/离线发版重新核验；Minor按实际影响记录或修复，说明判断和代价，不派第二次整体代码评审、不把额度失败算完成。
-- [ ] **4. 干净来源双架构构建打包。** 功能/必要修复提交且tracked clean后顺序运行`bash scripts/build-app.sh arm64`、`bash scripts/build-app.sh x86_64`、两个架构`bash scripts/package-app.sh`；须实际BUILD SUCCEEDED、0.4.0/build26、14.0、单架构、同完整SHA/clean。评审前包仅最终SHA相同才复用。
-- [ ] **5. 分发及附件。** 两App存在后`python3 -m unittest discover -s Tests/Distribution -v`（现有13项，据实际计数），检查签名/依赖/原素材/许可/库存/摘要及用户资料排除；本次8附件置专用空目录，`python3 scripts/prepare-release.py --assets STAGING_DIR --version 0.4.0 --commit FULL_SHA --check-only`离线验证，不远端写入。
-- [ ] **6. ARM离工程启动。** 从本次DMG复制到真正中文空格路径，弹出源DMG后`python3 scripts/smoke-app.py --app MOVED_APP --check-restore --output .build/quick-chat-actions-validation/moved-smoke.json`。工具隔离配置、不继承开发环境；验证可见动画/正常退出/重开，不称外机/Gatekeeper/Intel或真实快捷输入通过。
-- [ ] **7. 更新日用App。** 按准确路径正常退出Applications旧App并等接受写入，若未解决失败不得强杀；备份旧包、退出后主配置与AI文件（只盲复制/摘要，不解析私人AI或读Keychain），替换ARM、核对来源库存/版本/PID/自身窗口与schema13、偏好/皮肤/位置/快捷键/专注/统计和AI文件保留；不自动发API或改登录项。
-- [ ] **8. 文档归档和本地交付。** 验证文档报告真实命令/数量/退出码、单次评审/修复/取舍、包与安装来源、备份及未测；更新TODO/AGENTS/本计划状态、本地提交。仅归档并移除此计划SDD workspace，保留其他ledger。交付ARM App/DMG绝对路径，用户验收重点为真实自然语言卡片与本地结果、quick/full流式切换、隐藏桌宠、实际IME/焦点；未做不标通过，保留现分支，不推送/打标签/Release。
+- [x] **1. 完整回归。** `bash scripts/test.sh`、`python3 -m unittest discover -s Tests/Release -v`，保存命令/退出码/实际总数和新类执行；基线400仅作对照，不能当新结果。原生须TEST SUCCEEDED、零失败，离线现有13项；保留任何失败。来源代码变化后重跑受影响用例及全原生，不重复无变化检查。
+- [x] **2. 优化同源隔离探针。** 假网络/凭据、三套原素材与临时配置，走流式→quick/full交接→proposal→真实计时/安静执行→回执存档/重开；卡片过期/ABA/双击、执行中同步关窗换角色、回执失败本地重试、已完成记忆候选共存、退出等待及输入/窗口边缘。浅深色/最小窗/长文/长错误/卡片滚动及原记忆草稿。记录生产source SHA/源码摘要/优化参数，若为构造探针需先ARM Release提供框架，则记Ruling，最终源变更必须重建/重跑受影响探针；不把探针写作分发二进制真实API通过。
+- [x] **3. 一次最终独立整体评审。** 已选Native，使用当时最强合适可用模型单一只读席位，审基线b154e6b至功能最终提交，携带本计划/spec/Review Focus/测试与探针证据。阻断项先回归复现再单轮修复，完整相关/原生/离线发版重新核验；Minor按实际影响记录或修复，说明判断和代价，不派第二次整体代码评审、不把额度失败算完成。
+- [x] **4. 干净来源双架构构建打包。** 功能/必要修复提交且tracked clean后顺序运行`bash scripts/build-app.sh arm64`、`bash scripts/build-app.sh x86_64`、两个架构`bash scripts/package-app.sh`；须实际BUILD SUCCEEDED、0.4.0/build26、14.0、单架构、同完整SHA/clean。评审前包仅最终SHA相同才复用。
+- [x] **5. 分发及附件。** 两App存在后`python3 -m unittest discover -s Tests/Distribution -v`（现有13项，据实际计数），检查签名/依赖/原素材/许可/库存/摘要及用户资料排除；本次8附件置专用空目录，`python3 scripts/prepare-release.py --assets STAGING_DIR --version 0.4.0 --commit FULL_SHA --check-only`离线验证，不远端写入。
+- [x] **6. ARM离工程启动。** 从本次DMG复制到真正中文空格路径，弹出源DMG后`python3 scripts/smoke-app.py --app MOVED_APP --check-restore --output .build/quick-chat-actions-validation/moved-smoke.json`。工具隔离配置、不继承开发环境；验证可见动画/正常退出/重开，不称外机/Gatekeeper/Intel或真实快捷输入通过。
+- [x] **7. 更新日用App。** 按准确路径正常退出Applications旧App并等接受写入，若未解决失败不得强杀；备份旧包、退出后主配置与AI文件（只盲复制/摘要，不解析私人AI或读Keychain），替换ARM、核对来源库存/版本/PID/自身窗口与schema13、偏好/皮肤/位置/快捷键/专注/统计和AI文件保留；不自动发API或改登录项。
+- [x] **8. 文档归档和本地交付。** 验证文档报告真实命令/数量/退出码、单次评审/修复/取舍、包与安装来源、备份及未测；更新TODO/AGENTS/本计划状态、本地提交。仅归档并移除此计划SDD workspace，保留其他ledger。交付ARM App/DMG绝对路径，用户验收重点为真实自然语言卡片与本地结果、quick/full流式切换、隐藏桌宠、实际IME/焦点；未做不标通过，保留现分支，不推送/打标签/Release。
 
 ## Plan Self-Review / 审核状态
 
 主执行者已自审而未另派计划评审：设计1/2/4/6节对应Task1–4，3节对应Task5–7，5节和存档兼容对应Task4及原FIFO，7/8节对应Task7/8；五项Review Focus已分配具体失败用例。逐项核对了新终态的全部switch、三个Controller初始化、FocusMenus独占onChange、Published先发通知、原selectPage/windowWillClose清编辑、副作用回调重入、原角色回执及两个UI聚合模态；无未定义的后续类型接口。
 
-该计划保留用户已选本会话Native/原地/一次最终评审。用户已明确批准计划及本会话实施，Tasks1–7已按executing-plans完成；当前进入Task8完整回归、一次最终评审与本地交付。测试仅临时资料与假凭据，不触碰私人AI/Keychain；本版push/tag/Release仍无授权。
+该计划保留用户已选本会话Native/原地/一次最终评审。用户已明确批准计划及本会话实施，Tasks1–7已按executing-plans完成；Task8也已完成，最终功能/包/日用来源aceefa6；427项原生、13项离线发版、13项分发通过，一次评审0 Critical/0 Important/1 Minor延后。测试仅临时资料与假凭据，不触碰私人AI/Keychain；本版push/tag/Release仍无授权。

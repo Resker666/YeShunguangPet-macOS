@@ -1,6 +1,6 @@
 # YeShunguangPet macOS
 
-为 Mac mini M4 日常使用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前源码版本 **0.4.0 / build26**，增加角色旁轻聊天与经用户确认的App专注/手动安静操作，最低macOS14.0。实现与本地交付验证进行中；实际结果见后续验证文档，不以功能代码代替真实API或用户验收。未授权本版推送、标签或Release。
+为 Mac mini M4 日常使用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前源码版本 **0.4.0 / build26**，增加角色旁轻聊天与经用户确认的App专注/手动安静操作，最低macOS14.0。已完成427项原生/13项离线发版/13项分发、双架构打包和ARM日用App更新；一次整体评审0 Critical/0 Important/1 Minor，已知窗口切换问题及未测边界见[本轮验证](docs/quick-chat-actions-validation.md)。真实操作/输入与用户整体验收待确认。未授权本版推送、标签或Release。
 
 此前完成0.1.20待机、隐藏、安静与专注各10分钟同源资源采样，并发现真实跨日崩溃。原始条件、结果、失败复测和0.1.21修复验证见[资源调查记录](docs/resource-baseline-validation.md)；这些数据不代表功耗、过夜稳定性或新版性能提升。
 

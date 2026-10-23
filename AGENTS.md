@@ -127,3 +127,8 @@
 - 用户已明确认可0.4.0八项计划并要求本会话原地实施（2026-10-24记录）；主执行者连续TDD与本地提交，最后一次独立整体评审，不逐任务确认、不新增工作树。仅恢复本计划ledger：.superpowers/sdd/2026-10-23-macos-quick-chat-actions/progress.md；仍无push/tag/Release授权，个人AI/Keychain不用于自动验证。
 
 - 0.4.0已在本会话完成Tasks1–7本地功能提交：Core严格4工具合同/稳定修订、SSE终态、真实桥、确认执行与FIFO本地回执、唯一窗口协调与轻窗、双菜单聚合模态/退出。schema13/v2保持；两个0.3 Minor均已直接RED→GREEN。当前Task8回归、优化隔离探针、一次最终整体评审及干净双架构/本地安装待完成，不能视作已交付；仍不推送/tag/Release。
+
+- 0.4.0最终本地交付完成（2026-10-24）：427项原生149Core/278Mac、13项离线发版、13项分发及八附件离线核验通过；三套原皮肤优化同源假凭据/网络探针覆盖实际计时/安静、ABA/重复确认、原角色回执/FIFO重试、冻结记忆候选、交接/marked输入，主执行者已查看浅深色最小卡片底部等PNG。程序化窗口/输入不等于物理或真实API验收。
+- 同一独立最终评审席位gpt-6-astra/high在额度中断后恢复完成b154e6b..aceefa6：0 Critical/0 Important/1 Minor，未派第二次评审、无评审后源码修改；设置sheet期间内部full→quick可能暂时隐藏两窗，草稿/请求保留、菜单可恢复，已列TODO延后，不能称零已知问题。
+- 最终干净aceefa64afe1f84d8c60d7627e4a8db72199de2c的0.4.0/build26双架构包（最低14.0）、ZIP库存/来源/签名/素材/摘要、ARM中文空格路径弹出DMG后重开通过。/Applications日用ARM已安装运行，正常退出旧0.3.0后备份旧App/主配置/完整AI，schema13/v2及全部非位置状态/更新时位置与AI摘要保留；未解析AI正文、访问正式Keychain/API或改登录项。仅安装后shell输出包装用了zsh保留status变量而返回1，独立PID/库存/版本/自有窗口核验确认安装已成功，未重复安装。
+- 当前保留本地codex/macos-quick-chat-actions，无push/tag/Release授权，main/远端未改。完整记录docs/quick-chat-actions-validation.md；当前计划已完成，ledger仅归档.build/quick-chat-actions-validation/sdd-evidence，不恢复已完成任务或删除其它计划。真实API/Keychain、物理IME/焦点/睡眠/Spaces、真正最小化/恢复、Gatekeeper/外机/本版Intel运行待验收。
