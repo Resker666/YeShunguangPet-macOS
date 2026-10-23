@@ -135,12 +135,12 @@ XCTAssertEqual(state.messages.last?.content, "a13")
 - `actor ChatArchiveWorker` 用 Task 2 stores 实现上述协议；`init(settingsURL: URL)`，根为其父目录/AI。维护最新有效角色值，变更不能直接覆盖过期快照。
 - `@MainActor final class ChatWriteQueue`：`init(persistence: any ChatPersisting)`；`enqueue(_ operation: ChatWriteOperation, completion: @escaping @MainActor (ChatWriteTicket, Result<ChatStoredValue, Error>) -> Void) -> ChatWriteTicket`；`hasPending: Bool`、`waitForPending() async`。登记同步发生，单一 runner 逐个 await apply，禁止靠 Task 调度先后猜测 FIFO；队列不随网络取消撤销。
 
-- [ ] **1. 写失败用例。** `testAcceptedAppendThenClearRemainsEmpty` 用可控 worker 挂起 append，enqueue clear，依次释放并断言调用顺序为 append/clear，最终消息数 0。`testClearFailurePreservesCommittedState` 分别让前一 append 成功/失败，断言有效旧历史及需重试完整问答的归属不会丢失。
-- [ ] **2. 写取消独立断言。** `testAcceptedMutationSurvivesRequestCancellation` 确认 ticket 登记后调用方取消不撤销 write，receipt 仍指向旧角色；`testQueueDrainsBeforeExit` 断言 drain 挂起直到全部已接受事务完成。
-- [ ] **3. 运行 RED。** `bash scripts/test.sh -only-testing:PetMacTests/ChatPersistenceTests`，确认新事务行为的失败。
-- [ ] **4. 实现 FIFO。** worker 在后台读写；profile/append/clear/reset 都针对最新有效值执行，save 成功才推进有效值，失败保留旧值。主线程 receipt 序号控制界面发布，网络 generation 不参与撤销文件事务。
-- [ ] **5. 同命令 GREEN。** 夹具直接控制 continuation，不用 sleep 碰时序；确认每个事务完成一次，工作不落到 MainActor 同步文件 I/O。
-- [ ] **6. 提交。** 精确暂存本任务文件；`git commit -m "feat: serialize accepted chat mutations across lifecycle changes"`。
+- [x] **1. 写失败用例。** `testAcceptedAppendThenClearRemainsEmpty` 用可控 worker 挂起 append，enqueue clear，依次释放并断言调用顺序为 append/clear，最终消息数 0。`testClearFailurePreservesCommittedState` 分别让前一 append 成功/失败，断言有效旧历史及需重试完整问答的归属不会丢失。
+- [x] **2. 写取消独立断言。** `testAcceptedMutationSurvivesRequestCancellation` 确认 ticket 登记后调用方取消不撤销 write，receipt 仍指向旧角色；`testQueueDrainsBeforeExit` 断言 drain 挂起直到全部已接受事务完成。
+- [x] **3. 运行 RED。** `bash scripts/test.sh -only-testing:PetMacTests/ChatPersistenceTests`，确认新事务行为的失败。
+- [x] **4. 实现 FIFO。** worker 在后台读写；profile/append/clear/reset 都针对最新有效值执行，save 成功才推进有效值，失败保留旧值。主线程 receipt 序号控制界面发布，网络 generation 不参与撤销文件事务。
+- [x] **5. 同命令 GREEN。** 夹具直接控制 continuation，不用 sleep 碰时序；确认每个事务完成一次，工作不落到 MainActor 同步文件 I/O。
+- [x] **6. 提交。** 精确暂存本任务文件；`git commit -m "feat: serialize accepted chat mutations across lifecycle changes"`。
 
 ## Task 5：聊天控制器、请求代次与退出协调
 

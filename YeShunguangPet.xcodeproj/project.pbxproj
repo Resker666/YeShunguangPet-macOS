@@ -1049,6 +1049,7 @@
 				<string>40C6B6C9B6723BC2502FC9E8</string>
 				<string>418F17EA8AA4A990A4995FE5</string>
 				<string>69DF96341F184879BC5B591F</string>
+				<string>2EC2C4D1B2ABF4C5BA553667</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1474,6 +1475,9 @@
 				<string>46595C42EE3AABCB36275CDF</string>
 				<string>0F9D2CC198C933CA40019C3C</string>
 				<string>4BF3598F708AD0B7FAF2FF09</string>
+				<string>1A37F9CCF0ADDA2CA2B1B2B4</string>
+				<string>0B9B2FA8AAE80F5ACB0C32EB</string>
+				<string>202A2BD97A7AAB54768C7E47</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1803,6 +1807,9 @@
 				<string>A85D44323C6FA1D908218617</string>
 				<string>2844750F8AE355B3F8E9C494</string>
 				<string>1B4093BA5020EACD9F6F9966</string>
+				<string>5576024C4BE8862F3CE6D5D1</string>
+				<string>EC9DF330997470A733650D70</string>
+				<string>9B630B817497B46EC2242585</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -3487,6 +3494,67 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>1B4093BA5020EACD9F6F9966</string>
+		</dict>
+		<key>5576024C4BE8862F3CE6D5D1</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/Support/ChatFixtures.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>1A37F9CCF0ADDA2CA2B1B2B4</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>5576024C4BE8862F3CE6D5D1</string>
+		</dict>
+		<key>EC9DF330997470A733650D70</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/ChatPersistenceTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>0B9B2FA8AAE80F5ACB0C32EB</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>EC9DF330997470A733650D70</string>
+		</dict>
+		<key>9B630B817497B46EC2242585</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Chat/ChatPersistence.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>2EC2C4D1B2ABF4C5BA553667</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>9B630B817497B46EC2242585</string>
+		</dict>
+		<key>202A2BD97A7AAB54768C7E47</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>9B630B817497B46EC2242585</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>
