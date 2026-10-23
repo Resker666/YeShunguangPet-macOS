@@ -173,13 +173,13 @@ XCTAssertEqual(state.messages.last?.content, "a13")
 - PetSession 增加 `private(set) var skinRevision: UInt64`，仅 switchSkin 成功提交并替换后增加；`setChatPresented(_ presented: Bool)`、`presentChatReply(_ text: String)`，返回 Void。反馈方法留在 PetSession.swift 内以访问现有私有气泡/调度；不作无关大拆分。
 - StatusBarController 长期持有 `chat/chatWindow`，refresh 只在角色快照变化时 activate，不能每秒重载；现有单份 onStatusChange 继续由它持有。可测协调放 controller，AppDelegate 只衔接 NSApplication reply/alert。
 
-- [ ] **1. 写输入/布局失败用例。** `testCommandEnterHonorsMarkedText` 使用已组合/未组合输入夹具断言发送次数 0/1、普通 Enter 换行；`testWindowLayoutAndPlainText` 检查 520×620/最小 440×420、三页可达/滚动、浅深色、纯文本复制与长回复，后台到达不调用激活。程序化 IME 断言不记作真实输入法验收。
-- [ ] **2. 写集成失败用例。** `testTwoChatEntriesShareOneController` 断言菜单栏和右键打开同一会话、父子菜单/模态/退出门控正常、主设置仍七 Tab。`testChatAndSettingsPauseSourcesAreIndependent` 验证各自开关/最小化/App 隐藏互不释放另一暂停来源；手动输入及 focusQuiet 保留。`testReplyFeedbackHonorsAllGates` 覆盖可见/睡眠/安静/专注/菜单/设置/鼠标/手动动作，台词开关、80 单元、失败/重试/关窗/换肤不补播，缺失 waving 回 idle。
-- [ ] **3. 运行 RED。** `bash scripts/test.sh -only-testing:PetMacTests/ChatWindowTests -only-testing:PetMacTests/ChatIntegrationTests`；新用例必须实际执行。
-- [ ] **4. 实现窗口与菜单。** 标题随角色，档案受保护/未保存状态有明确操作；人设离页丢弃未应用编辑，聊天 draft 本次运行保留。总开关和模型、钥匙串写入分别反馈，密钥草稿保存成功清空；明确清空/重置确认并复用模态门控。打开才激活、关窗取消生成；原角色单双击不改。Info.plist 设置 0.1.22/build23，最低系统仍 14.0；帮助增加聊天配置、发送范围和记录清除的简短操作说明。
-- [ ] **5. 实现所有权、暂停与退出。** status 创建早于 session.start，聊天不得抢先存默认资料。成功换肤版本通知经过已有 refresh 转发；chatPresented 加入被动行为条件，普通互动台词暂停，独立短摘录沿用 6 秒期限。AppDelegate 同时等待皮肤与聊天已接受变更；未保存问答允许本地重试/继续退出/取消，取消退出不重发，不破坏原皮肤清理与主配置失败决策。
-- [ ] **6. 运行 GREEN。** 运行上述用例及既有 ContextMenuTests/SettingsGroupsTests/FocusCompanionTests/SpeechSessionTests，核对零失败。
-- [ ] **7. 提交。** 精确暂存本任务文件；`git commit -m "feat: add native character chat window and desktop integration"`。
+- [x] **1. 写输入/布局失败用例。** `testCommandEnterHonorsMarkedText` 使用已组合/未组合输入夹具断言发送次数 0/1、普通 Enter 换行；`testWindowLayoutAndPlainText` 检查 520×620/最小 440×420、三页可达/滚动、浅深色、纯文本复制与长回复，后台到达不调用激活。程序化 IME 断言不记作真实输入法验收。
+- [x] **2. 写集成失败用例。** `testTwoChatEntriesShareOneController` 断言菜单栏和右键打开同一会话、父子菜单/模态/退出门控正常、主设置仍七 Tab。`testChatAndSettingsPauseSourcesAreIndependent` 验证各自开关/最小化/App 隐藏互不释放另一暂停来源；手动输入及 focusQuiet 保留。`testReplyFeedbackHonorsAllGates` 覆盖可见/睡眠/安静/专注/菜单/设置/鼠标/手动动作，台词开关、80 单元、失败/重试/关窗/换肤不补播，缺失 waving 回 idle。
+- [x] **3. 运行 RED。** `bash scripts/test.sh -only-testing:PetMacTests/ChatWindowTests -only-testing:PetMacTests/ChatIntegrationTests`；新用例必须实际执行。
+- [x] **4. 实现窗口与菜单。** 标题随角色，档案受保护/未保存状态有明确操作；人设离页丢弃未应用编辑，聊天 draft 本次运行保留。总开关和模型、钥匙串写入分别反馈，密钥草稿保存成功清空；明确清空/重置确认并复用模态门控。打开才激活、关窗取消生成；原角色单双击不改。Info.plist 设置 0.1.22/build23，最低系统仍 14.0；帮助增加聊天配置、发送范围和记录清除的简短操作说明。
+- [x] **5. 实现所有权、暂停与退出。** status 创建早于 session.start，聊天不得抢先存默认资料。成功换肤版本通知经过已有 refresh 转发；chatPresented 加入被动行为条件，普通互动台词暂停，独立短摘录沿用 6 秒期限。AppDelegate 同时等待皮肤与聊天已接受变更；未保存问答允许本地重试/继续退出/取消，取消退出不重发，不破坏原皮肤清理与主配置失败决策。
+- [x] **6. 运行 GREEN。** 运行上述用例及既有 ContextMenuTests/SettingsGroupsTests/FocusCompanionTests/SpeechSessionTests，核对零失败。
+- [x] **7. 提交。** 精确暂存本任务文件；`git commit -m "feat: add native character chat window and desktop integration"`。
 
 ## Task 7：完整回归、独立评审与本地 App 交付
 

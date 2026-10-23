@@ -35,6 +35,8 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, sa
     private let onFeedback: (String) -> Void
     private let writes: ChatWriteQueue
     private var archives = [String: ChatConversation](), drafts = [String: String](), partials = [String: String]()
+    private var provisionalInputs = [String:String]()
+    var currentProvisionalInput: String? { character.flatMap { provisionalInputs[$0.id] } }
     private var protectedRoles = [String: String](), roleErrors = [String: String]()
     private var pendingPairs = [String: PendingPair](), roleWrites = [String: Int](), lastReceipts = [String: UInt64]()
     private(set) var connectionProtection: String?
@@ -69,6 +71,8 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, sa
     var canClearHistory: Bool { canMutate && character.flatMap { archives[$0.id] } != nil && character.flatMap { protectedRoles[$0.id] } == nil }
     var currentArchiveProtection: String? { character.flatMap { protectedRoles[$0.id] } }
     var canRetryPendingSave: Bool { canMutate && character.map { pendingPairs[$0.id] != nil && roleWrites[$0.id, default: 0] == 0 } == true }
+    var canRetryConnectionSave: Bool { canChangeConnection && pendingConnection != nil }
+    var canRetryTerminationSave: Bool { !pendingPairs.isEmpty || pendingConnection != nil }
     var terminationSaveError: String? {
         if !pendingPairs.isEmpty { return "有 \(pendingPairs.count) 个角色的完整对话尚未保存。" }
         return connectionError ?? credentialMutationError
@@ -133,7 +137,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, sa
         } catch { roleErrors[context.id] = "输入或人设无效，请检查后再发送。"; refreshCurrent(); return }
         generation &+= 1
         let current = generation, original = draft, input = snapshot.messages.last!.content
-        activeRequest = context; readingCredential = true
+        activeRequest = context; readingCredential = true; provisionalInputs[context.id] = input
         roleErrors[context.id] = nil; partials[context.id] = ""
         let credentials = credentials, client = client
         requestTask = Task { [weak self] in
@@ -224,7 +228,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, sa
             switch result {
             case .success:
                 if self.pendingPairs[id]?.token == pair.token {
-                    self.pendingPairs[id] = nil; self.partials[id] = nil; self.roleErrors[id] = nil
+                    self.pendingPairs[id] = nil; self.partials[id] = nil; self.provisionalInputs[id] = nil; self.roleErrors[id] = nil
                     if self.drafts[id] == pair.originalDraft { self.drafts[id] = "" }
                 }
                 if let (request, context) = feedback, !self.disposed, !self.terminating, !self.sleeping,
@@ -243,7 +247,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, sa
     }
     func discardPendingSave() {
         guard canRetryPendingSave, let id = character?.id else { return }
-        pendingPairs[id] = nil; partials[id] = nil; roleErrors[id] = nil; refreshCurrent()
+        pendingPairs[id] = nil; partials[id] = nil; provisionalInputs[id] = nil; roleErrors[id] = nil; refreshCurrent()
     }
     func applyProfile(_ profile: ChatProfile) { if let context = character { applyProfile(profile, for: context) } }
     func applyProfile(_ profile: ChatProfile, for context: ChatCharacter) {
@@ -267,7 +271,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, sa
             guard let self else { return }
             switch result {
             case .success:
-                self.pendingPairs[context.id] = nil; self.partials[context.id] = nil; self.roleErrors[context.id] = nil
+                self.pendingPairs[context.id] = nil; self.partials[context.id] = nil; self.provisionalInputs[context.id] = nil; self.roleErrors[context.id] = nil
             case .failure: self.roleErrors[context.id] = "记录未能清空，原历史与待存结果保留。"
             }
         }
@@ -279,7 +283,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, sa
             guard let self else { return }
             switch result {
             case .success:
-                self.protectedRoles[context.id] = nil; self.roleErrors[context.id] = nil; self.pendingPairs[context.id] = nil; self.partials[context.id] = nil
+                self.protectedRoles[context.id] = nil; self.roleErrors[context.id] = nil; self.pendingPairs[context.id] = nil; self.partials[context.id] = nil; self.provisionalInputs[context.id] = nil
                 if self.character == context { self.profileEditRevision &+= 1 }
             case .failure: self.roleErrors[context.id] = "记录未能备份并重置，原资料保持不变。"
             }
@@ -307,6 +311,10 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, sa
             self.refreshCurrent()
         }
         refreshCurrent()
+    }
+    func retryConnectionSave() {
+        guard canRetryConnectionSave, let value = pendingConnection else { return }
+        enqueueConnection(value)
     }
     func resetConnectionArchive() {
         guard canMutate, !isGenerating, !connectionWriting else { return }

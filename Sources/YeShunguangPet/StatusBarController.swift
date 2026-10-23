@@ -6,6 +6,10 @@ import PetCore
     private(set) var shortcuts:ShortcutController?
     private let loginItem:LoginItemController?
     let skinModel:SettingsModel?
+    private(set) var chat:ChatController?
+    private(set) var chatWindow:ChatWindowController?
+    let chatItem=NSMenuItem(title:"聊天…",action:#selector(openChat),keyEquivalent:"")
+    private let contextChatItem=NSMenuItem(title:"聊天…",action:#selector(openChat),keyEquivalent:"")
     let focus:FocusController?
     private(set) var focusWindow:FocusWindowController?
     private var quickSkins:QuickSkinMenus?
@@ -38,7 +42,7 @@ import PetCore
     private let resetItem=NSMenuItem(title:"备份原配置并重置",action:#selector(reset),keyEquivalent:"")
     let skinWarningItem=NSMenuItem(title:"皮肤恢复提示（查看设置…）",action:#selector(openSettings),keyEquivalent:"")
     private let onQuit: () -> Void
-    init(session: PetSession?, error: String? = nil, updates:ReleaseUpdateModel?=nil,registry:(any HotKeyRegistry)?=nil,loginItem:LoginItemController?=nil,diagnosticWriter:((String)->Bool)?=nil, onQuit: @escaping () -> Void) {
+    init(session: PetSession?, error: String? = nil, updates:ReleaseUpdateModel?=nil,registry:(any HotKeyRegistry)?=nil,loginItem:LoginItemController?=nil,diagnosticWriter:((String)->Bool)?=nil, chat:ChatController?=nil, onQuit: @escaping () -> Void) {
         #if arch(arm64)
         let architecture=ReleaseArchitecture.arm64
         #else
@@ -51,14 +55,23 @@ import PetCore
         self.skinModel=session.map{SettingsModel(session:$0,loginItem:loginItem,focus:focus)}
         self.session=session; self.onQuit=onQuit; item=NSStatusBar.system.statusItem(withLength:NSStatusItem.squareLength)
         super.init()
+        if let session {
+            self.chat = chat ?? ChatController(persistence:ChatArchiveWorker(settingsURL:session.settings.url),credentials:KeychainChatCredentialStore(),client:DeepSeekChatClient(),canDispatch:{ [weak self] in
+                guard let self else { return false }
+                return !self.terminating && self.session?.gate.exiting == false && self.settingsController?.hasBlockingSheet != true && self.chatWindow?.hasBlockingSheet != true && NSApp.modalWindow == nil
+            },onFeedback:{ [weak session] text in session?.presentChatReply(text) })
+            if let controller=self.chat {
+                chatWindow=ChatWindowController(controller:controller,onPresentationChange:{ [weak session] in session?.setChatPresented($0) })
+            }
+        }
         focus?.canPlayCompletionSound = {[weak self] in
             guard let self else{return false}
-            return !self.terminating && self.session?.gate.exiting==false && self.settingsController?.hasBlockingSheet != true && NSApp.modalWindow==nil
+            return !self.terminating && self.session?.gate.exiting==false && self.settingsController?.hasBlockingSheet != true && self.chatWindow?.hasBlockingSheet != true && NSApp.modalWindow==nil
         }
         if let session {
             shortcuts=ShortcutController(session:session,registry:registry ?? CarbonHotKeyRegistry(),canDispatch:{[weak self] in
                 guard let self else{return false}
-                return !self.menuOpen && !self.terminating && self.settingsController?.hasBlockingSheet != true && NSApp.modalWindow==nil
+                return !self.menuOpen && !self.terminating && self.settingsController?.hasBlockingSheet != true && self.chatWindow?.hasBlockingSheet != true && NSApp.modalWindow==nil
             })
         }
         item.button?.image=NSImage(systemSymbolName:"pawprint.fill",accessibilityDescription:"叶瞬光桌宠")
@@ -68,6 +81,7 @@ import PetCore
         for entry in [visibilityItem,recallItem,quietItem,lockItem] { entry.target=self; menu.addItem(entry) }
         lockItem.toolTip="暂停拖动和自动走动，保留点击、召回及屏幕变化时的位置修正。"
         quietItem.toolTip="本次运行暂时暂停注视、自动动作和走动，保留待机与手动互动；重开恢复正常。"
+        chatItem.target=self; menu.addItem(chatItem)
         settingsItem.target=self; menu.addItem(settingsItem)
         checkUpdatesItem.target=self;menu.addItem(checkUpdatesItem)
         helpItem.target=self;menu.addItem(helpItem)
@@ -80,13 +94,13 @@ import PetCore
         let quit=NSMenuItem(title:"退出",action:#selector(quit),keyEquivalent:""); quit.target=self; menu.addItem(quit)
         menu.delegate=self; item.menu=menu
         contextMenu.autoenablesItems=false;contextMenu.delegate=self
-        for entry in [contextSettingsItem,contextQuietItem,contextLockItem,contextHideItem,waveItem,jumpItem] {entry.target=self;contextMenu.addItem(entry)}
+        for entry in [contextChatItem,contextSettingsItem,contextQuietItem,contextLockItem,contextHideItem,waveItem,jumpItem] {entry.target=self;contextMenu.addItem(entry)}
         contextQuietItem.toolTip=quietItem.toolTip
         contextLockItem.toolTip=lockItem.toolTip
         if let session,let skinModel {
             let skins=QuickSkinMenus(session:session,model:skinModel,canDispatch:{[weak self] in
                 guard let self else{return false}
-                return !self.terminating && self.session?.gate.exiting==false && self.settingsController?.hasBlockingSheet != true && NSApp.modalWindow==nil
+                return !self.terminating && self.session?.gate.exiting==false && self.settingsController?.hasBlockingSheet != true && self.chatWindow?.hasBlockingSheet != true && NSApp.modalWindow==nil
             },onManage:{[weak self] in self?.presentSettings(tab:.skin)})
             quickSkins=skins
             for (parent,child) in zip([menu,contextMenu],skins.menus) {
@@ -96,12 +110,12 @@ import PetCore
         if let focus,let session {
             let window=FocusWindowController(session:session,focus:focus,canDispatch:{[weak self] in
                 guard let self else{return false}
-                return !self.terminating && self.session?.gate.exiting==false && self.settingsController?.hasBlockingSheet != true && NSApp.modalWindow==nil
+                return !self.terminating && self.session?.gate.exiting==false && self.settingsController?.hasBlockingSheet != true && self.chatWindow?.hasBlockingSheet != true && NSApp.modalWindow==nil
             })
             focusWindow=window
             let menus=FocusMenus(focus:focus,desktop:window,canDispatch:{[weak self] in
                 guard let self else{return false}
-                return !self.terminating && self.session?.gate.exiting==false && self.settingsController?.hasBlockingSheet != true && NSApp.modalWindow==nil
+                return !self.terminating && self.session?.gate.exiting==false && self.settingsController?.hasBlockingSheet != true && self.chatWindow?.hasBlockingSheet != true && NSApp.modalWindow==nil
             },onSettings:{[weak self] in self?.presentSettings(tab:.focus)})
             focusMenus=menus;for tracked in menus.trackingMenus{tracked.delegate=self}
             for (parent,child) in zip([menu,contextMenu],menus.menus) {
@@ -109,7 +123,7 @@ import PetCore
             }
         }
         session?.view.contextMenu = { [weak self] in
-            guard let self,!self.terminating,self.session?.gate.shouldRunFrames==true,self.settingsController?.hasBlockingSheet != true,NSApp.modalWindow==nil else{return nil}
+            guard let self,!self.terminating,self.session?.gate.shouldRunFrames==true,self.settingsController?.hasBlockingSheet != true,self.chatWindow?.hasBlockingSheet != true,NSApp.modalWindow==nil else{return nil}
             self.refresh();return self.contextMenu
         }
         diagnostics=SupportDiagnosticsModel(capture:{[weak self] in SupportDiagnosticSnapshot.capture(session:self?.session,focusWindow:self?.focusWindow)},canCopy:{[weak self] in self?.canUseSupportCommands==true},write:diagnosticWriter)
@@ -118,7 +132,7 @@ import PetCore
     func refresh() {
         visibilityItem.title=session?.isVisible == true ? "隐藏角色" : "显示角色"; visibilityItem.isEnabled=session != nil; recallItem.isEnabled=session != nil
         checkUpdatesItem.isEnabled=session != nil
-        helpItem.isEnabled=session != nil && !terminating && settingsController?.hasBlockingSheet != true && NSApp.modalWindow==nil
+        helpItem.isEnabled=session != nil && !terminating && settingsController?.hasBlockingSheet != true && chatWindow?.hasBlockingSheet != true && NSApp.modalWindow==nil
         copyDiagnosticsItem.isEnabled=canUseSupportCommands
         diagnosticResultItem.title=diagnostics?.feedback.message ?? "";diagnosticResultItem.isHidden=diagnostics?.feedback.message==nil
         settingsItem.isEnabled=session != nil; skinModel?.refresh();focus?.refreshConfiguration()
@@ -134,6 +148,17 @@ import PetCore
         quickSkins?.refresh()
         focusMenus?.refresh()
         focusWindow?.refreshPreferences()
+        chatItem.isEnabled = session != nil && !terminating && settingsController?.hasBlockingSheet != true && chatWindow?.hasBlockingSheet != true && NSApp.modalWindow == nil
+        contextChatItem.isEnabled = chatItem.isEnabled
+        if let session {
+            let m=session.skin.manifest
+            let context=ChatCharacter(id:m.id,name:m.name,description:m.description,skinRevision:session.skinRevision)
+            if chat?.character != context { chat?.activate(context) }
+        }
+    }
+    @objc private func openChat() {
+        guard session != nil, !terminating, session?.gate.exiting == false, settingsController?.hasBlockingSheet != true, chatWindow?.hasBlockingSheet != true, NSApp.modalWindow == nil else { return }
+        chatWindow?.present()
     }
     @objc private func retry() { session?.retrySave(); refresh() }
     @objc private func reset() { session?.resetProtectedSettings(); refresh() }
@@ -157,7 +182,7 @@ import PetCore
         var prefs=session.preferences;prefs.positionLocked.toggle();session.setPreferences(prefs);refresh()
     }
     @objc private func openSettings() {presentSettings()}
-    private var canUseSupportCommands:Bool {!terminating && session?.gate.exiting != true && settingsController?.hasBlockingSheet != true && NSApp.modalWindow==nil}
+    private var canUseSupportCommands:Bool {!terminating && session?.gate.exiting != true && settingsController?.hasBlockingSheet != true && chatWindow?.hasBlockingSheet != true && NSApp.modalWindow==nil}
     @objc private func copyDiagnostics() {diagnostics?.copyDiagnostics();refresh()}
     @objc private func openHelp() {
         guard !terminating,session?.gate.exiting==false,settingsController?.hasBlockingSheet != true,NSApp.modalWindow==nil else{return}
@@ -170,8 +195,8 @@ import PetCore
     }
     @objc private func checkUpdates() {guard session != nil else{return};presentSettings(tab:.about);updates.check()}
     func startShortcuts(){shortcuts?.start();focusWindow?.start()}
-    func beginTermination(){terminating=true;focusWindow?.beginTermination();focus?.setTerminating(true);contextMenu.cancelTracking();updates.cancel();quickSkins?.cancel();if let settingsController{settingsController.beginTermination()}else{skinModel?.beginTermination()};refresh()}
-    func cancelTermination(){terminating=false;focus?.setTerminating(false);focusWindow?.cancelTermination();if let settingsController{settingsController.cancelTermination()}else{skinModel?.cancelTermination()};refresh()}
+    func beginTermination(){terminating=true;chat?.beginTermination();chatWindow?.beginTermination();focusWindow?.beginTermination();focus?.setTerminating(true);contextMenu.cancelTracking();updates.cancel();quickSkins?.cancel();if let settingsController{settingsController.beginTermination()}else{skinModel?.beginTermination()};refresh()}
+    func cancelTermination(){terminating=false;chat?.cancelTermination();chatWindow?.cancelTermination();focus?.setTerminating(false);focusWindow?.cancelTermination();if let settingsController{settingsController.cancelTermination()}else{skinModel?.cancelTermination()};refresh()}
     @objc private func quit() { onQuit() }
-    func dispose() { terminating=true;focusWindow?.dispose();focusWindow=nil;focus?.dispose();focusMenus?.dispose();focusMenus=nil;contextMenu.cancelTracking();quickSkins?.dispose();quickSkins=nil;session?.view.contextMenu=nil;contextMenu.delegate=nil;openMenus.removeAll();updates.cancel();shortcuts?.dispose();settingsController?.close(); settingsController=nil; session?.setMenuOpen(false); item.menu=nil; menu.delegate=nil; NSStatusBar.system.removeStatusItem(item) }
+    func dispose() { terminating=true;chatWindow?.dispose();chatWindow=nil;chat?.dispose();chat=nil;focusWindow?.dispose();focusWindow=nil;focus?.dispose();focusMenus?.dispose();focusMenus=nil;contextMenu.cancelTracking();quickSkins?.dispose();quickSkins=nil;session?.view.contextMenu=nil;contextMenu.delegate=nil;openMenus.removeAll();updates.cancel();shortcuts?.dispose();settingsController?.close(); settingsController=nil; session?.setMenuOpen(false); item.menu=nil; menu.delegate=nil; NSStatusBar.system.removeStatusItem(item) }
 }

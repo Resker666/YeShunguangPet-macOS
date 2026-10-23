@@ -34,7 +34,8 @@ import PetCore
     private var gaze=MouseGaze()
     private var nextGazeSample: Duration?
     private var gazeSamples=0
-    private var menuOpen=false,settingsOpen=false
+    private var menuOpen=false,settingsOpen=false,chatPresented=false
+    private(set) var skinRevision: UInt64 = 0
     private let pointerPosition: () -> CGPoint
     private let automaticRandom: () -> Double
     private var automatic: AutomaticActions
@@ -51,9 +52,9 @@ import PetCore
     var gazeDirection: Int? { gaze.direction }
     var supportsGaze: Bool { skin.manifest.lookDirections.count==16 }
     var supportsRoaming: Bool { skin.manifest.animations[.runningLeft]?.loop==true && skin.manifest.animations[.runningRight]?.loop==true }
-    private var canSampleGaze: Bool { gate.shouldRunFrames && !effectiveQuiet && preferences.lookAtMouse && supportsGaze && action == .idle && !roaming.isWalking && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
-    private var canRunAutomatic: Bool { gate.shouldRunFrames && !effectiveQuiet && action == .idle && !roaming.isWalking && !interaction.isPointerBusy && !menuOpen && !settingsOpen }
-    private var canRoam: Bool { gate.shouldRunFrames && !effectiveQuiet && !preferences.positionLocked && !interaction.isPointerBusy && !menuOpen && !settingsOpen && (action == .idle || roaming.isWalking) }
+    private var canSampleGaze: Bool { gate.shouldRunFrames && !effectiveQuiet && preferences.lookAtMouse && supportsGaze && action == .idle && !roaming.isWalking && !interaction.isPointerBusy && !menuOpen && !settingsOpen && !chatPresented }
+    private var canRunAutomatic: Bool { gate.shouldRunFrames && !effectiveQuiet && action == .idle && !roaming.isWalking && !interaction.isPointerBusy && !menuOpen && !settingsOpen && !chatPresented }
+    private var canRoam: Bool { gate.shouldRunFrames && !effectiveQuiet && !preferences.positionLocked && !interaction.isPointerBusy && !menuOpen && !settingsOpen && !chatPresented && (action == .idle || roaming.isWalking) }
     var canPresentFocusCompletion:Bool {gate.shouldRunFrames && !effectiveQuiet && !menuOpen && !settingsOpen && !interaction.isPointerBusy && action == .idle}
     func setFocusQuiet(_ enabled:Bool) {
         guard !gate.exiting,focusQuiet != enabled else{return}
@@ -70,6 +71,10 @@ import PetCore
     }
     func setSettingsOpen(_ open: Bool) {
         guard !gate.exiting,settingsOpen != open else { return }; settingsOpen=open; cancelInput()
+    }
+    func setChatPresented(_ presented: Bool) {
+        guard !gate.exiting, chatPresented != presented else { return }
+        chatPresented = presented; cancelInput()
     }
     lazy var scheduler=FrameScheduler(now:now) { [weak self] in self?.tick() }
     init(skin: LoadedSkin, defaultSkin: LoadedSkin? = nil, now: @escaping () -> Duration, settings: SettingsStore, screens: @escaping () -> [ScreenArea], pointerPosition: @escaping () -> CGPoint = { NSEvent.mouseLocation }, automaticRandom: @escaping () -> Double = { Double.random(in:0..<1) },roamingRandom: @escaping () -> Double = { Double.random(in:0..<1) }) {
@@ -141,6 +146,7 @@ import PetCore
         if next.directory != skin.directory || !automatic.hasSameRules(as:nextAutomatic) {
             automatic=nextAutomatic
         }
+        skinRevision &+= 1
         scheduler.cancel(); skin=next; atlas=nextAtlas; selectedSkinID=id; skinWarning=nil; persistenceError=nil
         roaming=PetRoaming(random:roamingRandom)
         action = .idle; playback.start(animation); frame=first; view.image=image; frameUpdates += 1
@@ -331,11 +337,21 @@ import PetCore
     }
     func requestSpeech(_ event:SpeechEvent) {
         var candidate=speech
-        guard gate.shouldRunFrames,preferences.speechEnabled,!effectiveQuiet,!menuOpen,!settingsOpen,!interaction.isPointerBusy,
+        guard gate.shouldRunFrames,preferences.speechEnabled,!effectiveQuiet,!menuOpen,!settingsOpen,!chatPresented,!interaction.isPointerBusy,
               let text=candidate.select(lines:PersonalSpeech.resolve(id:skin.manifest.id,skin:skin.manifest.speech,overrides:preferences.speechOverrides),event:event,at:now()),
               let area=WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens())?.visibleFrame else{return}
         if speechBubble==nil {speechBubble=SpeechBubble()}
         if speechBubble?.show(text,owner:panel,area:area)==true {speech=candidate;speechDeadline=now() + .seconds(6);speechShownCount += 1}
+    }
+    func presentChatReply(_ text: String) {
+        guard canPresentFocusCompletion else { return }
+        play(.waving)
+        guard preferences.speechEnabled,
+              let area=WindowPlacement.capture(origin:panel.frame.origin,size:panel.frame.size,screens:screens())?.visibleFrame else { return }
+        if speechBubble == nil { speechBubble = SpeechBubble() }
+        if speechBubble?.show(ChatText.excerpt(text),owner:panel,area:area) == true {
+            speechDeadline = now() + .seconds(6); speechShownCount += 1; reschedule()
+        }
     }
     private func dismissSpeech() {speechDeadline=nil;speechBubble?.dismiss()}
     private func render() {
