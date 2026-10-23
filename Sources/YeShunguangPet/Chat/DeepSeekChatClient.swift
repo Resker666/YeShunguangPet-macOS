@@ -12,6 +12,6 @@ struct DeepSeekChatClient: ChatStreaming {
         transport = DeepSeekTextTransport(configuration: configuration)
     }
     func stream(_ snapshot: ChatPromptSnapshot, apiKey: String) -> AsyncThrowingStream<ChatStreamEvent, Error> {
-        transport.stream(model: snapshot.model, messages: snapshot.messages, format: .text, apiKey: apiKey)
+        transport.stream(model: snapshot.model, messages: snapshot.messages, format: snapshot.appSnapshot == nil ? .text : .chatActions, apiKey: apiKey)
     }
 }

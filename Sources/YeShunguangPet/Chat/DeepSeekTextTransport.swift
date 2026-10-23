@@ -7,7 +7,7 @@ private final class ChatRedirectDelegate: NSObject, URLSessionTaskDelegate, Send
     }
 }
 
-enum DeepSeekOutputFormat: Sendable { case text, jsonObject }
+enum DeepSeekOutputFormat: Sendable { case text, jsonObject, chatActions }
 
 struct DeepSeekTextTransport {
     private struct Body: Encodable {
@@ -19,6 +19,8 @@ struct DeepSeekTextTransport {
         let thinking = Thinking()
         let max_tokens = 2048
         let response_format: Output?
+        let tools: [DeepSeekToolDefinition]?
+        let tool_choice: String?
     }
     private let sessionConfiguration: URLSessionConfiguration
     static func configuration() -> URLSessionConfiguration {
@@ -42,8 +44,8 @@ struct DeepSeekTextTransport {
                     try Task.checkCancellation()
                     let key = try ChatSecret.normalize(apiKey)
                     let output: Body.Output?
-                    switch format { case .text: output = nil; case .jsonObject: output = .init(type: "json_object") }
-                    let data = try JSONEncoder().encode(Body(model: model.rawValue, messages: messages, response_format: output))
+                    switch format { case .text, .chatActions: output = nil; case .jsonObject: output = .init(type: "json_object") }
+                    let data = try JSONEncoder().encode(Body(model: model.rawValue, messages: messages, response_format: output, tools: format == .chatActions ? DeepSeekChatTools.definitions : nil, tool_choice: format == .chatActions ? "auto" : nil))
                     guard data.count <= 1048576 else { throw SkinError("本次聊天请求超过允许大小。") }
                     var request = URLRequest(url: URL(string: "https://api.deepseek.com/chat/completions")!, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30)
                     request.httpMethod = "POST"; request.httpBody = data
@@ -57,7 +59,7 @@ struct DeepSeekTextTransport {
                     guard http.value(forHTTPHeaderField: "Content-Type")?.lowercased().hasPrefix("text/event-stream") == true else {
                         throw SkinError("AI 服务没有返回流式文字，未自动重新请求。")
                     }
-                    var decoder = ChatSSEDecoder(), buffer = Data()
+                    var decoder = ChatSSEDecoder(mode: format == .chatActions ? .chatActions : .textOnly), buffer = Data()
                     for try await byte in bytes {
                         try Task.checkCancellation()
                         buffer.append(byte)
@@ -65,7 +67,7 @@ struct DeepSeekTextTransport {
                             for event in try decoder.append(buffer) {
                                 try Task.checkCancellation()
                                 continuation.yield(event)
-                                if event == .completed { continuation.finish(); return }
+                                switch event { case .completed, .action: continuation.finish(); return; case .delta: break }
                             }
                             buffer.removeAll(keepingCapacity: true)
                         }

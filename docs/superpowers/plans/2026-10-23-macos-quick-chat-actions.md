@@ -1,6 +1,6 @@
 # 桌面轻聊天与确认操作 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 交付共享原聊天与记忆的角色旁轻聊天窗，并让DeepSeek提出经用户确认、按真实状态执行的专注与手动安静操作。
 
@@ -59,10 +59,10 @@
 
 **Interfaces:** `public enum ChatAction: Equatable, Sendable { case startFocus(minutes:Int), pauseFocus, resumeFocus, setQuiet(enabled:Bool) }`；`ChatActionDecoder.decode(name:String,arguments:Data) throws -> ChatAction`。`ChatAppSnapshot: Equatable,Sendable`含`focusRevision/quietRevision:UInt64`、`phase:FocusPhase`、`status:FocusStatus`、`focusMinutes/breakMinutes/remainingSeconds:Int`、`manualQuiet/focusQuiet:Bool`，显式init同名参数；`.commandStamp:ChatActionStamp`；ChatActionStamp为Equatable/Sendable结构，含上述两种修订、phase/status、两种配置时长及两种安静布尔，排除remainingSeconds。`ChatActionReceipt`含action、`Outcome(applied/alreadySatisfied/failed/cancelled)`、本地detail及`assistantText:String`（前缀「【App操作回执】」）。`ChatActionExecutionResult { case expired(String), finished(ChatActionReceipt) }`。`ChatPromptSnapshot`新增`public let appSnapshot:ChatAppSnapshot?`及同名默认nil初始化参数，默认保留旧提示；非nil时加入固定操作规则和只含设计指定运行字段的资料，不发送修订/路径/统计。
 
-- [ ] **1. 写失败用例。** `testActionArgumentsRejectWrongTypesAndUnknownFields`断言1/120可用、0/121/1.5/true/缺字段/重复键/额外键/未知工具/非空pause对象拒绝，enabled只收布尔；4097字节拒绝。`testStampIgnoresCountdownButDetectsRevisionAndState`手工构造快照，只改秒数stamp相等，修订/phase/status/两种时长/安静组件任一改变不等。`testPromptAddsReadOnlyRuntimeWithoutChangingMemoryContract`确认nil保旧行为，非nil有人设/已存记忆/12轮/输入与4种边界、无私人路径/修订；MemoryExtractionSnapshot不含App状态，回执validate可进入原完整问答。
-- [ ] **2. 运行RED。** `bash scripts/test.sh -only-testing:PetCoreTests/ChatActionTests -only-testing:PetCoreTests/ChatConversationTests -only-testing:PetCoreTests/ChatMemoryTests`；保存新API缺失的失败证据。
-- [ ] **3. 实现上述合同。** StrictJSON按4096字节验证，确切字段/数值与布尔类型，拒绝非法字符串和未知函数；快照资料单独编码，固定指令置于用户自定义资料之外，不能把历史或记忆解析成操作。回执detail采用ChatText校验，不能塞原始异常路径/模型参数。
-- [ ] **4. 同命令GREEN并提交。** 记录实际数量、TEST SUCCEEDED；精确暂存Core/测试/工程，`git commit -m "feat: model confirmed app actions and runtime context"`。
+- [x] **1. 写失败用例。** `testActionArgumentsRejectWrongTypesAndUnknownFields`断言1/120可用、0/121/1.5/true/缺字段/重复键/额外键/未知工具/非空pause对象拒绝，enabled只收布尔；4097字节拒绝。`testStampIgnoresCountdownButDetectsRevisionAndState`手工构造快照，只改秒数stamp相等，修订/phase/status/两种时长/安静组件任一改变不等。`testPromptAddsReadOnlyRuntimeWithoutChangingMemoryContract`确认nil保旧行为，非nil有人设/已存记忆/12轮/输入与4种边界、无私人路径/修订；MemoryExtractionSnapshot不含App状态，回执validate可进入原完整问答。
+- [x] **2. 运行RED。** `bash scripts/test.sh -only-testing:PetCoreTests/ChatActionTests -only-testing:PetCoreTests/ChatConversationTests -only-testing:PetCoreTests/ChatMemoryTests`；保存新API缺失的失败证据。
+- [x] **3. 实现上述合同。** StrictJSON按4096字节验证，确切字段/数值与布尔类型，拒绝非法字符串和未知函数；快照资料单独编码，固定指令置于用户自定义资料之外，不能把历史或记忆解析成操作。回执detail采用ChatText校验，不能塞原始异常路径/模型参数。
+- [x] **4. 同命令GREEN并提交。** 记录实际数量、TEST SUCCEEDED；精确暂存Core/测试/工程，`git commit -m "feat: model confirmed app actions and runtime context"`。
 
 ## Task 2：有界工具流与现有传输兼容
 
@@ -70,10 +70,10 @@
 
 **Interfaces:** `ChatStreamEvent`新增终态`.action(ChatAction)`，只在完整tool_calls+[DONE]后发一次，工具回合不再发`.completed`；原`.delta(String)`和纯文字`.completed`不变。`ChatSSEDecoder.Mode { textOnly, chatActions }`、`init(mode:Mode = .textOnly)`；`DeepSeekOutputFormat`增加`.chatActions`。`DeepSeekToolDefinition:Encodable,Sendable`及`DeepSeekChatTools.definitions:[DeepSeekToolDefinition]`提供4个精确function定义（DTO只在此文件，不用Any编码工具库）。`DeepSeekChatClient.stream`仅在snapshot.appSnapshot非nil时启用工具模式；提炼仍jsonObject/textOnly，遇action防御性失败。Task4前Controller收到action先走明确失败占位，保证此任务完整编译但不执行功能。
 
-- [ ] **1. 写失败用例。** `testToolRoundCompletesOnlyAfterArgumentsAndDone`用受控SSE分片拼start_focus25（含UTF-8跨字节、空content、先有文字），DONE前零action，完成后恰一action且无completed。`testMalformedOrMultipleToolsNeverComplete`覆盖多项、错/布尔index、冲突id/name/type、未知名、错误/重复JSON、4097字节参数、256/257单元id、空content+stop、tool载荷+stop、缺工具+tool_calls、重复finish/DONE前终止后载荷、缺DONE与取消晚到。`testRequestsSeparateActionsFromMemoryJSON`检查实际URLProtocol请求：同一固定端点、4tools/tool_choice:auto、非思考和原时限，记忆无tools，拒绝后无重发，密钥不写持久文件。原纯文字/JSON限额和redirect/HTTP/超时用例继续。
-- [ ] **2. 运行RED。** `bash scripts/test.sh -only-testing:PetMacTests/ChatActionClientTests -only-testing:PetMacTests/ChatClientTests -only-testing:PetMacTests/MemoryClientTests`。
-- [ ] **3. 实现分模式解析与工具定义。** 严格index0单项、字段一致、累计字节上限；textOnly看到工具载荷即拒绝。收齐DONE即终结读取，不扫描未读尾部。共享session配置/取消/限额/错误，不复制网络栈、不添加未被文档支持的parallel字段；所有新增event穷尽switch在本任务更新。新测试文件使用独立private ActionURLProtocol（锁保护、按请求等待停止回调），不引用ChatClientTests/MemoryClientTests文件内private夹具、不放松其已有断言。
-- [ ] **4. 同命令GREEN并提交。** 核对取消用例等待真实URLProtocol回调而非固定yield次数，保留请求次数断言；`git commit -m "feat: decode bounded DeepSeek action proposals"`。
+- [x] **1. 写失败用例。** `testToolRoundCompletesOnlyAfterArgumentsAndDone`用受控SSE分片拼start_focus25（含UTF-8跨字节、空content、先有文字），DONE前零action，完成后恰一action且无completed。`testMalformedOrMultipleToolsNeverComplete`覆盖多项、错/布尔index、冲突id/name/type、未知名、错误/重复JSON、4097字节参数、256/257单元id、空content+stop、tool载荷+stop、缺工具+tool_calls、重复finish/DONE前终止后载荷、缺DONE与取消晚到。`testRequestsSeparateActionsFromMemoryJSON`检查实际URLProtocol请求：同一固定端点、4tools/tool_choice:auto、非思考和原时限，记忆无tools，拒绝后无重发，密钥不写持久文件。原纯文字/JSON限额和redirect/HTTP/超时用例继续。
+- [x] **2. 运行RED。** `bash scripts/test.sh -only-testing:PetMacTests/ChatActionClientTests -only-testing:PetMacTests/ChatClientTests -only-testing:PetMacTests/MemoryClientTests`。
+- [x] **3. 实现分模式解析与工具定义。** 严格index0单项、字段一致、累计字节上限；textOnly看到工具载荷即拒绝。收齐DONE即终结读取，不扫描未读尾部。共享session配置/取消/限额/错误，不复制网络栈、不添加未被文档支持的parallel字段；所有新增event穷尽switch在本任务更新。新测试文件使用独立private ActionURLProtocol（锁保护、按请求等待停止回调），不引用ChatClientTests/MemoryClientTests文件内private夹具、不放松其已有断言。
+- [x] **4. 同命令GREEN并提交。** 核对取消用例等待真实URLProtocol回调而非固定yield次数，保留请求次数断言；`git commit -m "feat: decode bounded DeepSeek action proposals"`。
 
 ## Task 3：真实计时和安静操作桥
 

@@ -19,6 +19,7 @@ struct DeepSeekMemoryClient: ChatMemoryExtracting {
                 guard content.utf8.count + text.utf8.count <= 16384 else { throw SkinError("提炼结果超过限制，未保存记忆。") }
                 content += text
             case .completed: completed = true
+            case .action: throw SkinError("记忆提炼不能包含操作提议。")
             }
         }
         try Task.checkCancellation()

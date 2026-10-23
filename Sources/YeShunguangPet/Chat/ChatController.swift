@@ -184,6 +184,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
                         guard answer.utf16.count + text.utf16.count <= 8000 else { throw SkinError("AI 回复超长，未记入记录。") }
                         answer += text; self.partials[context.id] = answer
                         self.scheduleFlush()
+                    case .action: throw SkinError("操作提议尚未启用，未执行任何操作。")
                     case .completed:
                         try ChatText.validate(answer, maxUTF16: 8000, allowEmpty: false)
                         self.requestTask = nil; self.activeRequest = nil; self.activeRequestKind = nil; self.readingCredential = false
