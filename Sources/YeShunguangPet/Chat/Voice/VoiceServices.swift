@@ -49,3 +49,37 @@ enum VoiceInputEvent: Equatable, Sendable { case partial(String), final(String),
     func endAudio()
     func cancel()
 }
+
+struct SystemVoice: Equatable, Sendable {
+    let id, name, language: String
+    let isAppleVoice, isPersonalVoice: Bool
+}
+enum VoiceOutputEvent: Equatable, Sendable { case finished, cancelled, failed }
+enum VoiceOutputFailure: Error, LocalizedError {
+    case busy, unavailable, invalid
+    var errorDescription: String? {
+        switch self {
+        case .busy: "系统朗读尚未确认停止，请稍后重试。"
+        case .unavailable: "没有可用的系统中文音色，请在系统辅助功能的朗读内容中下载中文音色。"
+        case .invalid: "朗读文字或语速无效。"
+        }
+    }
+}
+@MainActor protocol VoiceOutputProviding: AnyObject {
+    func installedVoices() -> [SystemVoice]
+    func speak(_ text: String, voiceIdentifier: String, rate: Double, token: UUID, onEvent: @escaping @MainActor (UUID, VoiceOutputEvent) -> Void) throws
+    func stop() async -> Bool
+    var onVoicesChanged: (() -> Void)? { get set }
+}
+@MainActor protocol NativeSpeechOutputDriving: AnyObject {
+    var isSpeaking: Bool { get }
+    var onEvent: (@MainActor (UUID, VoiceOutputEvent) -> Void)? { get set }
+    var onVoicesChanged: (() -> Void)? { get set }
+    func installedVoices() -> [SystemVoice]
+    func speak(_ text: String, voiceIdentifier: String, rate: Double, token: UUID) throws
+    func stop()
+}
+@MainActor struct VoiceServices {
+    let input: any VoiceInputProviding
+    let output: any VoiceOutputProviding
+}
