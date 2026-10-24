@@ -132,3 +132,5 @@
 - 同一独立最终评审席位gpt-6-astra/high在额度中断后恢复完成b154e6b..aceefa6：0 Critical/0 Important/1 Minor，未派第二次评审、无评审后源码修改；设置sheet期间内部full→quick可能暂时隐藏两窗，草稿/请求保留、菜单可恢复，已列TODO延后，不能称零已知问题。
 - 最终干净aceefa64afe1f84d8c60d7627e4a8db72199de2c的0.4.0/build26双架构包（最低14.0）、ZIP库存/来源/签名/素材/摘要、ARM中文空格路径弹出DMG后重开通过。/Applications日用ARM已安装运行，正常退出旧0.3.0后备份旧App/主配置/完整AI，schema13/v2及全部非位置状态/更新时位置与AI摘要保留；未解析AI正文、访问正式Keychain/API或改登录项。仅安装后shell输出包装用了zsh保留status变量而返回1，独立PID/库存/版本/自有窗口核验确认安装已成功，未重复安装。
 - 当前保留本地codex/macos-quick-chat-actions，无push/tag/Release授权，main/远端未改。完整记录docs/quick-chat-actions-validation.md；当前计划已完成，ledger仅归档.build/quick-chat-actions-validation/sdd-evidence，不恢复已完成任务或删除其它计划。真实API/Keychain、物理IME/焦点/睡眠/Spaces、真正最小化/恢复、Gatekeeper/外机/本版Intel运行待验收。
+
+- 用户于2026-10-24反馈「验证通过，推送」，确认0.4.0本机整体体验，授权按既有流程普通快进同步main与codex/macos-quick-chat-actions、核对两路CI和双架构Artifacts。不触发prepare_release、不打标签/建草稿/发布。此整体反馈不等于每项真实API工具/Keychain/物理IME/最小化/焦点/系统/外机/Intel专项逐一通过，已知1项Minor仍保留。此次仅追加验收与同步记录，源码/测试/脚本/工程与已通过427项的aceefa6一致，不重复无变化本地测试或替换日用App。实际推送/云端结果记录于.build/quick-chat-actions-validation/push-verification.json，不把授权当作成功。

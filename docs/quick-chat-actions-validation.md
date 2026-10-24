@@ -62,3 +62,9 @@ ARM源DMG已只读复制到`/private/tmp/叶瞬光 轻聊天 c70t7qyi/YeShunguan
 ARM App：`/Applications/YeShunguangPet.app`，源码构建副本`dist/YeShunguangPet.app`。ARM安装包：`dist/YeShunguangPet-0.4.0-macOS-arm64.dmg`；Intel安装包：`dist/YeShunguangPet-0.4.0-macOS-x86_64.dmg`。同目录各有ZIP和SHA-256，本次八附件均ad-hoc、未公证。
 
 当前仅本地分支`codex/macos-quick-chat-actions`；main/远端不变。验证日志、`final-delivery.json`、`native-probe.json`、`build.json`、PNG、`final-code-review.md`、`moved-smoke.json`、`local-install.json`和`installed-window.json`均在上述忽略目录，当前执行账本收尾归档为`sdd-evidence/`。
+
+## 后续验收与普通推送授权
+
+用户于2026-10-24明确「验证通过，推送」，确认本版在本机整体体验，授权按既有流程普通同步main及codex/macos-quick-chat-actions、检查两路CI与双架构Artifacts；不触发prepare_release、不打标签、创建草稿或发布。不能把整体反馈扩展为每个工具/失败/输入法/真实最小化/系统/Intel场景均已逐一验证；已知轻微项仍按TODO保留。
+
+本地App与包来源仍为aceefa6。本次只追加验收及同步文档，不改变生产源码或重复已通过的本地检查；云端按本次实际推送提交重新构建。远端SHA、两路运行ID、真实日志检查数量和附件元数据以忽略目录push-verification.json/cloud日志为准，不以此授权段落代替成功结果。
