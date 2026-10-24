@@ -26,14 +26,14 @@ import PetCore
         f.memoryClient.complete(0, json: #"{"candidates":[{"text":"新的候选","sourceRounds":[1]}]}"#)
         try await chatEventually { f.controller.memoryReview != nil }
     }
-    func testFourPagesAndAsyncArchiveLoadNeverOverwriteEditor() async throws {
+    func testFivePagesAndAsyncArchiveLoadNeverOverwriteEditor() async throws {
         let f = try await fixture(open: false)
         await f.persistence.holdNextLoad("robin")
         f.controller.activate(.init(id: "robin", name: "知更鸟", description: "", skinRevision: 0))
         await f.persistence.waitForLoad("robin")
         let window = ChatWindowController(controller: f.controller, onPresentationChange: { _ in })
         defer { window.dispose() }
-        XCTAssertEqual(window.pages.segmentCount, 4)
+        XCTAssertEqual(window.pages.segmentCount, 5)
         window.selectPage(2)
         await f.persistence.releaseLoad("robin")
         try await chatEventually { f.controller.conversation != nil }; window.render()
