@@ -32,6 +32,7 @@ enum VoiceCaptureState: Equatable { case idle, stoppingOutput, requestingPermiss
     }
     private var capture: Capture?, previewCapture: Capture?
     private var activity: UUID?, outputToken: UUID?, outputContext: ChatCharacter?
+    private var outputSurface: ChatVoiceSurface?
     private var preparation: Task<Void, Never>?
     private var outputStop: Task<Bool, Never>?
     private var stopToken: UUID?
@@ -196,7 +197,7 @@ enum VoiceCaptureState: Equatable { case idle, stoppingOutput, requestingPermiss
         stop()
         let barrier = outputStop
         guard commandRevision == command, usable, environment.surface == surface, !environment.effectiveQuiet, draft()?.character == context else { return }
-        let token = UUID(); activity = token; outputContext = context; actualVoice = selected; error = nil
+        let token = UUID(); activity = token; outputContext = context; outputSurface = surface; actualVoice = selected; error = nil
         preparation = Task { [weak self] in
             guard let self else { return }
             let stopped = await barrier?.value ?? false
@@ -223,7 +224,7 @@ enum VoiceCaptureState: Equatable { case idle, stoppingOutput, requestingPermiss
         commandRevision &+= 1
         activity = nil; preparation?.cancel(); preparation = nil
         retireCapture(); previewCapture = nil; preview = ""; canOfferNetwork = false
-        outputToken = nil; outputContext = nil; isSpeaking = false
+        outputToken = nil; outputContext = nil; outputSurface = nil; isSpeaking = false
         let output = services.output, previous = outputStop, stopID = UUID()
         stopToken = stopID
         outputStop = Task { [weak self] in
@@ -237,7 +238,8 @@ enum VoiceCaptureState: Equatable { case idle, stoppingOutput, requestingPermiss
     func updateEnvironment(_ snapshot: VoiceEnvironment) {
         environment = snapshot
         let contextChanged = capture.map { draft() != $0.snapshot } == true || outputContext.map { draft()?.character != $0 } == true
-        if contextChanged || !usable || (snapshot.surface != .conversation && (blocksChat || !preview.isEmpty || canOfferNetwork)) || snapshot.surface == .hidden || snapshot.surface == .other {
+        let outputPageChanged = outputSurface.map { $0 != snapshot.surface } == true
+        if contextChanged || outputPageChanged || !usable || (snapshot.surface != .conversation && (blocksChat || !preview.isEmpty || canOfferNetwork)) || snapshot.surface == .hidden || snapshot.surface == .other {
             if hasActivity { stop() }
         } else if snapshot.effectiveQuiet && (isSpeaking || (preparation != nil && capture == nil)) { stop() }
     }

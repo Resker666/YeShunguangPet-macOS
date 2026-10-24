@@ -12,6 +12,10 @@ import PetCore
     private let status = NSTextField(wrappingLabelWithString: "")
     private let sendButton = NSButton(), stopButton = NSButton(), expandButton = NSButton(), retryButton = NSButton()
     private var actionCard: ChatActionCardView!
+    private var voiceControls: ChatVoiceControls!
+    var onVoiceSettings: (() -> Void)?
+    var canPresent: Bool { allowed && !hasMarkedInput }
+    var voiceSurface: ChatVoiceSurface { .conversation }
     private var transcriptHeight: NSLayoutConstraint!
     private weak var session: PetSession?
     private let onExpand: () -> Void, canDispatch: () -> Bool
@@ -34,6 +38,7 @@ import PetCore
         actionCard = ChatActionCardView(controller: controller, hasBlockingModal: { [weak self] in
             guard let self else { return true }; return !self.allowed || self.hasMarkedInput
         })
+        voiceControls = ChatVoiceControls(controller: controller, hasBlockingModal: { [weak self] in self?.allowed != true }, hasMarkedInput: { [weak self] in self?.hasMarkedInput != false }, selection: { [weak self] in self?.inputSelection ?? .init(location: 0, length: 0) }, openSettings: { [weak self] in self?.onVoiceSettings?() })
         let root = NSStackView(); root.orientation = .vertical; root.alignment = .leading; root.spacing = 6
         root.edgeInsets = .init(top: 10, left: 10, bottom: 10, right: 10); root.translatesAutoresizingMaskIntoConstraints = false
         let content = NSView(); window.contentView = content; content.addSubview(root)
@@ -52,7 +57,7 @@ import PetCore
         transcript.translatesAutoresizingMaskIntoConstraints = false
         transcriptHeight = transcript.heightAnchor.constraint(equalToConstant: 80); transcriptHeight.isActive = true
         configure(retryButton, "重试本地保存", #selector(retry))
-        for view in [transcript, status, actionCard!, retryButton] {
+        for view in [transcript, status, actionCard!, voiceControls!, retryButton] {
             body.addArrangedSubview(view); view.translatesAutoresizingMaskIntoConstraints = false
             view.widthAnchor.constraint(equalTo: body.widthAnchor, constant: -10).isActive = true
         }
@@ -102,6 +107,7 @@ import PetCore
         if text.isEmpty { text = "输入文字与角色聊天。操作提议需你确认后才执行。" }
         if transcript.string != text { transcript.string = text }
         if composer.string != controller.draft && !composer.hasMarkedText() { composer.string = controller.draft }
+        if isPresentationVisible, !hasMarkedInput, let selection = controller.takeVoiceSelection() { inputSelection = selection }
         let phase: String
         switch controller.state {
         case .loading: phase = "正在读取本地资料"
@@ -116,12 +122,12 @@ import PetCore
         case .idle: phase = controller.connection.enabled ? "Enter 换行 · ⌘Enter 发送" : "AI 已关闭，请展开配置"
         }
         status.stringValue = controller.error ?? phase; status.textColor = controller.error == nil ? .secondaryLabelColor : .systemRed
-        actionCard.render()
+        actionCard.render(); voiceControls.render()
         sendButton.isEnabled = allowed && !hasMarkedInput && controller.canSend
-        stopButton.isEnabled = allowed && controller.isGenerating
+        stopButton.isEnabled = allowed && (controller.isGenerating || controller.voice?.hasActivity == true)
         expandButton.isEnabled = allowed && !hasMarkedInput
         retryButton.isHidden = !controller.canRetryPendingSave; retryButton.isEnabled = allowed && controller.canRetryPendingSave
-        composer.isEditable = !terminating && controller.state != .unsaved && controller.state != .saving
+        composer.isEditable = !terminating && controller.voice?.blocksChat != true && controller.state != .unsaved && controller.state != .saving
         window?.contentView?.layoutSubtreeIfNeeded()
         transcript.textContainer?.containerSize = .init(width: max(1, transcript.bounds.width - 10), height: CGFloat.greatestFiniteMagnitude)
         if let layout = transcript.layoutManager, let container = transcript.textContainer {
@@ -149,10 +155,11 @@ import PetCore
     func windowWillClose(_ notification: Notification) { if let onClose { onClose() } else { controller.windowClosed() } }
     override func cancelOperation(_ sender: Any?) { guard allowed, !hasMarkedInput else { return }; if let onClose { onClose() } else { close() } }
     func setPresentationCallbacks(onClose: @escaping () -> Void, onVisibility: @escaping () -> Void) { self.onClose = onClose; self.onVisibility = onVisibility }
-    func presentForHandoff(selection: NSRange) {
-        guard allowed, !hasMarkedInput else { return }
+    @discardableResult func presentForHandoff(selection: NSRange) -> Bool {
+        guard canPresent else { return false }
         render(); inputSelection = selection; reposition()
         window?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true); window?.makeFirstResponder(composer); onVisibility?()
+        return window?.isVisible == true
     }
     func hideForHandoff() { window?.orderOut(nil); onVisibility?() }
     func resetLogicalDrafts() { /* The shared input draft survives logical close. */ }

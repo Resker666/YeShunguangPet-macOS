@@ -4,11 +4,14 @@ import PetCore
 
 @MainActor final class FakeChatHost: ChatPresentationHosting {
     var isPresentationVisible = false, hasBlockingSheet = false, hasMarkedInput = false
+    var allowedToPresent = true, rejectPresentation = false
+    var voiceSurface: ChatVoiceSurface = .conversation
+    var canPresent: Bool { allowedToPresent && !hasBlockingSheet && !hasMarkedInput && !terminating && !disposed }
     var inputSelection = NSRange(location: 0, length: 0)
     var onClose: (() -> Void)?, onVisibility: (() -> Void)?
     var resets = 0, disposed = false, terminating = false
     func setPresentationCallbacks(onClose: @escaping () -> Void, onVisibility: @escaping () -> Void) { self.onClose = onClose; self.onVisibility = onVisibility }
-    func presentForHandoff(selection: NSRange) { inputSelection = selection; isPresentationVisible = true; onVisibility?() }
+    func presentForHandoff(selection: NSRange) -> Bool { guard canPresent, !rejectPresentation else { return false }; inputSelection = selection; isPresentationVisible = true; onVisibility?(); return true }
     func hideForHandoff() { isPresentationVisible = false; onVisibility?() }
     func resetLogicalDrafts() { resets += 1 }
     func beginTermination() { terminating = true }
@@ -48,6 +51,40 @@ import PetCore
         XCTAssertTrue(memory.hasMarkedText(), "composition fixture must be real marked text")
         coordinator.present(.quick); XCTAssertTrue(full.isPresentationVisible)
         memory.unmarkText(); coordinator.closeActive(); XCTAssertFalse(f.controller.isGenerating); XCTAssertEqual(memory.string, "")
+    }
+    func testRejectedTargetKeepsSourceVisibleAndVoiceRunning() async throws {
+        let f = try ChatControllerFixture(); try await f.open(); defer { f.controller.dispose() }
+        let input = ControlledVoiceInput(), output = ControlledVoiceOutput()
+        f.controller.configureVoice(services: .init(input: input, output: output), now: { .zero })
+        let voice = try XCTUnwrap(f.controller.voice); try await chatEventually { voice.settings.isLoaded }
+        voice.settings.apply(.init(enabled: true)); await f.controller.waitForPendingWrites()
+        let full = FakeChatHost(), quick = FakeChatHost(), coordinator = ChatPresentationCoordinator(controller: f.controller, onPresented: { _ in })
+        defer { coordinator.dispose() }; coordinator.register(full, for: .full); coordinator.register(quick, for: .quick)
+        coordinator.present(.full); voice.beginInput(selection: .init(location: 0, length: 0))
+        try await chatEventually { input.starts.count == 1 }
+        for preflight in [true, false] {
+            quick.allowedToPresent = !preflight; quick.rejectPresentation = !preflight
+            coordinator.present(.quick)
+            XCTAssertTrue(full.isPresentationVisible); XCTAssertEqual(coordinator.activeMode, .full); XCTAssertTrue(voice.blocksChat)
+        }
+        await f.close()
+    }
+    func testVoiceHandoffNeverPublishesIntermediateHidden() async throws {
+        let f = try ChatControllerFixture(); try await f.open()
+        let input = ControlledVoiceInput(), output = ControlledVoiceOutput()
+        f.controller.configureVoice(services: .init(input: input, output: output), now: { .zero })
+        let voice = try XCTUnwrap(f.controller.voice); try await chatEventually { voice.settings.isLoaded }
+        voice.settings.apply(.init(enabled: true)); await f.controller.waitForPendingWrites()
+        let full = FakeChatHost(), quick = FakeChatHost(); var visible = [Bool](), surfaces = [ChatVoiceSurface]()
+        let coordinator = ChatPresentationCoordinator(controller: f.controller, onPresented: { visible.append($0) }); defer { coordinator.dispose() }
+        coordinator.onVoicePresentationChanged = { surfaces.append($0) }
+        coordinator.register(full, for: .full); coordinator.register(quick, for: .quick); coordinator.present(.full)
+        voice.beginInput(selection: .init(location: 0, length: 0)); try await chatEventually { input.starts.count == 1 }
+        let stops = output.stops, cancellations = input.cancellations.count
+        coordinator.present(.quick); coordinator.present(.full)
+        XCTAssertEqual(visible, [true]); XCTAssertFalse(surfaces.contains(.hidden)); XCTAssertEqual(input.starts.count, 1)
+        XCTAssertEqual(output.stops, stops); XCTAssertEqual(input.cancellations.count, cancellations); XCTAssertTrue(voice.blocksChat)
+        await f.close()
     }
     func testLateHiddenHostCloseDoesNotCloseCurrentHost() async throws {
         let f = try ChatControllerFixture(); addTeardownBlock { await f.close() }; try await f.open()

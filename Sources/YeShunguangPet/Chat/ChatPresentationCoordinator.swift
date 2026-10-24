@@ -4,11 +4,13 @@ import AppKit
 enum ChatPresentationMode: Hashable { case full, quick }
 @MainActor protocol ChatPresentationHosting: AnyObject {
     var isPresentationVisible: Bool { get }
+    var canPresent: Bool { get }
+    var voiceSurface: ChatVoiceSurface { get }
     var hasBlockingSheet: Bool { get }
     var hasMarkedInput: Bool { get }
     var inputSelection: NSRange { get set }
     func setPresentationCallbacks(onClose: @escaping () -> Void, onVisibility: @escaping () -> Void)
-    func presentForHandoff(selection: NSRange)
+    func presentForHandoff(selection: NSRange) -> Bool
     func hideForHandoff()
     func resetLogicalDrafts()
     func beginTermination()
@@ -36,7 +38,9 @@ enum ChatInputSelection {
     private var hosts = [ChatPresentationMode: any ChatPresentationHosting]()
     private(set) var activeMode: ChatPresentationMode?
     private var presentationGeneration: UInt64 = 0
-    private var presented = false, terminating = false, disposed = false
+    private var presented = false, terminating = false, disposed = false, handingOff = false
+    var onVoicePresentationChanged: ((ChatVoiceSurface) -> Void)?
+    var voiceSurface: ChatVoiceSurface { activeMode.flatMap { hosts[$0] }.flatMap { $0.isPresentationVisible ? $0.voiceSurface : nil } ?? .hidden }
     var hasBlockingSheet: Bool { hosts.values.contains { $0.hasBlockingSheet } }
     var isQuickVisible: Bool { activeMode == .quick && hosts[.quick]?.isPresentationVisible == true }
     init(controller: ChatController, onPresented: @escaping (Bool) -> Void) { self.controller = controller; self.onPresented = onPresented }
@@ -47,22 +51,24 @@ enum ChatInputSelection {
     }
     private func bind(_ host: any ChatPresentationHosting, mode: ChatPresentationMode, epoch: UInt64) {
         host.setPresentationCallbacks(onClose: { [weak self] in
-            guard let self, !self.disposed, !self.terminating, self.activeMode == mode, self.presentationGeneration == epoch else { return }
+            guard let self, !self.disposed, !self.terminating, !self.handingOff, self.activeMode == mode, self.presentationGeneration == epoch else { return }
             self.closeActive()
         }, onVisibility: { [weak self] in
-            guard let self, !self.disposed, !self.terminating, self.activeMode == mode, self.presentationGeneration == epoch else { return }
+            guard let self, !self.disposed, !self.terminating, !self.handingOff, self.activeMode == mode, self.presentationGeneration == epoch else { return }
             self.updatePresented()
         })
     }
     func present(_ mode: ChatPresentationMode) {
-        guard !disposed, !terminating, !hasBlockingSheet, !hosts.values.contains(where: { $0.hasMarkedInput }), let target = hosts[mode] else { return }
-        let selection = activeMode.flatMap { hosts[$0]?.inputSelection } ?? target.inputSelection
-        presentationGeneration &+= 1
-        let old = activeMode; activeMode = mode
+        guard !disposed, !terminating, !handingOff, !hasBlockingSheet, !hosts.values.contains(where: { $0.hasMarkedInput }),
+              let target = hosts[mode], target.canPresent else { return }
+        let selection = controller.voiceSelectionForHandoff ?? activeMode.flatMap { hosts[$0]?.inputSelection } ?? target.inputSelection
+        let old = activeMode
+        handingOff = true
+        guard target.presentForHandoff(selection: selection) else { handingOff = false; return }
+        presentationGeneration &+= 1; activeMode = mode
         bind(target, mode: mode, epoch: presentationGeneration)
         if let old, old != mode { hosts[old]?.hideForHandoff() }
-        target.presentForHandoff(selection: selection)
-        updatePresented()
+        handingOff = false; updatePresented()
     }
     func closeActive() {
         guard !disposed, !terminating, activeMode != nil, !hasBlockingSheet,
@@ -73,6 +79,9 @@ enum ChatInputSelection {
         updatePresented()
     }
     private func updatePresented() {
+        guard !handingOff else { return }
+        let surface = voiceSurface
+        controller.updateVoiceSurface(surface); onVoicePresentationChanged?(surface)
         let visible = !disposed && activeMode.flatMap { hosts[$0]?.isPresentationVisible } == true
         guard visible != presented else { return }
         presented = visible; controller.setPresented(visible); onPresented(visible)

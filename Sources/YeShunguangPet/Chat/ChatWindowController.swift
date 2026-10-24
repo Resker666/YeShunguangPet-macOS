@@ -4,9 +4,11 @@ import PetCore
 
 @MainActor final class ChatWindowController: NSWindowController, NSWindowDelegate, ChatPresentationHosting {
     let controller: ChatController
-    let pages = NSSegmentedControl(labels:["对话","人设","记忆","连接"],trackingMode:.selectOne,target:nil,action:nil)
+    let pages = NSSegmentedControl(labels:["对话","人设","记忆","连接","语音"],trackingMode:.selectOne,target:nil,action:nil)
     private var memoryView: ChatMemoryView!
     private var actionCard: ChatActionCardView!
+    private var voiceControls: ChatVoiceControls!
+    private var voiceSettings: ChatVoiceSettingsView!
     var onQuickChat: (() -> Void)?
     private var presentationClose: (() -> Void)?, presentationVisibility: (() -> Void)?
     private var managed: Bool { presentationClose != nil }
@@ -46,6 +48,14 @@ import PetCore
         }, confirm: { [weak self] title, detail, action in self?.confirm(title, detail, perform: action) })
         actionCard = ChatActionCardView(controller: controller, hasBlockingModal: { [weak self] in
             guard let self else { return true }; return self.terminating || self.disposed || self.hasBlockingSheet || self.hasMarkedInput
+        })
+        voiceControls = ChatVoiceControls(controller: controller, hasBlockingModal: { [weak self] in
+            guard let self else { return true }; return self.terminating || self.disposed || self.hasBlockingSheet
+        }, hasMarkedInput: { [weak self] in self?.hasMarkedInput != false }, selection: { [weak self] in self?.inputSelection ?? .init(location: 0, length: 0) }, openSettings: { [weak self] in self?.selectPage(4) })
+        voiceSettings = ChatVoiceSettingsView(controller: controller, hasBlockingModal: { [weak self] in
+            guard let self else { return true }; return self.terminating || self.disposed || self.hasBlockingSheet || self.hasMarkedInput
+        }, onResetRequested: { [weak self] in
+            self?.confirm("备份并重置语音设置？", "仅备份并重置 voice.json，恢复语音关闭；不改聊天、角色、连接或钥匙串。") { self?.controller.voice?.settings.backupAndReset() }
         })
         window.delegate = self; window.center()
         let root = NSStackView(); root.orientation = .vertical; root.alignment = .leading; root.spacing = 12
@@ -143,7 +153,7 @@ import PetCore
             let quick = NSButton(title: "轻聊天…", target: self, action: #selector(openQuickChat))
             quick.bezelStyle = .rounded; add(quick)
             add(textBox(transcript,height:240))
-            add(actionCard)
+            add(actionCard); add(voiceControls)
             add(label("输入最多 2000 个 UTF-16 单元。Enter 换行，⌘Enter 发送。"))
             add(textBox(composer,height:76))
             add(row(sendButton,stopButton,copyButton))
@@ -155,20 +165,22 @@ import PetCore
             }
             add(applyProfileButton)
         case 2: add(memoryView)
-        default:
+        case 3:
             add(label("DeepSeek 官方接口 · https://api.deepseek.com"))
             add(enabled); add(label("模型")); add(model); add(applyConnectionButton); add(retryConnectionButton)
             add(label("API 密钥")); add(key); add(row(saveKeyButton,removeKeyButton)); add(connectionLabel)
             add(label("点击发送会将人设、已确认长期记忆、最近 12 轮完整对话、本App专注/安静运行状态和本次文字交给 DeepSeek，并附4个工具定义，增加输入 tokens。操作尚未执行，须卡片确认；确认或取消由App生成本地回执，不再请求模型。点击提炼记忆会额外发送当前角色已保存问答和记忆；均按你的 API 账户计费。打开窗口或保存设置不会发送测试请求。"))
             add(label("密钥保存在 macOS 钥匙串；连接偏好单独保存。关闭 AI 会立即停止当前请求，取消不能撤回服务商已经收到的内容。"))
             add(resetConnectionButton)
+        case 4: add(voiceSettings)
+        default: break
         }
         content.layoutSubtreeIfNeeded()
     }
     func selectPage(_ value:Int) {
-        guard (0..<4).contains(value) else { return }
+        guard (0..<5).contains(value) else { return }
         if page == 1 || value == 1 { reloadProfile() }
-        page = value; pages.selectedSegment = value; rebuildPage(); render()
+        page = value; pages.selectedSegment = value; rebuildPage(); render(); updatePresentation()
     }
     @objc private func pageChanged() { selectPage(pages.selectedSegment) }
     private func reloadProfile() {
@@ -203,7 +215,8 @@ import PetCore
             transcript.setSelectedRange(NSRange(location:min(oldSelection.location,text.utf16.count),length:0))
             if nearBottom { transcript.scrollToEndOfDocument(nil) }
         }
-        if composer.string != controller.draft { composer.string = controller.draft }
+        if composer.string != controller.draft && !composer.hasMarkedText() { composer.string = controller.draft }
+        if isPresentationVisible, page == 0, !composer.hasMarkedText(), let selection = controller.takeVoiceSelection() { inputSelection = selection }
         let phase: String
         switch controller.state {
         case .loading: phase = "正在读取本地资料"
@@ -220,13 +233,13 @@ import PetCore
         statusLabel.stringValue = "\(context?.name ?? "") · \(context?.id ?? "")\n" + (controller.error ?? phase)
         statusLabel.textColor = controller.error == nil ? .secondaryLabelColor : .systemRed
         sendButton.isEnabled = !terminating && !hasBlockingSheet && !composer.hasMarkedText() && controller.canSend
-        stopButton.isEnabled = !terminating && controller.isGenerating
+        stopButton.isEnabled = !terminating && (controller.isGenerating || controller.voice?.hasActivity == true)
         copyButton.isEnabled = !terminating && (!controller.partialReply.isEmpty || messages.last != nil)
         clearButton.isEnabled = !terminating && controller.canClearHistory
         retryButton.isHidden = !controller.canRetryPendingSave; discardButton.isHidden = retryButton.isHidden
         resetButton.isHidden = controller.currentArchiveProtection == nil
         resetButton.isEnabled = !terminating && !controller.hasPendingWrites
-        composer.isEditable = !terminating && controller.state != .unsaved && controller.state != .saving
+        composer.isEditable = !terminating && controller.voice?.blocksChat != true && controller.state != .unsaved && controller.state != .saving
         applyProfileButton.isEnabled = !terminating && controller.canEditProfile
         for field in profileFields { field.isEditable = !terminating && controller.canEditProfile }
         enabled.isEnabled = !terminating && controller.connectionLoaded && (controller.connection.enabled || controller.canChangeConnection)
@@ -238,8 +251,10 @@ import PetCore
         resetConnectionButton.isHidden = controller.connectionProtection == nil
         resetConnectionButton.isEnabled = !terminating && controller.canChangeConnection
         connectionLabel.stringValue = [controller.connectionProtection,controller.connectionError,controller.credentialMutationError,controller.credentialFeedback].compactMap{$0}.joined(separator:"\n")
-        memoryView.render(); actionCard.render()
+        memoryView.render(); actionCard.render(); voiceControls.render(); voiceSettings.render()
     }
+    var canPresent: Bool { !disposed && !terminating && !hasBlockingSheet && !hasMarkedInput }
+    var voiceSurface: ChatVoiceSurface { page == 0 ? .conversation : page == 4 ? .settings : .other }
     var isPresentationVisible: Bool { !disposed && window?.isVisible == true && window?.isMiniaturized == false && !NSApp.isHidden }
     var hasMarkedInput: Bool {
         composer.hasMarkedText() || profileFields.contains { $0.hasMarkedText() } || memoryView.hasMarkedInput
@@ -252,13 +267,14 @@ import PetCore
     func setPresentationCallbacks(onClose: @escaping () -> Void, onVisibility: @escaping () -> Void) {
         presentationClose = onClose; presentationVisibility = onVisibility
     }
-    func presentForHandoff(selection: NSRange) {
-        guard !disposed, !terminating, !hasBlockingSheet, !hasMarkedInput else { return }
+    @discardableResult func presentForHandoff(selection: NSRange) -> Bool {
+        guard canPresent else { return false }
         // Returning to conversation must not run selectPage's persona-reset rule.
         if page != 0 { page = 0; pages.selectedSegment = 0; rebuildPage() }
         render(); inputSelection = selection
         window?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
         window?.makeFirstResponder(composer); updatePresentation()
+        return window?.isVisible == true
     }
     func hideForHandoff() { window?.orderOut(nil); updatePresentation() }
     func resetLogicalDrafts() { key.stringValue = ""; reloadProfile(); memoryView.resetDrafts() }
@@ -275,7 +291,7 @@ import PetCore
     private func updatePresentation() {
         let visible = !disposed && window?.isVisible == true && window?.isMiniaturized == false && !NSApp.isHidden
         if managed { presentationVisibility?() }
-        else { controller.setPresented(visible); onPresentationChange(visible) }
+        else { controller.updateVoiceSurface(visible ? voiceSurface : .hidden); controller.setPresented(visible); onPresentationChange(visible) }
     }
     @objc private func appVisibilityChanged(_ notification:Notification) { updatePresentation() }
     func windowDidMiniaturize(_ notification:Notification) { updatePresentation() }

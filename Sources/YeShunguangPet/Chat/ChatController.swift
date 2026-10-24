@@ -682,6 +682,13 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         voiceSelection = nil
         return selection.snapshot == voiceDraftSnapshot ? selection.range : nil
     }
+    var voiceSelectionForHandoff: NSRange? {
+        guard let selection = voiceSelection, selection.snapshot == voiceDraftSnapshot else { return nil }
+        return selection.range
+    }
+    func updateVoiceSurface(_ surface: ChatVoiceSurface) {
+        voiceEnvironment.surface = surface; refreshVoiceEnvironment()
+    }
     func updateVoiceEnvironment(_ snapshot: VoiceEnvironment) {
         voiceEnvironment = snapshot; refreshVoiceEnvironment()
     }

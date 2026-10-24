@@ -26,7 +26,7 @@ import PetCore
         let native = try XCTUnwrap(window.window)
         XCTAssertEqual(native.contentLayoutRect.size,CGSize(width:520,height:620))
         XCTAssertEqual(native.contentMinSize,CGSize(width:440,height:420))
-        XCTAssertEqual(window.pages.segmentCount,4)
+        XCTAssertEqual(window.pages.segmentCount,5)
         try await f.send("你好",answer:"<script>alert('literal')</script>\n" + String(repeating:"长回复",count:100),index:0)
         window.render()
         XCTAssertFalse(window.transcript.isRichText)
