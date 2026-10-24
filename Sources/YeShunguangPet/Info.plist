@@ -24,5 +24,9 @@
 	<true/>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>仅在你主动点击录音后使用麦克风，将语音转换成可编辑的聊天草稿，文字由你手动发送。</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>将你主动录制的中文语音转换成可编辑文字。优先在本机识别；经你允许的本次联网识别可能由 Apple 处理录音。识别文字由你手动发送到 DeepSeek。</string>
 </dict>
 </plist>
