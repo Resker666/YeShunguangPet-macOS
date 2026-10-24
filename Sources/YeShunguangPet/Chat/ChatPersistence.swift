@@ -9,14 +9,17 @@ enum ChatWriteOperation: Sendable {
     case memories(characterID: String, expectedRevision: UInt64, memories: [ChatMemory])
     case connection(ChatConnection)
     case resetConnection
+    case voicePreferences(VoicePreferences)
+    case resetVoicePreferences
 }
 
-enum ChatStoredValue: Sendable { case character(ChatConversation), connection(ChatConnection) }
+enum ChatStoredValue: Sendable { case character(ChatConversation), connection(ChatConnection), voicePreferences(VoicePreferences) }
 struct ChatWriteTicket: Equatable, Sendable { let sequence: UInt64 }
 
 protocol ChatPersisting: Sendable {
     func loadCharacter(id: String, defaultProfile: ChatProfile) async -> ChatLoadResult<ChatConversation>
     func loadConnection() async -> ChatLoadResult<ChatConnection>
+    func loadVoicePreferences() async -> ChatLoadResult<VoicePreferences>
     func apply(_ operation: ChatWriteOperation) async throws -> ChatStoredValue
 }
 
@@ -25,11 +28,15 @@ actor ChatArchiveWorker: ChatPersisting {
     private var characters = [String: ChatConversation](), protections = [String: String]()
     private var connection: ChatConnection?, connectionProtection: String?
     private var connectionLoaded = false
+    private let voiceStore: VoicePreferencesStore
+    private var voiceLoaded = false
+    private var voice: VoicePreferences?, voiceProtection: String?
 
     init(settingsURL: URL) {
         let root = settingsURL.deletingLastPathComponent().appendingPathComponent("AI", isDirectory: true)
         store = ChatStore(directory: root.appendingPathComponent("characters", isDirectory: true))
         connectionStore = ChatConnectionStore(url: root.appendingPathComponent("connection.json"))
+        voiceStore = VoicePreferencesStore(url: root.appendingPathComponent("voice.json"))
     }
 
     private func load(id: String, defaultProfile: ChatProfile) -> ChatLoadResult<ChatConversation> {
@@ -65,6 +72,21 @@ actor ChatArchiveWorker: ChatPersisting {
         return result
     }
 
+    func loadVoicePreferences() async -> ChatLoadResult<VoicePreferences> {
+        if voiceLoaded {
+            if let voiceProtection { return .protectedFile(voiceProtection) }
+            return .loaded(voice ?? .init())
+        }
+        voiceLoaded = true
+        let result = voiceStore.load()
+        switch result {
+        case .missing: voice = .init()
+        case .loaded(let value): voice = value
+        case .protectedFile(let message): voiceProtection = message
+        }
+        return result
+    }
+
     private func current(_ id: String) throws -> ChatConversation {
         _ = load(id: id, defaultProfile: .init())
         guard protections[id] == nil, let value = characters[id] else { throw SkinError("原聊天档案受保护，请先备份并重置。") }
@@ -95,6 +117,15 @@ actor ChatArchiveWorker: ChatPersisting {
             try connectionStore.save(value)
             connection = value; connectionLoaded = true; connectionProtection = nil
             return .connection(value)
+        case .voicePreferences(let value):
+            _ = await loadVoicePreferences()
+            guard voiceProtection == nil else { throw SkinError("语音设置受保护，请先备份并重置。") }
+            try voiceStore.save(value); voice = value
+            return .voicePreferences(value)
+        case .resetVoicePreferences:
+            let value = try voiceStore.backupAndReset()
+            voice = value; voiceLoaded = true; voiceProtection = nil
+            return .voicePreferences(value)
         case .resetConnection:
             let value = try connectionStore.backupAndReset()
             connection = value; connectionLoaded = true; connectionProtection = nil
