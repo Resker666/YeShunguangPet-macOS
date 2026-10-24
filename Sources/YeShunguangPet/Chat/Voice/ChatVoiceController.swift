@@ -44,11 +44,14 @@ enum VoiceCaptureState: Equatable { case idle, stoppingOutput, requestingPermiss
     private(set) var captureState: VoiceCaptureState = .idle
     private(set) var preview = "", error: String?
     private(set) var isSpeaking = false, canOfferNetwork = false
+    private(set) var isStoppingOutput = false, outputStopFailed = false
+    private static let stopFailureMessage = "系统朗读尚未确认停止，可能仍在播放。请重试停止；新录音或朗读须先确认输出已停止。"
     private(set) var actualVoice: SystemVoice?
     private(set) var availableVoices = [SystemVoice]()
     var blocksChat: Bool { captureState != .idle }
     var suppressesCompletionAudio: Bool { captureState == .recording || captureState == .finishing }
-    var hasActivity: Bool { blocksChat || isSpeaking || preparation != nil || !preview.isEmpty || canOfferNetwork }
+    private var hasCancellableActivity: Bool { blocksChat || isSpeaking || preparation != nil || !preview.isEmpty || canOfferNetwork }
+    var hasActivity: Bool { hasCancellableActivity || isStoppingOutput || outputStopFailed }
     init(settings: ChatVoicePreferencesController, services: VoiceServices, now: @escaping () -> Duration,
          draft: @escaping () -> VoiceDraftSnapshot?, canRecognize: @escaping () -> Bool,
          apply: @escaping (VoiceDraftSnapshot, VoiceInsertion) -> Bool) {
@@ -64,7 +67,7 @@ enum VoiceCaptureState: Equatable { case idle, stoppingOutput, requestingPermiss
         settingsObservation = settings.objectWillChange.sink { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self, !self.disposed else { return }
-                if !settings.enabledForSession, self.hasActivity { self.stop() }
+                if !settings.enabledForSession, self.hasCancellableActivity { self.stop() }
                 self.changeRevision &+= 1
             }
         }
@@ -226,11 +229,19 @@ enum VoiceCaptureState: Equatable { case idle, stoppingOutput, requestingPermiss
         retireCapture(); previewCapture = nil; preview = ""; canOfferNetwork = false
         outputToken = nil; outputContext = nil; outputSurface = nil; isSpeaking = false
         let output = services.output, previous = outputStop, stopID = UUID()
-        stopToken = stopID
+        stopToken = stopID; isStoppingOutput = true
         outputStop = Task { [weak self] in
             if let previous { _ = await previous.value }
             let result = await output.stop()
-            if self?.stopToken == stopID { self?.outputStop = nil }
+            if let self, self.stopToken == stopID {
+                self.outputStop = nil
+                if !self.disposed {
+                    self.isStoppingOutput = false; self.outputStopFailed = !result
+                    if !result { self.error = Self.stopFailureMessage }
+                    else if self.error == Self.stopFailureMessage { self.error = nil }
+                    self.changeRevision &+= 1
+                }
+            }
             return result
         }
         changeRevision &+= 1
@@ -240,7 +251,7 @@ enum VoiceCaptureState: Equatable { case idle, stoppingOutput, requestingPermiss
         let contextChanged = capture.map { draft() != $0.snapshot } == true || outputContext.map { draft()?.character != $0 } == true
         let outputPageChanged = outputSurface.map { $0 != snapshot.surface } == true
         if contextChanged || outputPageChanged || !usable || (snapshot.surface != .conversation && (blocksChat || !preview.isEmpty || canOfferNetwork)) || snapshot.surface == .hidden || snapshot.surface == .other {
-            if hasActivity { stop() }
+            if hasCancellableActivity { stop() }
         } else if snapshot.effectiveQuiet && (isSpeaking || (preparation != nil && capture == nil)) { stop() }
     }
     func dispose() {

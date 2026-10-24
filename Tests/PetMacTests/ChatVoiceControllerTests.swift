@@ -147,6 +147,37 @@ import PetCore
         XCTAssertEqual(h.output.stops, 1, "An unawaited extra stop could cancel the new playback later")
         await h.close()
     }
+    func testStandaloneStopFailureIsVisibleAndRetryDoesNotStartNewAudio() async throws {
+        let h = try await VoiceControllerHarness.makeEnabled()
+        h.controller.readLatest("当前朗读"); try await chatEventually { h.output.spoken.count == 1 }
+        h.output.stopResult = false; let calls = h.output.stops
+        h.controller.stop(); try await chatEventually { h.output.stops == calls + 1 }
+        XCTAssertNotNil(h.controller.error, "Unconfirmed stop must remain visible")
+        h.output.stopResult = true
+        h.controller.stop(); try await chatEventually { h.output.stops == calls + 2 }
+        XCTAssertNil(h.controller.error); XCTAssertEqual(h.output.spoken.count, 1); XCTAssertTrue(h.input.starts.isEmpty)
+        await h.close()
+    }
+    func testDisableStopFailureIsVisibleWithoutReenablingVoice() async throws {
+        let h = try await VoiceControllerHarness.makeEnabled()
+        h.controller.readLatest("当前朗读"); try await chatEventually { h.output.spoken.count == 1 }
+        h.output.stopResult = false; let calls = h.output.stops
+        h.settings.disable(); await h.writes.waitForPending(); try await chatEventually { h.output.stops == calls + 1 }
+        XCTAssertFalse(h.settings.enabledForSession); XCTAssertNotNil(h.controller.error)
+        h.output.stopResult = true; h.controller.stop(); try await chatEventually { h.output.stops == calls + 2 }
+        XCTAssertFalse(h.settings.enabledForSession); XCTAssertNil(h.controller.error); XCTAssertEqual(h.output.spoken.count, 1)
+        await h.close()
+    }
+    func testOldFailedStopCannotOverwriteNewSuccessfulStop() async throws {
+        let h = try await VoiceControllerHarness.makeEnabled()
+        h.output.holdStop = true; h.output.stopResult = false
+        h.controller.stop(); try await chatEventually { h.output.stops == 1 }
+        h.controller.stop()
+        h.output.releaseStop(); h.output.stopResult = true
+        try await chatEventually { h.output.stops == 2 }
+        XCTAssertNil(h.controller.error); XCTAssertFalse(h.controller.isSpeaking); XCTAssertTrue(h.input.starts.isEmpty)
+        await h.close()
+    }
     func testPublishedSubscriberCanHideBeforeCaptureStarts() async throws {
         let h = try await VoiceControllerHarness.makeEnabled()
         let observation = h.controller.objectWillChange.sink { [weak h] _ in

@@ -47,7 +47,8 @@ import PetCore
         for view in [enabled, automatic, voices, rate, apply] as [NSControl] { view.isEnabled = editable }
         disable.isEnabled = allowed && settings.isLoaded
         preview.isEnabled = allowed && settings.enabledForSession && !voice.blocksChat
-        stop.isEnabled = allowed && voice.isSpeaking
+        stop.title = voice.isStoppingOutput ? "确认停止中…" : voice.outputStopFailed ? "重试停止朗读" : "停止朗读"
+        stop.isEnabled = allowed && !voice.isStoppingOutput && (voice.isSpeaking || voice.outputStopFailed)
         retry.isHidden = !settings.hasUnsaved; discard.isHidden = !settings.hasUnsaved
         retry.isEnabled = allowed && !settings.isWriting; discard.isEnabled = retry.isEnabled
         reset.isHidden = settings.protection == nil; reset.isEnabled = allowed && !settings.isWriting

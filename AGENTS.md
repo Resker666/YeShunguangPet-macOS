@@ -142,3 +142,5 @@
 - 用户已于2026-10-24明确「认可计划，按本会话方式实施」，授权连续本地开发/回归/一次最终整体评审/App交付，不逐任务确认。仅使用.superpowers/sdd/2026-10-24-macos-system-voice-chat/progress.md记录并恢复本计划；已完成任务不重做。原地分支codex/macos-system-voice-chat，无额外worktree；仅新增只读SDK事实调查，不委派逐任务实现或评审。当前Task1已观察缺少新类型的RED及9项相关GREEN，完整回归与实际语音验收按后续证据报告；日用App尚未替换，不访问个人AI/正式Keychain或调用真实语音。原受限环境Xcode插件/服务失败日志保留，不作产品失败；未改源码的本机服务基线427项通过。本版push/tag/Release仍未授权。
 
 - 0.5.0已完成Tasks1–8的连续本会话TDD本地提交，功能/测试来源0da1e1a；完整485项原生（158Core/327Mac）、13项离线发版及干净ARM中间构建通过，三套真实旧皮肤的同源优化假语音/模型探针通过，主执行者已看最小浅深色缓存并核验在线确认/设置滚动可达。首次完整回归有一个旧四页断言失败，更新为第五页后完整通过，原日志保留。当前Task9同一次新gpt-6-astra/high整体评审进行中，最终双架构包/搬移/日用替换尚未执行，不能视作已交付；日用App仍0.4.0，不调用真实语音/API/正式钥匙串，不改登录项。原0.4设置sheet内部切轻窗Minor已直接回归并修正；本轮独立评审结果以docs/system-voice-chat-validation.md后续实际记录为准，仍无push/tag/Release授权。只恢复本计划.superpowers/sdd/2026-10-24-macos-system-voice-chat，不重做Tasks1–8。
+
+- 0.5.0同一新gpt-6-astra/high最终整体评审在额度中断后恢复完成0ae7f82..0da1e1a，0Critical/1Important/2Minor，无第二评审。Important停止false结果静默丢弃已在唯一TDD修复pass先RED（独立停止/关闭后错误及重试入口缺失）后GREEN21项，修复后完整489项（158Core/331Mac）通过；旧停止结果隔离与录音前确认屏障保留。2项Minor：联网新段无持续模式标识、改草稿后的旧预览接受按钮静默拒绝，均列TODO、不得称已修复。当前仍待最终双架构包/分发/搬移与个人安装，原日用0.4.0尚未替换；后续实际结果另记，仍无push/tag/Release。
