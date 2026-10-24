@@ -8,7 +8,7 @@
 
 **Tech Stack:** Swift6、AppKit、Foundation、Combine、Speech、AVFoundation/AVFAudio、XCTest；macOS14+，无第三方依赖。
 
-**Spec:** [已批准书面设计](../specs/2026-10-24-macos-system-voice-chat-design.md)。用户于2026-10-24明确「认可书面设计，进入实施计划」。当前计划待审核，尚未授权产品实施。
+**Spec:** [已批准书面设计](../specs/2026-10-24-macos-system-voice-chat-design.md)。用户于2026-10-24明确「认可书面设计，进入实施计划」，随后明确「认可计划，按本会话方式实施」。本计划已获准，本会话原地连续执行，进度以本计划ledger为准。
 
 ## Global Constraints
 
@@ -182,4 +182,4 @@ Mac新增源码同时进入App与未托管PetMacTests源阶段，Core与相应Co
 
 主执行者已完成spec覆盖、步骤粒度、接口类型、五项Review Focus和篇幅比例自审，并补清停止确认后才输出、偏好dispose、父控制器即时生命周期同步、handoff内部切页和只影响提示音的独立门控。计划与设计长度相近，不复制产品实现体；本阶段未执行产品测试、代码评审或构建。
 
-当前请用户审核本计划；用户已选本会话Native原地执行，不重问方式。计划获准才实施，不能把设计批准当作实施计划已批准。
+用户已明确审核本计划并授权按本会话Native原地执行，不重问方式、不逐任务确认。原地实施、回归、一次最终整体评审及本地App交付连续推进；push/tag/Release仍需新指令。
