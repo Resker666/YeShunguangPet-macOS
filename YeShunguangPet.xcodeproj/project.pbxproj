@@ -1551,6 +1551,7 @@
 				<string>57311001FBA7427D91178615</string>
 				<string>BABDB3C7E50B4E5C811B6F24</string>
 				<string>6BD603BFDE43497AB9289421</string>
+				<string>C4D6059CD03F43CBB33535F8</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1936,6 +1937,7 @@
 				<string>5BE30F877EB948E2A4F5BD80</string>
 				<string>F185388FD7364BD88D1B8F34</string>
 				<string>A65012FFC84D47679C6A4F34</string>
+				<string>683F526791914D4D9CF336BB</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -4775,6 +4777,24 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>A65012FFC84D47679C6A4F34</string>
+		</dict>
+		<key>683F526791914D4D9CF336BB</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/ChatVoiceIntegrationTests.swift</string>
+			<key>sourceTree</key>
+			<string>SOURCE_ROOT</string>
+		</dict>
+		<key>C4D6059CD03F43CBB33535F8</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>683F526791914D4D9CF336BB</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

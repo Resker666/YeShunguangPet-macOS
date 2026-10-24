@@ -64,6 +64,11 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     private(set) var terminating = false
     private(set) var disposed = false
     private var presented = false
+    private(set) var voice: ChatVoiceController?
+    private var voiceObservation: AnyCancellable?
+    private var voiceEnvironment = VoiceEnvironment()
+    private var draftRevision: UInt64 = 0
+    private var voiceSelection: (snapshot: VoiceDraftSnapshot, range: NSRange)?
 
     var unsavedCharacterIDs: [String] { pendingPairs.keys.sorted() }
     var pendingMemoryCharacterIDs: [String] { pendingMemories.keys.sorted() }
@@ -79,32 +84,33 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     }
     var canEditProfile: Bool {
         guard let id = character?.id else { return false }
-        return canMutate && pendingAction == nil && executingAction == nil && activeRequest == nil && archives[id] != nil && protectedRoles[id] == nil
+        return canMutate && voice?.blocksChat != true && pendingAction == nil && executingAction == nil && activeRequest == nil && archives[id] != nil && protectedRoles[id] == nil
             && pendingPairs[id] == nil && pendingMemories[id] == nil && roleWrites[id, default: 0] == 0
     }
     var canEditMemories: Bool { canEditProfile }
     var canRetryMemorySave: Bool {
         canMutate && activeRequest == nil && character.map { pendingMemories[$0.id] != nil && roleWrites[$0.id, default: 0] == 0 } == true
     }
-    var canChangeConnection: Bool { canMutate && pendingAction == nil && executingAction == nil && !isGenerating && !connectionWriting && credentialTask == nil && connectionLoaded }
+    var canChangeConnection: Bool { canMutate && voice?.blocksChat != true && pendingAction == nil && executingAction == nil && !isGenerating && !connectionWriting && credentialTask == nil && connectionLoaded }
     var canSend: Bool {
         guard let id = character?.id else { return false }
-        return canMutate && pendingAction == nil && executingAction == nil && connectionLoaded && connection.enabled && connectionProtection == nil
+        return canMutate && voice?.blocksChat != true && pendingAction == nil && executingAction == nil && connectionLoaded && connection.enabled && connectionProtection == nil
             && connectionError == nil && !connectionWriting && credentialTask == nil && credentialMutationError == nil
             && credentialAvailability != .missing && requestTask == nil && archives[id] != nil
             && protectedRoles[id] == nil && pendingPairs[id] == nil && pendingMemories[id] == nil && roleWrites[id, default: 0] == 0
             && (try? ChatText.validate(draft, maxUTF16: 2000, allowEmpty: false)) != nil
     }
-    var canClearHistory: Bool { canMutate && executingAction == nil && character.flatMap { archives[$0.id] } != nil && character.flatMap { protectedRoles[$0.id] } == nil && character.flatMap { pendingMemories[$0.id] } == nil }
+    var canClearHistory: Bool { canMutate && voice?.blocksChat != true && executingAction == nil && character.flatMap { archives[$0.id] } != nil && character.flatMap { protectedRoles[$0.id] } == nil && character.flatMap { pendingMemories[$0.id] } == nil }
     var currentArchiveProtection: String? { character.flatMap { protectedRoles[$0.id] } }
     var canRetryPendingSave: Bool { canMutate && character.map { pendingPairs[$0.id] != nil && roleWrites[$0.id, default: 0] == 0 } == true }
     var canRetryConnectionSave: Bool { canChangeConnection && pendingConnection != nil }
-    var canRetryTerminationSave: Bool { !pendingPairs.isEmpty || !pendingMemories.isEmpty || pendingConnection != nil }
+    var canRetryTerminationSave: Bool { !pendingPairs.isEmpty || !pendingMemories.isEmpty || pendingConnection != nil || voice?.settings.hasUnsaved == true }
     var terminationSaveError: String? {
         var messages = [String]()
         if executingAction != nil { messages.append("操作正在执行，回执尚未保存。") }
         if !pendingPairs.isEmpty { messages.append("有 \(pendingPairs.count) 个角色的完整对话尚未保存。") }
         if !pendingMemories.isEmpty { messages.append("有 \(pendingMemories.count) 个角色的已确认记忆变更尚未保存。") }
+        if voice?.settings.hasUnsaved == true { messages.append(voice?.settings.error ?? "语音偏好尚未保存。") }
         if let connectionError { messages.append(connectionError) }
         if let credentialMutationError { messages.append(credentialMutationError) }
         return messages.isEmpty ? nil : messages.joined(separator: "\n")
@@ -161,11 +167,15 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
 
     func setDraft(_ text: String) {
         guard !disposed, let id = character?.id else { return }
+        draftRevision &+= 1; voiceSelection = nil
         drafts[id] = text; draft = text
+        refreshVoiceEnvironment()
     }
 
     func send() {
         guard canSend, let context = character, let archive = archives[context.id] else { return }
+        voice?.stop()
+        guard canSend, character == context else { return }
         let snapshot: ChatPromptSnapshot
         do {
             let runtime = actions.snapshot()
@@ -242,6 +252,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         }
     }
     private func cancelRequest() {
+        voice?.stop(); voiceSelection = nil
         if let card = pendingAction { roleErrors[card.context.id] = "操作提议已失效，未执行；可重新发送。" }
         pendingAction = nil
         generation &+= 1
@@ -254,7 +265,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
 
     var canDecideAction: Bool {
         guard let card = pendingAction, let context = character else { return false }
-        return canMutate && executingAction == nil && card.context == context && card.requestGeneration == generation
+        return canMutate && voice?.blocksChat != true && executingAction == nil && card.context == context && card.requestGeneration == generation
             && card.connectionGeneration == connectionGeneration && connection.enabled && !connectionWriting && credentialTask == nil
             && activeRequest == nil && pendingPairs[context.id] == nil && pendingMemories[context.id] == nil && roleWrites[context.id, default: 0] == 0
     }
@@ -299,6 +310,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
 
     func extractMemories() {
         guard canExtractMemories, let context = character, let archive = archives[context.id] else { return }
+        voice?.stop()
         let snapshot: MemoryExtractionSnapshot
         do { snapshot = try .init(conversation: archive, model: connection.model) }
         catch { roleErrors[context.id] = "当前资料无法提炼，请检查完整对话。"; refreshCurrent(); return }
@@ -381,11 +393,16 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
             case .success:
                 if self.pendingPairs[id]?.token == pair.token {
                     self.pendingPairs[id] = nil; self.partials[id] = nil; self.provisionalInputs[id] = nil; self.roleErrors[id] = nil
-                    if self.drafts[id] == pair.originalDraft { self.drafts[id] = "" }
+                    if self.drafts[id] == pair.originalDraft {
+                        self.drafts[id] = ""; self.draftRevision &+= 1; self.voiceSelection = nil
+                    }
                 }
                 if let (request, context) = feedback, !self.disposed, !self.terminating, !self.sleeping,
                    self.generation == request, self.character == context {
-                    self.onFeedback(pair.assistant)
+                    if case .modelReply = pair.kind {
+                        self.voice?.didSaveReply(.init(id: pair.token, context: context, requestRevision: request, text: pair.assistant))
+                    }
+                    if !self.disposed, !self.terminating, !self.sleeping, self.generation == request, self.character == context { self.onFeedback(pair.assistant) }
                 }
             case .failure:
                 switch pair.kind {
@@ -509,7 +526,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         if !value.enabled {
             // Disabling is a new intent even while an older preference/key write is pending.
             cancelRequest(); connection.enabled = false
-        } else if pendingAction != nil || executingAction != nil || connectionWriting || credentialTask != nil || isGenerating { refreshCurrent(); return }
+        } else if voice?.blocksChat == true || pendingAction != nil || executingAction != nil || connectionWriting || credentialTask != nil || isGenerating { refreshCurrent(); return }
         guard connectionProtection == nil else { refreshCurrent(); return }
         enqueueConnection(value)
     }
@@ -537,7 +554,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         enqueueConnection(value)
     }
     func resetConnectionArchive() {
-        guard canMutate, pendingAction == nil, executingAction == nil, !isGenerating, !connectionWriting else { return }
+        guard canMutate, voice?.blocksChat != true, pendingAction == nil, executingAction == nil, !isGenerating, !connectionWriting else { return }
         connectionGeneration &+= 1
         let intent = connectionGeneration
         connectionWriteCount += 1
@@ -556,7 +573,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     }
 
     func saveCredential(_ secret: String) {
-        guard canMutate, pendingAction == nil, executingAction == nil, !isGenerating, credentialTask == nil else { return }
+        guard canMutate, voice?.blocksChat != true, pendingAction == nil, executingAction == nil, !isGenerating, credentialTask == nil else { return }
         let normalized: String
         do { normalized = try ChatSecret.normalize(secret) }
         catch { credentialMutationError = "API 密钥为空、过长或含有无效字符。"; refreshCurrent(); return }
@@ -576,7 +593,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         refreshCurrent()
     }
     func removeCredential() {
-        guard canMutate, pendingAction == nil, executingAction == nil, !isGenerating, credentialTask == nil else { return }
+        guard canMutate, voice?.blocksChat != true, pendingAction == nil, executingAction == nil, !isGenerating, credentialTask == nil else { return }
         credentialFeedback = nil; credentialMutationError = nil
         let credentials = credentials
         credentialTask = Task { [weak self] in
@@ -596,11 +613,12 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     func setSleeping(_ sleeping: Bool) {
         guard !disposed, self.sleeping != sleeping else { return }
         self.sleeping = sleeping
+        refreshVoiceEnvironment()
         if sleeping { cancelRequest() }
         refreshCurrent()
     }
-    func beginTermination() { guard !disposed else { return }; terminating = true; cancelRequest(); memoryReview = nil; memoryEditRevision &+= 1; refreshCurrent() }
-    func cancelTermination() { guard !disposed else { return }; terminating = false; refreshCurrent() }
+    func beginTermination() { guard !disposed else { return }; terminating = true; refreshVoiceEnvironment(); cancelRequest(); memoryReview = nil; memoryEditRevision &+= 1; refreshCurrent() }
+    func cancelTermination() { guard !disposed else { return }; terminating = false; refreshVoiceEnvironment(); refreshCurrent() }
     func waitForPendingWrites() async {
         while true {
             if let credentialTask { await credentialTask.value }
@@ -615,15 +633,64 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         for (id, pair) in pendingPairs { enqueuePair(pair, id: id, feedback: nil) }
         for change in pendingMemories.values { enqueueMemoryChange(change) }
         if let value = pendingConnection, !connectionWriting { enqueueConnection(value) }
+        voice?.settings.retryPendingSaveForTermination()
         await waitForPendingWrites()
         return terminationSaveError == nil
     }
     func dispose() {
         guard !disposed else { return }
         cancelRequest(); disposed = true; presented = false
+        refreshVoiceEnvironment(); voice?.dispose(); voiceObservation?.cancel(); voiceObservation = nil
         roleLoadTask?.cancel(); connectionLoadTask?.cancel()
         actions.dispose()
         stopLifecycleObservers()
+    }
+
+    func configureVoice(services: VoiceServices, now: @escaping () -> Duration) {
+        guard voice == nil, !disposed else { return }
+        let settings = ChatVoicePreferencesController(persistence: persistence, writes: writes, canMutate: { [weak self] in self?.canMutate == true })
+        let value = ChatVoiceController(settings: settings, services: services, now: now,
+            draft: { [weak self] in self?.voiceDraftSnapshot },
+            canRecognize: { [weak self] in self?.canPrepareVoiceInput == true },
+            apply: { [weak self] expected, insertion in self?.applyVoiceInsertion(insertion, expected: expected) == true })
+        voice = value
+        voiceObservation = value.objectWillChange.sink { [weak self] _ in
+            Task { @MainActor in guard let self, !self.disposed else { return }; self.objectWillChange.send() }
+        }
+        refreshVoiceEnvironment(); objectWillChange.send()
+    }
+    var voiceDraftSnapshot: VoiceDraftSnapshot? {
+        character.map { .init(character: $0, revision: draftRevision, text: drafts[$0.id] ?? "") }
+    }
+    var canPrepareVoiceInput: Bool {
+        guard let id = character?.id else { return false }
+        return canMutate && pendingAction == nil && executingAction == nil && connectionLoaded && connection.enabled && connectionProtection == nil
+            && connectionError == nil && !connectionWriting && credentialTask == nil && credentialMutationError == nil
+            && credentialAvailability != .missing && requestTask == nil && archives[id] != nil && protectedRoles[id] == nil
+            && pendingPairs[id] == nil && pendingMemories[id] == nil && roleWrites[id, default: 0] == 0
+    }
+    func applyVoiceInsertion(_ insertion: VoiceInsertion, expected: VoiceDraftSnapshot) -> Bool {
+        guard canPrepareVoiceInput, voiceDraftSnapshot == expected else { return false }
+        setDraft(insertion.text)
+        guard let current = voiceDraftSnapshot, current.character == expected.character, current.text == insertion.text,
+              current.revision == expected.revision &+ 1, canPrepareVoiceInput else { return false }
+        voiceSelection = (current, insertion.selection)
+        return true
+    }
+    func takeVoiceSelection() -> NSRange? {
+        guard let selection = voiceSelection else { return nil }
+        voiceSelection = nil
+        return selection.snapshot == voiceDraftSnapshot ? selection.range : nil
+    }
+    func updateVoiceEnvironment(_ snapshot: VoiceEnvironment) {
+        voiceEnvironment = snapshot; refreshVoiceEnvironment()
+    }
+    private func refreshVoiceEnvironment() {
+        var value = voiceEnvironment
+        value.sleeping = sleeping || value.sleeping
+        value.terminating = terminating || value.terminating
+        value.disposed = disposed || value.disposed
+        voice?.updateEnvironment(value)
     }
 
     private func refreshCurrent() {

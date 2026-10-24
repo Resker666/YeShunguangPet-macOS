@@ -53,6 +53,10 @@ import PetCore
         guard !disposed, canMutate(), !isWriting, let pending else { return }
         enqueue(pending, explicitEnable: false)
     }
+    func retryPendingSaveForTermination() {
+        guard !disposed, !isWriting, let pending else { return }
+        enqueue(pending, explicitEnable: false)
+    }
     func discardPendingSave() {
         guard !disposed, canMutate(), !isWriting else { return }
         pending = nil; error = nil; changeRevision &+= 1
