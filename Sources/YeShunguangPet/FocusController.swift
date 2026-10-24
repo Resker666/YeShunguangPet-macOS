@@ -43,6 +43,7 @@ struct FocusPresetCommand:Hashable {let minutes:Int,generation:UInt64}
     private var suppressCompletionSound=false
     private let playCompletionSound:()->Void
     var canPlayCompletionSound:()->Bool = {NSApp.modalWindow==nil}
+    var allowsCompletionAudio:()->Bool = {true}
     var onChange:(()->Void)?
     var phase:FocusPhase {snapshot.phase}
     var status:FocusStatus {snapshot.status}
@@ -113,7 +114,7 @@ struct FocusPresetCommand:Hashable {let minutes:Int,generation:UInt64}
         refreshStatistics()
         publishAndSchedule()
         if let completion {
-            if !suppressCompletionSound,!sleeping,canOperate,session?.gate.sleeping==false,session?.isQuiet==false,completionSoundEnabled,canPlayCompletionSound(){playCompletionSound()}
+            if !suppressCompletionSound,!sleeping,canOperate,session?.gate.sleeping==false,session?.isQuiet==false,completionSoundEnabled,canPlayCompletionSound(),allowsCompletionAudio(){playCompletionSound()}
             session?.presentFocusCompletion(completion)
         }
     }

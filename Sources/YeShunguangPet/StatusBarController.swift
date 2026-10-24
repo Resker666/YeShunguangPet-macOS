@@ -19,6 +19,7 @@ import PetCore
     private var quickSkins:QuickSkinMenus?
     private var focusMenus:FocusMenus?
     private var openMenus=Set<ObjectIdentifier>(),terminating=false
+    private var voiceSheets = Set<ObjectIdentifier>()
     private var menuOpen:Bool { !openMenus.isEmpty }
     let checkUpdatesItem=NSMenuItem(title:"检查更新…",action:#selector(checkUpdates),keyEquivalent:"")
     let helpItem=NSMenuItem(title:"使用帮助…",action:#selector(openHelp),keyEquivalent:"")
@@ -65,12 +66,21 @@ import PetCore
                 let actionBridge=FocusChatActionBridge(session:session,focus:focus!,canDispatch:{ [weak self] in self?.canUseSupportCommands == true })
                 self.chat=ChatController(persistence:ChatArchiveWorker(settingsURL:session.settings.url),credentials:KeychainChatCredentialStore(),client:DeepSeekChatClient(),memoryClient:DeepSeekMemoryClient(),actions:actionBridge,canDispatch:{ [weak self] in self?.canUseSupportCommands == true },onFeedback:{ [weak self] text in self?.presentChatReply(text) })
             }
+            if chat == nil {
+                self.chat?.configureVoice(services: VoiceServices(input: NativeSpeechInput(), output: NativeSpeechOutput()), now: session.now)
+            }
             if let controller=self.chat {
-                let presentation=ChatPresentationCoordinator(controller:controller,onPresented:{ [weak session] in session?.setChatPresented($0) })
+                let presentation=ChatPresentationCoordinator(controller:controller,onPresented:{ [weak session] in session?.setChatPresented($0) },canPresent:{[weak self] in self?.canUseSupportCommands == true})
                 chatPresentation=presentation
                 let full=ChatWindowController(controller:controller,onPresentationChange:{_ in})
-                let quick=QuickChatWindowController(controller:controller,session:session,onExpand:{[weak presentation] in presentation?.present(.full)},canDispatch:{[weak self] in self?.canUseSupportCommands == true})
-                full.onQuickChat = {[weak presentation] in presentation?.present(.quick)}
+                let quick=QuickChatWindowController(controller:controller,session:session,onExpand:{[weak self,weak presentation] in guard self?.canUseSupportCommands == true else{return};presentation?.present(.full)},canDispatch:{[weak self] in self?.canUseSupportCommands == true})
+                full.onQuickChat = {[weak self,weak presentation] in guard self?.canUseSupportCommands == true else{return};presentation?.present(.quick)}
+                quick.onVoiceSettings = {[weak self,weak full,weak presentation] in
+                    guard self?.canUseSupportCommands == true else{return}
+                    presentation?.present(.full)
+                    if presentation?.activeMode == .full, full?.isPresentationVisible == true { full?.selectPage(4) }
+                }
+                presentation.onVoicePresentationChanged = {[weak self] _ in self?.refreshVoiceEnvironment()}
                 chatWindow=full;quickChatWindow=quick
                 presentation.register(full,for:.full);presentation.register(quick,for:.quick)
             }
@@ -79,6 +89,7 @@ import PetCore
             guard let self else{return false}
             return !self.terminating && self.session?.gate.exiting==false && self.settingsController?.hasBlockingSheet != true && self.chatPresentation?.hasBlockingSheet != true && NSApp.modalWindow==nil
         }
+        focus?.allowsCompletionAudio = {[weak self] in self?.chat?.voice?.suppressesCompletionAudio != true}
         if let session {
             shortcuts=ShortcutController(session:session,registry:registry ?? CarbonHotKeyRegistry(),canDispatch:{[weak self] in
                 guard let self else{return false}
@@ -139,6 +150,9 @@ import PetCore
             self.refresh();return self.contextMenu
         }
         diagnostics=SupportDiagnosticsModel(capture:{[weak self] in SupportDiagnosticSnapshot.capture(session:self?.session,focusWindow:self?.focusWindow)},canCopy:{[weak self] in self?.canUseSupportCommands==true},write:diagnosticWriter)
+        for name in [NSWindow.willBeginSheetNotification, NSWindow.didEndSheetNotification, NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification] {
+            NotificationCenter.default.addObserver(self,selector:#selector(voiceWindowChanged),name:name,object:nil)
+        }
         session?.onStatusChange = { [weak self] in self?.refresh() }; refresh()
     }
     func refresh() {
@@ -168,6 +182,7 @@ import PetCore
             let context=ChatCharacter(id:m.id,name:m.name,description:m.description,skinRevision:session.skinRevision)
             if chat?.character != context { chat?.activate(context) }
         }
+        refreshVoiceEnvironment()
     }
     @objc private func openChat() {
         guard session != nil, !terminating, session?.gate.exiting == false, settingsController?.hasBlockingSheet != true, chatPresentation?.hasBlockingSheet != true, NSApp.modalWindow == nil else { return }
@@ -189,6 +204,26 @@ import PetCore
     func menuDidClose(_ menu: NSMenu) {
         openMenus.remove(ObjectIdentifier(menu));session?.setMenuOpen(menuOpen)
         focus?.setDisplayVisible(menuOpen,source:"menus")
+        refreshVoiceEnvironment()
+    }
+    private func refreshVoiceEnvironment() {
+        chat?.updateVoiceEnvironment(.init(surface: chatPresentation?.voiceSurface ?? .hidden,
+            blocked: menuOpen || !voiceSheets.isEmpty || settingsController?.hasBlockingSheet == true || chatPresentation?.hasBlockingSheet == true || NSApp.modalWindow != nil,
+            effectiveQuiet: session?.effectiveQuiet == true,
+            sleeping: chat?.sleeping == true, terminating: terminating || session?.gate.exiting == true, disposed: chat?.disposed == true))
+    }
+    @objc nonisolated private func voiceWindowChanged(_ notification: Notification) {
+        let begin = notification.name == NSWindow.willBeginSheetNotification
+        let end = notification.name == NSWindow.didEndSheetNotification
+        let id = (notification.object as? NSWindow).map(ObjectIdentifier.init)
+        if Thread.isMainThread { MainActor.assumeIsolated { handleVoiceWindowChange(begin:begin,end:end,id:id) } }
+        else { Task { @MainActor [weak self] in self?.handleVoiceWindowChange(begin:begin,end:end,id:id) } }
+    }
+    private func handleVoiceWindowChange(begin:Bool,end:Bool,id:ObjectIdentifier?) {
+        if let id { if begin {voiceSheets.insert(id)}; if end {voiceSheets.remove(id)} }
+        refreshVoiceEnvironment()
+        // The first notification may precede attachedSheet/modalWindow assignment.
+        DispatchQueue.main.async { [weak self] in self?.refreshVoiceEnvironment() }
     }
     @objc private func wave() {guard canUseSupportCommands else{return};session?.play(.waving)}
     @objc private func jump() {guard canUseSupportCommands else{return};session?.play(.jumping)}
@@ -216,5 +251,5 @@ import PetCore
     func beginTermination(){guard !terminating else{return};terminating=true;chat?.beginTermination();chatPresentation?.beginTermination();focusWindow?.beginTermination();focus?.setTerminating(true);contextMenu.cancelTracking();updates.cancel();quickSkins?.cancel();if let settingsController{settingsController.beginTermination()}else{skinModel?.beginTermination()};refresh()}
     func cancelTermination(){terminating=false;chat?.cancelTermination();chatPresentation?.cancelTermination();focus?.setTerminating(false);focusWindow?.cancelTermination();if let settingsController{settingsController.cancelTermination()}else{skinModel?.cancelTermination()};refresh()}
     @objc private func quit() { guard canUseSupportCommands else{return};onQuit() }
-    func dispose() { terminating=true;chatPresentation?.dispose();chatPresentation=nil;chatWindow=nil;quickChatWindow=nil;chat?.dispose();chat=nil;focusWindow?.dispose();focusWindow=nil;focus?.dispose();focusMenus?.dispose();focusMenus=nil;contextMenu.cancelTracking();quickSkins?.dispose();quickSkins=nil;session?.view.contextMenu=nil;contextMenu.delegate=nil;openMenus.removeAll();updates.cancel();shortcuts?.dispose();settingsController?.close(); settingsController=nil; session?.setMenuOpen(false); item.menu=nil; menu.delegate=nil; NSStatusBar.system.removeStatusItem(item) }
+    func dispose() { NotificationCenter.default.removeObserver(self);voiceSheets.removeAll();terminating=true;chatPresentation?.dispose();chatPresentation=nil;chatWindow=nil;quickChatWindow=nil;chat?.dispose();chat=nil;focusWindow?.dispose();focusWindow=nil;focus?.dispose();focusMenus?.dispose();focusMenus=nil;contextMenu.cancelTracking();quickSkins?.dispose();quickSkins=nil;session?.view.contextMenu=nil;contextMenu.delegate=nil;openMenus.removeAll();updates.cancel();shortcuts?.dispose();settingsController?.close(); settingsController=nil; session?.setMenuOpen(false); item.menu=nil; menu.delegate=nil; NSStatusBar.system.removeStatusItem(item) }
 }

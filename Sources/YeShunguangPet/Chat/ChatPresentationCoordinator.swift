@@ -35,6 +35,7 @@ enum ChatInputSelection {
 @MainActor final class ChatPresentationCoordinator {
     private let controller: ChatController
     private let onPresented: (Bool) -> Void
+    private let canPresentGlobally: () -> Bool
     private var hosts = [ChatPresentationMode: any ChatPresentationHosting]()
     private(set) var activeMode: ChatPresentationMode?
     private var presentationGeneration: UInt64 = 0
@@ -43,7 +44,7 @@ enum ChatInputSelection {
     var voiceSurface: ChatVoiceSurface { activeMode.flatMap { hosts[$0] }.flatMap { $0.isPresentationVisible ? $0.voiceSurface : nil } ?? .hidden }
     var hasBlockingSheet: Bool { hosts.values.contains { $0.hasBlockingSheet } }
     var isQuickVisible: Bool { activeMode == .quick && hosts[.quick]?.isPresentationVisible == true }
-    init(controller: ChatController, onPresented: @escaping (Bool) -> Void) { self.controller = controller; self.onPresented = onPresented }
+    init(controller: ChatController, onPresented: @escaping (Bool) -> Void, canPresent: @escaping () -> Bool = { true }) { self.controller = controller; self.onPresented = onPresented; self.canPresentGlobally = canPresent }
     func register(_ host: any ChatPresentationHosting, for mode: ChatPresentationMode) {
         guard !disposed, hosts[mode] == nil else { return }
         hosts[mode] = host
@@ -59,7 +60,7 @@ enum ChatInputSelection {
         })
     }
     func present(_ mode: ChatPresentationMode) {
-        guard !disposed, !terminating, !handingOff, !hasBlockingSheet, !hosts.values.contains(where: { $0.hasMarkedInput }),
+        guard !disposed, !terminating, !handingOff, canPresentGlobally(), !hasBlockingSheet, !hosts.values.contains(where: { $0.hasMarkedInput }),
               let target = hosts[mode], target.canPresent else { return }
         let selection = controller.voiceSelectionForHandoff ?? activeMode.flatMap { hosts[$0]?.inputSelection } ?? target.inputSelection
         let old = activeMode
@@ -71,7 +72,7 @@ enum ChatInputSelection {
         handingOff = false; updatePresented()
     }
     func closeActive() {
-        guard !disposed, !terminating, activeMode != nil, !hasBlockingSheet,
+        guard !disposed, !terminating, canPresentGlobally(), activeMode != nil, !hasBlockingSheet,
               !hosts.values.contains(where: { $0.hasMarkedInput }) else { return }
         presentationGeneration &+= 1; activeMode = nil
         for host in hosts.values { host.hideForHandoff(); host.resetLogicalDrafts() }

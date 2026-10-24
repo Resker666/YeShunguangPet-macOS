@@ -23,6 +23,25 @@ import PetCore
         focus.canPlayCompletionSound = {!input.modal}
         return .init(directory:directory,session:session,input:input,focus:focus)
     }
+    func testRecordingSuppressesOnlyCompletionAudio() async throws {
+        for finishing in [false, true] {
+            let f = try fixture(); defer { f.close() }
+            let h = try await VoiceControllerHarness.makeEnabled()
+            f.focus.allowsCompletionAudio = { !h.controller.suppressesCompletionAudio }
+            h.controller.beginInput(selection: .init(location: 0, length: 0))
+            try await chatEventually { h.input.starts.count == 1 }
+            if finishing { h.controller.finishInput() }
+            XCTAssertTrue(f.focus.canStartPreset)
+            try f.focus.setCompletionSound(true)
+            f.focus.startOrResume(); f.input.time = .seconds(60); f.focus.refreshTime()
+            XCTAssertEqual(f.focus.status, .completed); XCTAssertEqual(f.input.sounds, 0)
+            XCTAssertEqual(f.focus.todayStatistics.completedCount, 1); XCTAssertEqual(f.focus.todayStatistics.plannedMinutes, 1)
+            h.controller.cancelInput(); f.focus.refreshTime(); XCTAssertEqual(f.input.sounds, 0)
+            f.focus.reset(); f.focus.startOrResume(); f.input.time = .seconds(120); f.focus.refreshTime()
+            XCTAssertEqual(f.input.sounds, 1); XCTAssertEqual(f.focus.todayStatistics.completedCount, 2)
+            await h.close()
+        }
+    }
     func testCompletionSoundDefaultsOffAndEnablingAfterCompletionDoesNotReplay()throws {
         let f=try fixture();defer{f.close()};f.focus.startOrResume();f.input.time = .seconds(60);f.focus.refreshTime()
         XCTAssertEqual(f.input.sounds,0);try f.focus.setCompletionSound(true);f.focus.refreshTime()

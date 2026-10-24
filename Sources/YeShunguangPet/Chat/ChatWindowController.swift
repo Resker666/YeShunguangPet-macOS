@@ -322,6 +322,7 @@ import PetCore
     }
     private func confirm(_ title:String,_ detail:String,perform:() -> Void) {
         guard !terminating, !hasBlockingSheet else { return }
+        controller.voice?.stop()
         let alert = NSAlert(); alert.messageText = title; alert.informativeText = detail
         alert.addButton(withTitle:"确认"); alert.addButton(withTitle:"取消")
         if alert.runModal() == .alertFirstButtonReturn, !terminating { perform() }

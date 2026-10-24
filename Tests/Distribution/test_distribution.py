@@ -27,6 +27,14 @@ class DistributionTests(unittest.TestCase):
         with (self.app / "Contents/Info.plist").open("rb") as stream:
             self.version = plistlib.load(stream)["CFBundleShortVersionString"]
 
+    def test_voice_privacy_usage_descriptions(self):
+        with (self.app / "Contents/Info.plist").open("rb") as stream:
+            info = plistlib.load(stream)
+        for key in ("NSMicrophoneUsageDescription", "NSSpeechRecognitionUsageDescription"):
+            self.assertIsInstance(info.get(key), str)
+            self.assertTrue(info[key].strip(), key)
+        self.assertEqual(info["LSMinimumSystemVersion"], "14.0")
+
     def package(self):
         return subprocess.run(["bash", "scripts/package-app.sh"], cwd=self.root,
                               capture_output=True, text=True, timeout=90)
