@@ -134,3 +134,5 @@
 - 当前保留本地codex/macos-quick-chat-actions，无push/tag/Release授权，main/远端未改。完整记录docs/quick-chat-actions-validation.md；当前计划已完成，ledger仅归档.build/quick-chat-actions-validation/sdd-evidence，不恢复已完成任务或删除其它计划。真实API/Keychain、物理IME/焦点/睡眠/Spaces、真正最小化/恢复、Gatekeeper/外机/本版Intel运行待验收。
 
 - 用户于2026-10-24反馈「验证通过，推送」，确认0.4.0本机整体体验，授权按既有流程普通快进同步main与codex/macos-quick-chat-actions、核对两路CI和双架构Artifacts。不触发prepare_release、不打标签/建草稿/发布。此整体反馈不等于每项真实API工具/Keychain/物理IME/最小化/焦点/系统/外机/Intel专项逐一通过，已知1项Minor仍保留。此次仅追加验收与同步记录，源码/测试/脚本/工程与已通过427项的aceefa6一致，不重复无变化本地测试或替换日用App。实际推送/云端结果记录于.build/quick-chat-actions-validation/push-verification.json，不把授权当作成功。
+
+- 用户随后选择C语音交流，并明确「系统中文音色打通」；本机识别不可用时，选择提示后可允许Apple在线识别。当前在原独立Mac仓库本地codex/macos-system-voice-chat（基线0ae7f82）保存书面提案docs/superpowers/specs/2026-10-24-macos-system-voice-chat-design.md，建议0.5.0/build27、主动录音→检查草稿→原聊天发送→完整回复成功保存后朗读，在线授权仅本次新录音。新的只读可实施性检查结论nothing important left，尚待用户审核整份设计；未写实施计划或产品代码，不把系统音色/联网选择扩展为设计或实施已批准。仍沿用本会话原地、一次最终独立整体评审，不新增工作树；主schema13/角色v2、日用App/个人AI/Keychain/登录项保持。只读SDK/音色枚举不等于编译、实际发声或识别通过，工具音频枚举为空也不证明本机无麦克风。本版push/tag/Release未授权。
