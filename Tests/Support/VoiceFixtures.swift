@@ -1,4 +1,5 @@
 import Foundation
+import PetCore
 
 @MainActor final class ControlledVoiceInput: VoiceInputProviding {
     var permissionsValue = VoicePermissions(microphone: .authorized, speech: .authorized)
@@ -46,4 +47,43 @@ import Foundation
     func stop() async -> Bool { stops += 1; if holdStop { return await withCheckedContinuation { stopsWaiting.append($0) } }; return stopResult }
     func releaseStop() { holdStop = false; let waiting = stopsWaiting; stopsWaiting = []; for waiter in waiting { waiter.resume(returning: stopResult) } }
     func emit(_ token: UUID, _ event: VoiceOutputEvent) { callbacks[token]?(token, event) }
+}
+
+@MainActor final class VoiceControllerHarness {
+    let root: URL
+    let persistence: ControlledChatPersistence, writes: ChatWriteQueue
+    let settings: ChatVoicePreferencesController
+    let input = ControlledVoiceInput(), output = ControlledVoiceOutput()
+    var clock: Duration = .zero
+    var snapshot = VoiceDraftSnapshot(character: .init(id: "robin", name: "知更鸟", description: "角色", skinRevision: 0), revision: 0, text: "")
+    var canInput = true
+    var insertions = [VoiceInsertion]()
+    var environment = VoiceEnvironment(surface: .conversation)
+    lazy var controller = ChatVoiceController(settings: settings, services: .init(input: input, output: output), now: { [weak self] in self?.clock ?? .zero }, draft: { [weak self] in self?.snapshot }, canRecognize: { [weak self] in self?.canInput == true }, apply: { [weak self] expected, insertion in
+        guard let self, self.snapshot == expected else { return false }
+        self.insertions.append(insertion)
+        self.snapshot = .init(character: expected.character, revision: expected.revision + 1, text: insertion.text)
+        return true
+    })
+    init() throws {
+        root = FileManager.default.temporaryDirectory.appendingPathComponent("voice-harness-" + UUID().uuidString)
+        persistence = ControlledChatPersistence(settingsURL: root.appendingPathComponent("settings.json"))
+        writes = ChatWriteQueue(persistence: persistence)
+        settings = ChatVoicePreferencesController(persistence: persistence, writes: writes)
+    }
+    static func makeEnabled() async throws -> VoiceControllerHarness {
+        let h = try VoiceControllerHarness()
+        try await chatEventually { h.settings.isLoaded }
+        h.settings.apply(.init(enabled: true)); await h.writes.waitForPending()
+        h.controller.updateEnvironment(h.environment)
+        return h
+    }
+    func advance(by duration: Duration) { clock += duration; controller.serviceDeadlines() }
+    func setEnvironment(_ value: VoiceEnvironment) { environment = value; controller.updateEnvironment(value) }
+    func close() async {
+        controller.dispose(); input.releasePermissions(); output.releaseStop(); settings.dispose()
+        await persistence.releaseWrite(); await writes.waitForPending()
+        try? FileManager.default.removeItem(at: root)
+    }
+    func reply(_ revision: UInt64 = 1, text: String = "完整回复") -> VoiceSavedReply { .init(id: UUID(), context: snapshot.character, requestRevision: revision, text: text) }
 }
