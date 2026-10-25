@@ -56,3 +56,7 @@
 App与旧状态备份仅在0700的忽略证据目录 `.build/system-voice-chat-validation`；原测试/构建/签名/包/搬移/安装日志、build-info来源、优化探针源码摘要和一次评审报告一起保留。本地分支 `codex/macos-system-voice-chat` 保留，未合并main或更改远端。Windows仓库未改动。
 
 本地安装包：`dist/YeShunguangPet-0.5.0-macOS-arm64.dmg`（M系列）及 `dist/YeShunguangPet-0.5.0-macOS-x86_64.dmg`（Intel），同目录还有ZIP及SHA-256。包为ad-hoc签名，未做付费Developer ID签名或苹果公证；已有Gatekeeper/外机边界仍待实际验证。
+
+## 推送授权（2026-10-25）
+
+用户明确指令「推送」，授权按既有流程普通快进同步main与codex/macos-system-voice-chat，并核对两路CI和Artifacts；不打标签、不触发prepare_release、不创建或发布Release。本次没有声明「验证通过」，不将推送指令记作真实语音或逐项本机验收通过。产品源码、测试、脚本和工程相对已通过489项的20c16ec未再修改，本轮只补文档，不重复无变化的本地测试或替换日用App。实际远端与云端结果保存在忽略目录.build/system-voice-chat-validation/push-verification.json，授权不等于推送或CI已成功。
