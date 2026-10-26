@@ -1,4 +1,5 @@
 import Foundation
+import AVFoundation
 import XCTest
 
 @MainActor private final class TestSpeechOutputDriver: NativeSpeechOutputDriving {
@@ -14,6 +15,38 @@ import XCTest
 }
 
 @MainActor final class NativeSpeechOutputTests: XCTestCase {
+    func testVoiceNotificationProducerDoesNotWaitForMainActor() async throws {
+        let center = NotificationCenter(), posting = DispatchSemaphore(value: 0), posted = DispatchSemaphore(value: 0)
+        var updates = 0
+        let observation = SpeechVoicesObservation(center: center) { updates += 1 }
+        DispatchQueue.global().async {
+            posting.signal()
+            center.post(name: AVSpeechSynthesizer.availableVoicesDidChangeNotification, object: nil)
+            posted.signal()
+        }
+        // Model speechVoices() waiting synchronously for its background worker.
+        // The worker must be able to finish posting while MainActor is occupied.
+        XCTAssertEqual(posting.wait(timeout: .now() + 3), .success)
+        XCTAssertEqual(posted.wait(timeout: .now() + 1), .success, "Voice service must not wait for the UI to deliver its notification")
+        XCTAssertEqual(updates, 0)
+        try await chatEventually { updates == 1 }
+        withExtendedLifetime(observation) {}
+    }
+
+    func testVoiceNotificationOnMainIsDeferredAndObservationIsRemoved() async throws {
+        let center = NotificationCenter()
+        var updates = 0
+        var observation: SpeechVoicesObservation? = SpeechVoicesObservation(center: center) { updates += 1 }
+        center.post(name: AVSpeechSynthesizer.availableVoicesDidChangeNotification, object: nil)
+        XCTAssertEqual(updates, 0)
+        try await chatEventually { updates == 1 }
+        XCTAssertNotNil(observation)
+        observation = nil
+        center.post(name: AVSpeechSynthesizer.availableVoicesDidChangeNotification, object: nil)
+        await Task.yield()
+        XCTAssertEqual(updates, 1)
+    }
+
     func testBusySpeakDoesNotQueueAndLateCancelKeepsNewToken() async throws {
         let driver = TestSpeechOutputDriver(), first = UUID(), second = UUID()
         let output = NativeSpeechOutput(driver: driver, stopTimeout: .milliseconds(20))

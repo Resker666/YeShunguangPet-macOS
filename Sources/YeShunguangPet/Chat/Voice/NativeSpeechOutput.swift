@@ -75,15 +75,13 @@ private final class SpeechOutputProxy: NSObject, AVSpeechSynthesizerDelegate, @u
 @MainActor private final class SystemSpeechOutputDriver: NativeSpeechOutputDriving {
     private var synthesizer: AVSpeechSynthesizer?
     private var proxy: SpeechOutputProxy?
-    private var observer: VoiceNotificationToken?
+    private var observer: SpeechVoicesObservation?
     var onEvent: (@MainActor (UUID, VoiceOutputEvent) -> Void)?
     var onVoicesChanged: (() -> Void)?
     var isSpeaking: Bool { synthesizer?.isSpeaking == true }
     private func observeVoices() {
         guard observer == nil else { return }
-        observer = VoiceNotificationToken(NotificationCenter.default.addObserver(forName: AVSpeechSynthesizer.availableVoicesDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.onVoicesChanged?() }
-        })
+        observer = SpeechVoicesObservation { [weak self] in self?.onVoicesChanged?() }
     }
     func installedVoices() -> [SystemVoice] {
         observeVoices()
@@ -105,8 +103,16 @@ private final class SpeechOutputProxy: NSObject, AVSpeechSynthesizerDelegate, @u
     func stop() { _ = synthesizer?.stopSpeaking(at: .immediate) }
 }
 
-private final class VoiceNotificationToken: @unchecked Sendable {
+final class SpeechVoicesObservation: @unchecked Sendable {
+    private let center: NotificationCenter
     private let value: any NSObjectProtocol
-    init(_ value: any NSObjectProtocol) { self.value = value }
-    deinit { NotificationCenter.default.removeObserver(value) }
+    init(center: NotificationCenter = .default, onChange: @escaping @MainActor @Sendable () -> Void) {
+        self.center = center
+        // speechVoices() can synchronously wait for the thread posting this notification.
+        // Never make that producer wait for MainActor; only enqueue the UI refresh.
+        value = center.addObserver(forName: AVSpeechSynthesizer.availableVoicesDidChangeNotification, object: nil, queue: nil) { _ in
+            Task { @MainActor in onChange() }
+        }
+    }
+    deinit { center.removeObserver(value) }
 }
