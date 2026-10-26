@@ -152,3 +152,5 @@
 - 2026-10-26用户实用0.5.0语音后反馈整个App点不动，授权本地排错修复。已先抓实际PID40623的5秒栈，确认音色查询主线程与TTS后台通知queue.main互等；真实通知中心RED已复现。0.5.1/build28最小修复改queue.nil并异步MainActor刷新，原位增加两项通知线程/注销回归；相关36、完整491（158Core/333Mac）及离线13通过，同源优化实际音色只读查询+20次后台通知通过，无录音朗读/API/Keychain操作。独立评审/构建/分发与本地恢复结果见docs/voice-hang-fix-validation.md后续事实；不恢复完成的0.5.0计划，不将旧推送授权扩展到本次修复push/tag/Release。
 
 - 0.5.1修复已本地交付，干净来源08c166bc65f5fd1d378ab58f7d38ec4c4cbd5ecd。本次独立范围评审0Critical/0Important/0Minor；双架构构建/打包/签名/来源及八附件离线校验、14项实际分发均通过，旧0.5的两项Minor仍保留。先盲备份旧App/配置/完整AI，已采样PID40623不能响应正常SIGTERM，3秒后仅强制结束它，不能写作正常退出，未存草稿无法保证恢复。/Applications已运行0.5.1/build28 PID45987，新版一次正常启动/退出与新采样事件循环/计时回调通过，原偏好/更新时位置/schema13及AI/voice摘要保持；未读聊天正文或访问正式Keychain/API、真实录音朗读或改登录项。实际语音/权限/物理输入/系统/本版Intel/外机/Gatekeeper/云端未验收，仍未push/tag/Release，证据与备份仅.build/voice-hang-2026-10-26；文档收尾不改变已安装来源。
+
+- 用户随后于2026-10-26反馈「可以，通过，推送」，确认0.5.1本机修复整体体验，授权普通快进同步main与codex/macos-system-voice-chat，核对两路CI和双架构Artifacts；不触发prepare_release，不打标签、建草稿或发布。反馈不扩展为全部语音/设备/权限/Apple联网/物理输入/系统/Intel/外机专项通过，原两项Minor保留。本次只补验收授权文档，产品/测试/工程与已通过491项的08c166b相同，不重复无变化测试或操作个人App/AI/Keychain/音频。实际push/云端事实存.build/voice-hang-2026-10-26/push-verification.json，不把授权当作已成功。

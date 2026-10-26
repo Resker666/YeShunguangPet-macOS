@@ -32,3 +32,9 @@ Apple的[通知观察文档](https://developer.apple.com/documentation/foundatio
 全部原始栈、RED/GREEN/完整测试、只读探针、评审、构建/打包、安装结果与0700私人备份保存在忽略目录 `.build/voice-hang-2026-10-26`。本地安装包为 `dist/YeShunguangPet-0.5.1-macOS-arm64.dmg` 与 `dist/YeShunguangPet-0.5.1-macOS-x86_64.dmg`，另有ZIP和摘要。文档收尾提交不改变包和已安装App的08c166b来源。
 
 语音识别、可闻朗读、权限弹窗以及本版Intel/外机/Gatekeeper、云端Swift6.3.3构建仍待实际验证；只读系统音色查询和修复线程回归不当作整条真实语音链路通过。用户本轮只要求本地排错修复，没有推送、标签或Release授权，main与远端未改。
+
+## 用户验收与推送授权（2026-10-26）
+
+用户随后反馈「可以，通过，推送」，确认0.5.1本机修复整体体验并明确授权按既有流程普通快进同步main和codex/macos-system-voice-chat，核对两路Actions及双架构Artifacts。该整体反馈不扩展为权限撤销/Apple联网/全部设备和语音路径/物理输入/系统/Intel或外机逐项通过；原两项Minor保留。不触发prepare_release、不打标签、不创建草稿或发布Release。
+
+本轮仅记录验收及同步授权，产品、测试、脚本与工程相对08c166b未再变化，不重复491项已通过的本地测试，不替换或操作当前日用App、音频、个人AI与钥匙串。实际远端与CI日志/附件元数据另存忽略目录 `.build/voice-hang-2026-10-26/push-verification.json`，不把授权写作推送或云端验证已成功。
