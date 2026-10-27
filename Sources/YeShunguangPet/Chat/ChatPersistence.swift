@@ -11,15 +11,21 @@ enum ChatWriteOperation: Sendable {
     case resetConnection
     case voicePreferences(VoicePreferences)
     case resetVoicePreferences
+    case localVoice(LocalVoiceMutation)
 }
 
-enum ChatStoredValue: Sendable { case character(ChatConversation), connection(ChatConnection), voicePreferences(VoicePreferences) }
+enum ChatStoredValue: Sendable { case character(ChatConversation), connection(ChatConnection), voicePreferences(VoicePreferences), localVoice(LocalVoiceCommit) }
 struct ChatWriteTicket: Equatable, Sendable { let sequence: UInt64 }
 
 protocol ChatPersisting: Sendable {
     func loadCharacter(id: String, defaultProfile: ChatProfile) async -> ChatLoadResult<ChatConversation>
     func loadConnection() async -> ChatLoadResult<ChatConnection>
     func loadVoicePreferences() async -> ChatLoadResult<VoicePreferences>
+    func loadLocalVoiceIndex() async -> ChatLoadResult<LocalVoiceIndex>
+    func stageLocalVoice(folder: URL) async throws -> StagedLocalVoice
+    func discardLocalVoiceStage(_ staged: StagedLocalVoice) async throws
+    func localVoiceEntries() async -> [LocalVoiceLibraryEntry]
+    func resolveLocalVoice(libraryID: UUID) async throws -> ResolvedLocalVoice
     func apply(_ operation: ChatWriteOperation) async throws -> ChatStoredValue
 }
 
@@ -31,12 +37,14 @@ actor ChatArchiveWorker: ChatPersisting {
     private let voiceStore: VoicePreferencesStore
     private var voiceLoaded = false
     private var voice: VoicePreferences?, voiceProtection: String?
+    private let localVoiceStore: LocalVoiceIndexStore
 
     init(settingsURL: URL) {
         let root = settingsURL.deletingLastPathComponent().appendingPathComponent("AI", isDirectory: true)
         store = ChatStore(directory: root.appendingPathComponent("characters", isDirectory: true))
         connectionStore = ChatConnectionStore(url: root.appendingPathComponent("connection.json"))
         voiceStore = VoicePreferencesStore(url: root.appendingPathComponent("voice.json"))
+        localVoiceStore = LocalVoiceIndexStore(root: settingsURL.deletingLastPathComponent().appendingPathComponent("LocalVoice", isDirectory: true))
     }
 
     private func load(id: String, defaultProfile: ChatProfile) -> ChatLoadResult<ChatConversation> {
@@ -92,6 +100,17 @@ actor ChatArchiveWorker: ChatPersisting {
         guard protections[id] == nil, let value = characters[id] else { throw SkinError("原聊天档案受保护，请先备份并重置。") }
         return value
     }
+    func loadLocalVoiceIndex() async -> ChatLoadResult<LocalVoiceIndex> { localVoiceStore.load() }
+    func stageLocalVoice(folder: URL) async throws -> StagedLocalVoice { try localVoiceStore.library.stage(folder: folder) }
+    func discardLocalVoiceStage(_ staged: StagedLocalVoice) async throws { try localVoiceStore.library.discard(staged) }
+    func localVoiceEntries() async -> [LocalVoiceLibraryEntry] {
+        guard case .loaded(let index) = localVoiceStore.load() else { return [] }
+        return localVoiceStore.library.entries(index: index)
+    }
+    func resolveLocalVoice(libraryID: UUID) async throws -> ResolvedLocalVoice {
+        guard case .loaded(let index) = localVoiceStore.load() else { throw LocalVoiceError("语音库索引不可用") }
+        return try localVoiceStore.library.resolve(libraryID: libraryID, index: index)
+    }
     private func save(_ value: ChatConversation) throws -> ChatStoredValue {
         try store.save(value)
         characters[value.characterID] = value
@@ -100,6 +119,7 @@ actor ChatArchiveWorker: ChatPersisting {
 
     func apply(_ operation: ChatWriteOperation) async throws -> ChatStoredValue {
         switch operation {
+        case .localVoice(let mutation): return .localVoice(try localVoiceStore.apply(mutation))
         case .profile(let id, let profile):
             let prior = try current(id)
             return try save(prior.replacingProfile(profile))

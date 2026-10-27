@@ -2,6 +2,14 @@ import Foundation
 import CryptoKit
 
 enum LocalVoiceFixtures {
+    static func folder(_ parent: URL, name: String = UUID().uuidString, id: String = "hutao-pilot-e1") throws -> URL {
+        let directory = parent.appendingPathComponent(name)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try manifest { $0["id"] = id }.write(to: directory.appendingPathComponent("voice.json"))
+        try Data("test".utf8).write(to: directory.appendingPathComponent("s2.pth"))
+        try pcm().write(to: directory.appendingPathComponent("reference.wav"))
+        return directory
+    }
     static let testSHA = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
     static func pcm(seconds: Double = 3, rate: UInt32 = 32000, channels: UInt16 = 1, bits: UInt16 = 16) -> Data {
         let frames = Int(seconds * Double(rate)), size = frames * Int(channels) * Int(bits / 8)

@@ -33,6 +33,11 @@ actor ControlledChatPersistence: ChatPersisting {
         return result
     }
     func loadConnection() async -> ChatLoadResult<ChatConnection> { await worker.loadConnection() }
+    func loadLocalVoiceIndex() async -> ChatLoadResult<LocalVoiceIndex> { await worker.loadLocalVoiceIndex() }
+    func stageLocalVoice(folder: URL) async throws -> StagedLocalVoice { try await worker.stageLocalVoice(folder: folder) }
+    func discardLocalVoiceStage(_ staged: StagedLocalVoice) async throws { try await worker.discardLocalVoiceStage(staged) }
+    func localVoiceEntries() async -> [LocalVoiceLibraryEntry] { await worker.localVoiceEntries() }
+    func resolveLocalVoice(libraryID: UUID) async throws -> ResolvedLocalVoice { try await worker.resolveLocalVoice(libraryID: libraryID) }
     func loadVoicePreferences() async -> ChatLoadResult<VoicePreferences> {
         let result = await worker.loadVoicePreferences()
         arrivedLoads.insert("voice"); loadWaiters.removeValue(forKey: "voice")?.resume()
@@ -42,6 +47,7 @@ actor ControlledChatPersistence: ChatPersisting {
     func apply(_ operation: ChatWriteOperation) async throws -> ChatStoredValue {
         let name: String
         switch operation {
+        case .localVoice: name = "localVoice"
         case .profile(let id, _): name = "profile:" + id
         case .append(let id, _, _): name = "append:" + id
         case .clear(let id): name = "clear:" + id
