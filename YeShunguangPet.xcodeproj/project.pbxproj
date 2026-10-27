@@ -1102,6 +1102,8 @@
 				<string>EC395CE35A2BDACCC5BD54C9</string>
 				<string>DF419590FD933549FC68A031</string>
 				<string>159F31F7656A0B63E44E66A7</string>
+				<string>2C4C0EC2DB39D2B4C1F0BCAF</string>
+				<string>F11F49AE5014E4AB56FE8B4C</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1584,6 +1586,9 @@
 				<string>AFF782FE4B2D351F5C92CEEB</string>
 				<string>241CA7B2594EAEBCBE0F87A4</string>
 				<string>480716200C66FE5A4B33C727</string>
+				<string>E8C36B8CA0460081E771B187</string>
+				<string>A31E69CDFD111FA7ADDA6B0B</string>
+				<string>67460389E60944BFE271542C</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1997,6 +2002,9 @@
 				<string>8373DAF8669974D412AAA10E</string>
 				<string>E589C461D9624982E4DA171A</string>
 				<string>06119DCA80990DC3BD71AB57</string>
+				<string>81837C9BE356F360794C2208</string>
+				<string>3BDC054894C889369DA8BD0D</string>
+				<string>B33A7DD99819C4F2B90F6A49</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -5371,6 +5379,74 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>06119DCA80990DC3BD71AB57</string>
+		</dict>
+		<key>81837C9BE356F360794C2208</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/VoiceOutputRouterTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>E8C36B8CA0460081E771B187</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>81837C9BE356F360794C2208</string>
+		</dict>
+		<key>3BDC054894C889369DA8BD0D</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Chat/Voice/VoiceOutputRouting.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>2C4C0EC2DB39D2B4C1F0BCAF</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>3BDC054894C889369DA8BD0D</string>
+		</dict>
+		<key>A31E69CDFD111FA7ADDA6B0B</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>3BDC054894C889369DA8BD0D</string>
+		</dict>
+		<key>B33A7DD99819C4F2B90F6A49</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Chat/Voice/VoiceOutputRouter.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>F11F49AE5014E4AB56FE8B4C</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>B33A7DD99819C4F2B90F6A49</string>
+		</dict>
+		<key>67460389E60944BFE271542C</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>B33A7DD99819C4F2B90F6A49</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

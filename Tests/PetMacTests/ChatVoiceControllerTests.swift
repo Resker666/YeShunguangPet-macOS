@@ -103,7 +103,7 @@ import PetCore
         XCTAssertEqual(h.settings.preferences.voiceIdentifier, "missing")
         XCTAssertNotNil(h.controller.actualVoice)
         h.controller.stop(); h.output.voices = []
-        h.controller.readLatest("无音色"); XCTAssertNotNil(h.controller.error)
+        h.controller.readLatest("无音色"); try await chatEventually { h.controller.error != nil }
         XCTAssertEqual(h.output.spoken.count, 1)
         h.controller.readLatest(String(repeating: "超", count: 8001)); XCTAssertEqual(h.output.spoken.count, 1)
         await h.close()
@@ -151,10 +151,10 @@ import PetCore
         let h = try await VoiceControllerHarness.makeEnabled()
         h.controller.readLatest("当前朗读"); try await chatEventually { h.output.spoken.count == 1 }
         h.output.stopResult = false; let calls = h.output.stops
-        h.controller.stop(); try await chatEventually { h.output.stops == calls + 1 }
+        let failed = await h.controller.stopAndWait(); XCTAssertFalse(failed); XCTAssertEqual(h.output.stops, calls + 1)
         XCTAssertNotNil(h.controller.error, "Unconfirmed stop must remain visible")
         h.output.stopResult = true
-        h.controller.stop(); try await chatEventually { h.output.stops == calls + 2 }
+        let retried = await h.controller.stopAndWait(); XCTAssertTrue(retried); XCTAssertEqual(h.output.stops, calls + 2)
         XCTAssertNil(h.controller.error); XCTAssertEqual(h.output.spoken.count, 1); XCTAssertTrue(h.input.starts.isEmpty)
         await h.close()
     }
@@ -162,9 +162,11 @@ import PetCore
         let h = try await VoiceControllerHarness.makeEnabled()
         h.controller.readLatest("当前朗读"); try await chatEventually { h.output.spoken.count == 1 }
         h.output.stopResult = false; let calls = h.output.stops
-        h.settings.disable(); await h.writes.waitForPending(); try await chatEventually { h.output.stops == calls + 1 }
+        h.settings.disable(); await h.writes.waitForPending(); try await chatEventually { h.controller.outputStopFailed }
+        XCTAssertEqual(h.output.stops, calls + 1)
         XCTAssertFalse(h.settings.enabledForSession); XCTAssertNotNil(h.controller.error)
-        h.output.stopResult = true; h.controller.stop(); try await chatEventually { h.output.stops == calls + 2 }
+        h.output.stopResult = true
+        let retried = await h.controller.stopAndWait(); XCTAssertTrue(retried); XCTAssertEqual(h.output.stops, calls + 2)
         XCTAssertFalse(h.settings.enabledForSession); XCTAssertNil(h.controller.error); XCTAssertEqual(h.output.spoken.count, 1)
         await h.close()
     }
@@ -190,5 +192,20 @@ import PetCore
         try await chatEventually { h.controller.captureState == .idle }
         XCTAssertTrue(h.input.starts.isEmpty); observation.cancel()
         await h.close()
+    }
+    func testSynchronousReplacementDuringStopDoesNotReviveOuterRead() async throws {
+        let h = try await VoiceControllerHarness.makeEnabled()
+        h.controller.readLatest("正在读"); try await chatEventually { h.output.spoken.count == 1 }
+        var replaced = false
+        let observation = h.controller.objectWillChange.sink { [weak h] _ in
+            MainActor.assumeIsolated {
+                guard let h, !replaced, h.controller.outputPhase == .stopping else { return }
+                replaced = true; h.controller.readLatest("订阅者的新朗读")
+            }
+        }
+        h.controller.readLatest("应被替换的外层朗读")
+        try await chatEventually { h.output.spoken.count == 2 }
+        XCTAssertEqual(h.output.spoken[1].text, "订阅者的新朗读")
+        observation.cancel(); await h.close()
     }
 }

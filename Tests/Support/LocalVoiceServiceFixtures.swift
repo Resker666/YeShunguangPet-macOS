@@ -60,6 +60,7 @@ for line in sys.stdin.buffer:
 @MainActor final class ControlledLocalVoiceProcess: LocalVoiceProcessDriving {
     var hasResources = false
     var starts = 0, generates = 0, stops = 0
+    var speeds = [Double]()
     var holdStart = false, holdGeneration = false, holdStop = false, stopResult = true
     var outputData = LocalVoiceFixtures.pcm(seconds: 0.1)
     var startWaiter: CheckedContinuation<Void, Error>?, generationWaiter: CheckedContinuation<URL, Error>?
@@ -70,7 +71,7 @@ for line in sys.stdin.buffer:
         if holdStart { try await withCheckedThrowingContinuation { startWaiter = $0 } }
     }
     func generate(requestID: UUID, text: String, speedFactor: Double) async throws -> URL {
-        generates += 1
+        generates += 1; speeds.append(speedFactor)
         if holdGeneration { return try await withCheckedThrowingContinuation { generationWaiter = $0 } }
         let url = directory!.appendingPathComponent(requestID.uuidString + ".wav")
         try outputData.write(to: url)

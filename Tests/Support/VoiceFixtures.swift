@@ -59,12 +59,14 @@ import PetCore
     var canInput = true
     var insertions = [VoiceInsertion]()
     var environment = VoiceEnvironment(surface: .conversation)
-    lazy var controller = ChatVoiceController(settings: settings, services: .init(input: input, output: output), now: { [weak self] in self?.clock ?? .zero }, draft: { [weak self] in self?.snapshot }, canRecognize: { [weak self] in self?.canInput == true }, apply: { [weak self] expected, insertion in
+    var routing: (any VoiceOutputRouting)?
+    var selection: VoiceRouteSelection = .system
+    lazy var controller = ChatVoiceController(settings: settings, services: .init(input: input, routing: routing ?? VoiceOutputRouter(system: output)), now: { [weak self] in self?.clock ?? .zero }, draft: { [weak self] in self?.snapshot }, canRecognize: { [weak self] in self?.canInput == true }, apply: { [weak self] expected, insertion in
         guard let self, self.snapshot == expected else { return false }
         self.insertions.append(insertion)
         self.snapshot = .init(character: expected.character, revision: expected.revision + 1, text: insertion.text)
         return true
-    })
+    }, resolveSelection: { [weak self] _ in self?.selection ?? .system })
     init() throws {
         root = FileManager.default.temporaryDirectory.appendingPathComponent("voice-harness-" + UUID().uuidString)
         persistence = ControlledChatPersistence(settingsURL: root.appendingPathComponent("settings.json"))

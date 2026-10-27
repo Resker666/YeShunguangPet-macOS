@@ -26,6 +26,7 @@ enum VoiceCaptureState: Equatable { case idle, stoppingOutput, requestingPermiss
     private let services: VoiceServices, now: () -> Duration
     private let draft: () -> VoiceDraftSnapshot?, canRecognize: () -> Bool
     private let apply: (VoiceDraftSnapshot, VoiceInsertion) -> Bool
+    private let resolveSelection: @MainActor (ChatCharacter) async -> VoiceRouteSelection
     private var environment = VoiceEnvironment(), disposed = false
     private struct Capture {
         let token: UUID, snapshot: VoiceDraftSnapshot, selection: NSRange, mode: VoiceRecognitionMode
@@ -45,22 +46,27 @@ enum VoiceCaptureState: Equatable { case idle, stoppingOutput, requestingPermiss
     private(set) var preview = "", error: String?
     private(set) var isSpeaking = false, canOfferNetwork = false
     private(set) var isStoppingOutput = false, outputStopFailed = false
-    private static let stopFailureMessage = "系统朗读尚未确认停止，可能仍在播放。请重试停止；新录音或朗读须先确认输出已停止。"
+    private static let stopFailureMessage = "语音输出尚未确认停止，可能仍在生成或播放。请重试停止；新录音或朗读须先确认输出已停止。"
     private(set) var actualVoice: SystemVoice?
+    private(set) var actualOutput: VoiceOutputIdentity?
+    private(set) var outputPhase: VoiceOutputPhase = .idle
     private(set) var availableVoices = [SystemVoice]()
     var blocksChat: Bool { captureState != .idle }
     var suppressesCompletionAudio: Bool { captureState == .recording || captureState == .finishing }
-    private var hasCancellableActivity: Bool { blocksChat || isSpeaking || preparation != nil || !preview.isEmpty || canOfferNetwork }
+    var hasOutputActivity: Bool { outputToken != nil || (outputContext != nil && preparation != nil) }
+    var hasPendingResources: Bool { outputStop != nil || services.output.hasResources }
+    private var hasCancellableActivity: Bool { blocksChat || hasOutputActivity || preparation != nil || !preview.isEmpty || canOfferNetwork || (services.output.hasResources && !isStoppingOutput && !outputStopFailed) }
     var hasActivity: Bool { hasCancellableActivity || isStoppingOutput || outputStopFailed }
     init(settings: ChatVoicePreferencesController, services: VoiceServices, now: @escaping () -> Duration,
          draft: @escaping () -> VoiceDraftSnapshot?, canRecognize: @escaping () -> Bool,
-         apply: @escaping (VoiceDraftSnapshot, VoiceInsertion) -> Bool) {
-        self.settings = settings; self.services = services; self.now = now; self.draft = draft; self.canRecognize = canRecognize; self.apply = apply
-        availableVoices = Self.filter(services.output.installedVoices())
+         apply: @escaping (VoiceDraftSnapshot, VoiceInsertion) -> Bool,
+         resolveSelection: @escaping @MainActor (ChatCharacter) async -> VoiceRouteSelection = { _ in .system }) {
+        self.settings = settings; self.services = services; self.now = now; self.draft = draft; self.canRecognize = canRecognize; self.apply = apply; self.resolveSelection = resolveSelection
+        availableVoices = Self.filter(services.output.installedSystemVoices())
         services.output.onVoicesChanged = { [weak self] in
             guard let self, !self.disposed else { return }
-            self.availableVoices = Self.filter(self.services.output.installedVoices())
-            if let selected = self.actualVoice, !self.availableVoices.contains(where: { $0.id == selected.id }), self.isSpeaking { self.stop() }
+            self.availableVoices = Self.filter(self.services.output.installedSystemVoices())
+            if self.actualOutput?.backend == .system, let selected = self.actualVoice, !self.availableVoices.contains(where: { $0.id == selected.id }), self.hasOutputActivity { self.stop() }
             self.changeRevision &+= 1
         }
         settings.onDisable = { [weak self] in self?.stop() }
@@ -191,43 +197,77 @@ enum VoiceCaptureState: Equatable { case idle, stoppingOutput, requestingPermiss
         }
         do { try ChatText.validate(text, maxUTF16: 8000, allowEmpty: false) }
         catch { self.error = "没有可朗读的已保存文字，或文字超过上限。"; changeRevision &+= 1; return }
-        availableVoices = Self.filter(services.output.installedVoices())
-        let voices = availableVoices
-        guard let selected = voices.first(where: { $0.id == settings.preferences.voiceIdentifier }) ?? voices.first(where: { $0.language.lowercased() == "zh-cn" }) ?? voices.first else {
-            error = VoiceOutputFailure.unavailable.localizedDescription; changeRevision &+= 1; return
-        }
+        availableVoices = Self.filter(services.output.installedSystemVoices())
+        // A new sentence may reuse a confirmed idle role model. Explicit stop,
+        // recording and lifecycle changes still dispose of the idle worker.
         let command = commandRevision &+ 1
-        stop()
+        if hasOutputActivity || outputStopFailed, outputStop == nil { stop() }
+        else {
+            commandRevision &+= 1; activity = nil; preparation?.cancel(); preparation = nil
+            retireCapture(); previewCapture = nil; preview = ""; canOfferNetwork = false
+            outputToken = nil; outputContext = nil; outputSurface = nil; isSpeaking = false
+        }
         let barrier = outputStop
         guard commandRevision == command, usable, environment.surface == surface, !environment.effectiveQuiet, draft()?.character == context else { return }
-        let token = UUID(); activity = token; outputContext = context; outputSurface = surface; actualVoice = selected; error = nil
+        let token = UUID(); activity = token; outputToken = token; outputContext = context; outputSurface = surface
+        actualVoice = nil; actualOutput = nil; error = nil; outputPhase = .resolving
+        changeRevision &+= 1
+        guard outputValid(token, context: context, surface: surface, command: command) else { return }
         preparation = Task { [weak self] in
             guard let self else { return }
-            let stopped = await barrier?.value ?? false
-            guard !Task.isCancelled, self.activity == token, self.usable, self.environment.surface == surface,
-                  !self.environment.effectiveQuiet, !self.blocksChat, self.draft()?.character == context else { return }
+            let stopped = await barrier?.value ?? true
+            guard !Task.isCancelled, self.outputValid(token, context: context, surface: surface, command: command) else { return }
+            guard stopped else { self.failOutput(token, issue: .stopping); return }
+            let selection = await self.resolveSelection(context)
+            guard !Task.isCancelled, self.outputValid(token, context: context, surface: surface, command: command) else { return }
+            let prepared = await self.services.output.prepare(for: selection)
+            guard !Task.isCancelled, self.outputValid(token, context: context, surface: surface, command: command) else { return }
+            guard prepared else { self.failOutput(token, issue: .stopping); return }
             self.preparation = nil
-            guard stopped else { self.error = VoiceOutputFailure.busy.localizedDescription; self.changeRevision &+= 1; return }
-            self.outputToken = token; self.isSpeaking = true; self.changeRevision &+= 1
-            guard self.outputToken == token, self.usable, self.environment.surface == surface, !self.environment.effectiveQuiet, self.draft()?.character == context else { return }
             do {
-                try self.services.output.speak(text, voiceIdentifier: selected.id, rate: self.settings.preferences.rate, token: token) { [weak self] token, event in
-                    guard let self, self.outputToken == token else { return }
-                    self.outputToken = nil; self.isSpeaking = false
-                    if event == .failed { self.error = "系统朗读未能完成，可手动重试。" }
-                    self.changeRevision &+= 1
-                }
+                let request = RoutedVoiceRequest(token: token, text: text, rate: self.settings.preferences.rate,
+                                                preferredSystemVoiceID: self.settings.preferences.voiceIdentifier, selection: selection,
+                                                isValid: { [weak self] in self?.outputValid(token, context: context, surface: surface, command: command) == true })
+                try self.services.output.speak(request) { [weak self] token, event in self?.receiveOutput(token, event) }
             } catch {
                 guard self.outputToken == token else { return }
-                self.outputToken = nil; self.isSpeaking = false; self.error = (error as? VoiceOutputFailure)?.localizedDescription ?? "系统朗读未能开始。"; self.changeRevision &+= 1
+                self.failOutput(token, issue: error as? LocalVoiceIssue ?? .systemUnavailable)
             }
         }
+    }
+    private func outputValid(_ token: UUID, context: ChatCharacter, surface: ChatVoiceSurface, command: UInt64) -> Bool {
+        outputToken == token && activity == token && commandRevision == command && usable && environment.surface == surface && !environment.effectiveQuiet && !blocksChat && draft()?.character == context
+    }
+    private func failOutput(_ token: UUID, issue: LocalVoiceIssue) {
+        guard outputToken == token else { return }
+        outputToken = nil; preparation = nil; isSpeaking = false
+        if !services.output.hasResources { outputContext = nil; outputSurface = nil }
+        outputPhase = issue == .stopping ? .stopping : .idle
+        outputStopFailed = issue == .stopping
+        error = issue == .stopping ? Self.stopFailureMessage : issue.localizedDescription
+        changeRevision &+= 1
+    }
+    private func receiveOutput(_ token: UUID, _ event: RoutedVoiceEvent) {
+        guard outputToken == token else { return }
+        switch event {
+        case .phase(let phase): outputPhase = phase; isSpeaking = phase == .playing
+        case .actualIdentity(let identity):
+            actualOutput = identity; actualVoice = availableVoices.first { $0.id == identity.systemVoiceID }
+        case .notice(let message): error = message
+        case .failed(let issue): failOutput(token, issue: issue); return
+        case .finished, .cancelled:
+            // Keep the owner while a warm model remains, so even an idle worker
+            // is invalidated by a same-ID skin replacement or page transition.
+            outputToken = nil; isSpeaking = false; outputPhase = .idle
+            if !services.output.hasResources { outputContext = nil; outputSurface = nil }
+        }
+        changeRevision &+= 1
     }
     func stop() {
         commandRevision &+= 1
         activity = nil; preparation?.cancel(); preparation = nil
         retireCapture(); previewCapture = nil; preview = ""; canOfferNetwork = false
-        outputToken = nil; outputContext = nil; outputSurface = nil; isSpeaking = false
+        outputToken = nil; outputContext = nil; outputSurface = nil; isSpeaking = false; actualVoice = nil; actualOutput = nil; outputPhase = .stopping
         let output = services.output, previous = outputStop, stopID = UUID()
         stopToken = stopID; isStoppingOutput = true
         outputStop = Task { [weak self] in
@@ -236,7 +276,7 @@ enum VoiceCaptureState: Equatable { case idle, stoppingOutput, requestingPermiss
             if let self, self.stopToken == stopID {
                 self.outputStop = nil
                 if !self.disposed {
-                    self.isStoppingOutput = false; self.outputStopFailed = !result
+                    self.isStoppingOutput = false; self.outputStopFailed = !result; self.outputPhase = result ? .idle : .stopping
                     if !result { self.error = Self.stopFailureMessage }
                     else if self.error == Self.stopFailureMessage { self.error = nil }
                     self.changeRevision &+= 1
@@ -246,13 +286,18 @@ enum VoiceCaptureState: Equatable { case idle, stoppingOutput, requestingPermiss
         }
         changeRevision &+= 1
     }
+    func stopAndWait() async -> Bool {
+        if let outputStop { return await outputStop.value }
+        stop()
+        return await outputStop?.value ?? false
+    }
     func updateEnvironment(_ snapshot: VoiceEnvironment) {
         environment = snapshot
         let contextChanged = capture.map { draft() != $0.snapshot } == true || outputContext.map { draft()?.character != $0 } == true
         let outputPageChanged = outputSurface.map { $0 != snapshot.surface } == true
         if contextChanged || outputPageChanged || !usable || (snapshot.surface != .conversation && (blocksChat || !preview.isEmpty || canOfferNetwork)) || snapshot.surface == .hidden || snapshot.surface == .other {
             if hasCancellableActivity { stop() }
-        } else if snapshot.effectiveQuiet && (isSpeaking || (preparation != nil && capture == nil)) { stop() }
+        } else if snapshot.effectiveQuiet && (hasOutputActivity || (preparation != nil && capture == nil) || (services.output.hasResources && !isStoppingOutput && !outputStopFailed)) { stop() }
     }
     func dispose() {
         guard !disposed else { return }

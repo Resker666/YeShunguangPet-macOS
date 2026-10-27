@@ -81,5 +81,11 @@ enum VoiceOutputFailure: Error, LocalizedError {
 }
 @MainActor struct VoiceServices {
     let input: any VoiceInputProviding
-    let output: any VoiceOutputProviding
+    let output: any VoiceOutputRouting
+    init(input: any VoiceInputProviding, output: any VoiceOutputProviding) {
+        self.input = input; self.output = VoiceOutputRouter(system: output)
+    }
+    init(input: any VoiceInputProviding, routing: any VoiceOutputRouting) {
+        self.input = input; output = routing
+    }
 }
