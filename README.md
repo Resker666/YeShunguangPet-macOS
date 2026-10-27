@@ -142,6 +142,8 @@ python3 scripts/smoke-app.py --app /绝对路径/YeShunguangPet.app --check-rest
 
 也可在 Xcode 打开 `YeShunguangPet.xcodeproj`，选择共享 scheme `YeShunguangPet`。测试使用临时目录，不修改个人配置。`.build/` 和 `dist/` 不进入 Git。
 
+本地角色语音目前处于独立实验阶段，尚未接入 App。源码、配置与模型清单可以进入 Git；权重、原始录音及运行环境单独保存，不随普通 App 构建或 CI 上传。胡桃候选的存放、备份和恢复边界见[本地语音模型管理](docs/local-voice-storage.md)。
+
 构建需要 Xcode；使用 App 不需要。默认ARM App在`dist/YeShunguangPet.app`，Intel App在`dist/x86_64/YeShunguangPet.app`。两者主程序和嵌入框架架构必须一致；打包核对所选架构、Info.plist声明和两个Mach-O的实际macOS 14.0最低版本，拒绝错误标签、混合框架或最低版本不符的包。
 
 打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.4.0-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.19已公开发布八份附件，标签及云端包来源为`37a73f0cd163dbb172300d0df269a4b7575180b5`，两路CI通过并获本台黑苹果整体体验通过反馈；本地历史交付包来源仍为`5164ba9`。0.1.20从干净来源`e15b739`本地交付，后续已普通同步`a90c5e1`且两路CI通过。0.1.21本地App/八附件来自干净`76f9c615563b42359041f12ea38999ba516dfd6e`，已安装运行；用户已授权普通同步和云端核验，未授权标签或Release。

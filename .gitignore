@@ -9,3 +9,11 @@ xcuserdata/
 .DS_Store
 __pycache__/
 *.pyc
+
+# Local voice weights and runtime data are stored separately from source history.
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+*.onnx
+/LocalVoiceData/
