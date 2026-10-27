@@ -281,6 +281,7 @@
 				<string>69E9EF34E18A989A07E63A7F</string>
 				<string>F96C3516224751409C2684DC</string>
 				<string>422529805F2201275923D48E</string>
+				<string>EA8BF03EBD6250D94CC81D5D</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -647,6 +648,7 @@
 				<string>444E4DC4914312A7E858ED8C</string>
 				<string>9D629E466F7EDFC3D7E42F1B</string>
 				<string>267B84DAECB6DD25217C0561</string>
+				<string>EC51388509C49FAA9CC5A832</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1160,6 +1162,7 @@
 			<array>
 				<string>5D8C3A28B5DF585868DDC472</string>
 				<string>DC019946BD42A3CE78CC5502</string>
+				<string>F22E06A750C9D51AFA9006A2</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1634,6 +1637,7 @@
 			<key>files</key>
 			<array>
 				<string>577D31682B128AB11D7F3825</string>
+				<string>CC2D23A1BE34F1CCB7E302ED</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1975,6 +1979,9 @@
 				<string>21EEA27F85EFDF8EB864912D</string>
 				<string>8E534A9D8A49A2378DB46FF5</string>
 				<string>6721FDD2B9484540E684B59A</string>
+				<string>DE9514AD5AF58FC35AEC778A</string>
+				<string>6ED47A1DB1F5E983AF10919E</string>
+				<string>852998A3ACBB19A1C256F53C</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -5159,6 +5166,67 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>6721FDD2B9484540E684B59A</string>
+		</dict>
+		<key>DE9514AD5AF58FC35AEC778A</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Tests/PetCoreTests/LocalVoiceEngineTests.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>EC51388509C49FAA9CC5A832</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>DE9514AD5AF58FC35AEC778A</string>
+		</dict>
+		<key>6ED47A1DB1F5E983AF10919E</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Sources/PetCore/LocalVoice/LocalVoiceEngine.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+		</dict>
+		<key>EA8BF03EBD6250D94CC81D5D</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>6ED47A1DB1F5E983AF10919E</string>
+		</dict>
+		<key>852998A3ACBB19A1C256F53C</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>path</key>
+			<string>Resources/LocalVoice</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+			<key>lastKnownFileType</key>
+			<string>folder</string>
+		</dict>
+		<key>F22E06A750C9D51AFA9006A2</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>852998A3ACBB19A1C256F53C</string>
+		</dict>
+		<key>CC2D23A1BE34F1CCB7E302ED</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>852998A3ACBB19A1C256F53C</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

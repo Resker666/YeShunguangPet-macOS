@@ -26,6 +26,7 @@ protocol ChatPersisting: Sendable {
     func discardLocalVoiceStage(_ staged: StagedLocalVoice) async throws
     func localVoiceEntries() async -> [LocalVoiceLibraryEntry]
     func resolveLocalVoice(libraryID: UUID) async throws -> ResolvedLocalVoice
+    func localVoiceEngineStatus() async -> LocalVoiceEngineStatus
     func apply(_ operation: ChatWriteOperation) async throws -> ChatStoredValue
 }
 
@@ -38,8 +39,10 @@ actor ChatArchiveWorker: ChatPersisting {
     private var voiceLoaded = false
     private var voice: VoicePreferences?, voiceProtection: String?
     private let localVoiceStore: LocalVoiceIndexStore
+    private let dataRoot: URL
 
     init(settingsURL: URL) {
+        dataRoot = settingsURL.deletingLastPathComponent()
         let root = settingsURL.deletingLastPathComponent().appendingPathComponent("AI", isDirectory: true)
         store = ChatStore(directory: root.appendingPathComponent("characters", isDirectory: true))
         connectionStore = ChatConnectionStore(url: root.appendingPathComponent("connection.json"))
@@ -101,6 +104,7 @@ actor ChatArchiveWorker: ChatPersisting {
         return value
     }
     func loadLocalVoiceIndex() async -> ChatLoadResult<LocalVoiceIndex> { localVoiceStore.load() }
+    func localVoiceEngineStatus() async -> LocalVoiceEngineStatus { LocalVoiceEngineDescriptor.status(dataRoot: dataRoot) }
     func stageLocalVoice(folder: URL) async throws -> StagedLocalVoice { try localVoiceStore.library.stage(folder: folder) }
     func discardLocalVoiceStage(_ staged: StagedLocalVoice) async throws { try localVoiceStore.library.discard(staged) }
     func localVoiceEntries() async -> [LocalVoiceLibraryEntry] {

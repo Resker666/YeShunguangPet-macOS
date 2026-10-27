@@ -38,6 +38,7 @@ actor ControlledChatPersistence: ChatPersisting {
     func discardLocalVoiceStage(_ staged: StagedLocalVoice) async throws { try await worker.discardLocalVoiceStage(staged) }
     func localVoiceEntries() async -> [LocalVoiceLibraryEntry] { await worker.localVoiceEntries() }
     func resolveLocalVoice(libraryID: UUID) async throws -> ResolvedLocalVoice { try await worker.resolveLocalVoice(libraryID: libraryID) }
+    func localVoiceEngineStatus() async -> LocalVoiceEngineStatus { await worker.localVoiceEngineStatus() }
     func loadVoicePreferences() async -> ChatLoadResult<VoicePreferences> {
         let result = await worker.loadVoicePreferences()
         arrivedLoads.insert("voice"); loadWaiters.removeValue(forKey: "voice")?.resume()
