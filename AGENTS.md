@@ -160,3 +160,5 @@
 - 用户随后要求开始胡桃本地音色接入，并明确首版先覆盖当前M4、通用免Python引擎安装包后续做。现于本地codex/macos-local-character-voice（基线cbe6ae4）保存书面设计docs/superpowers/specs/2026-10-27-macos-local-character-voice-design.md，提出0.6.0/build29、独立stdio worker、稳定本机环境、文件夹语音包和角色ID绑定、确认停止与失败回退。新的只读可实施性检查结论nothing important left，具体合同待用户书面审核，通过后再写实施计划；尚未新增产品代码、安装依赖、移动/加载模型或替换日用App。沿用本会话原地与一次最终独立整体代码评审，不重问执行方式；仍无本版push/tag/Release授权，个人AI/Keychain与原实验保持。
 
 - 用户已于2026-10-27明确“认可书面设计，进入实施计划”。九项计划docs/superpowers/plans/2026-10-27-macos-local-character-voice.md已由主执行者自审，覆盖严格包/PCM/索引、快照与同一FIFO、本机稳定环境、stdio适配、进程/播放、共享路由与一次回退、原生管理、生产/退出/CI和真实M4本地交付。额外只读调查仅核对现有工程/夹具/流水线入口，不是计划评审；未派逐任务评审或实现。已补清空闲同角色worker复用与显式stop的区别、索引失败保留stage、清理token命名空间和未有Apple音色的本地输出；现等待用户审核计划，保留本会话原地/一次最终整体代码评审，不重问执行方式。尚未新增产品代码、安装依赖、加载模型、替换日用App或写新ledger；主schema13/角色v2/voice1/个人AI/Keychain和原实验不变，仍无push/tag/Release授权。
+
+- 用户于2026-10-27明确“认可计划，按本会话方式实施”，授权连续完成九项本地任务、一次最终整体独立评审及真实M4本地交付；不逐项确认，不另建worktree，不委派逐任务实现或评审。仅恢复本计划.superpowers/sdd/2026-10-27-macos-local-character-voice/progress.md。只读运行时依赖调查允许，不加载个人资料或正式Keychain。Xcode首次受限沙箱启动失败不算产品RED，正常测试服务下已观察新类型缺失RED；后续验证以实际日志为准，原实验/备份与个人App暂不动。主schema13、角色v2、voice1保持，本版push/tag/Release/模型上传仍未授权。
