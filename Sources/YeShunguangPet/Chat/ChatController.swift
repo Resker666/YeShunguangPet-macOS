@@ -252,7 +252,8 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         }
     }
     private func cancelRequest() {
-        voice?.stop(); voiceSelection = nil
+        if let voice, voice.hasActivity || voice.hasPendingResources { voice.stop() }
+        voiceSelection = nil
         if let card = pendingAction { roleErrors[card.context.id] = "操作提议已失效，未执行；可重新发送。" }
         pendingAction = nil
         generation &+= 1

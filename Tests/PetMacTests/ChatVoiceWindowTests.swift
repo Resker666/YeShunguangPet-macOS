@@ -86,11 +86,13 @@ import PetCore
         let full = ChatWindowController(controller: f.controller, onPresentationChange: { _ in }); defer { full.dispose() }
         full.present(); voice.readLatest("当前朗读"); try await chatEventually { voice.isSpeaking }
         output.stopResult = false; let count = output.stops
-        voice.settings.disable(); await f.controller.waitForPendingWrites(); try await chatEventually { output.stops == count + 1 }
+        voice.settings.disable(); await f.controller.waitForPendingWrites(); try await chatEventually { voice.outputStopFailed && !voice.isStoppingOutput }
+        XCTAssertEqual(output.stops, count + 1)
         full.render()
         let retry = try XCTUnwrap(descendants(full.pageScroll, NSButton.self).first { $0.title == "重试停止朗读" })
         XCTAssertFalse(retry.isHidden); XCTAssertTrue(retry.isEnabled)
-        output.stopResult = true; try press(retry); try await chatEventually { output.stops == count + 2 }
+        output.stopResult = true; try press(retry); try await chatEventually { !voice.isStoppingOutput && !voice.outputStopFailed }
+        XCTAssertEqual(output.stops, count + 2)
         full.render(); XCTAssertFalse(voice.settings.enabledForSession); XCTAssertNil(voice.error)
         XCTAssertEqual(output.spoken.count, 1)
         await f.close()
