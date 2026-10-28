@@ -142,9 +142,9 @@
 
 **Interfaces:** 使用前面公开接口和既有构建/打包脚本，不新增产品调试后门。新计划ledger仅在计划批准后建立，完成后只归档本计划证据。
 
-- [ ] **Step 1: 完整回归。** `bash scripts/test.sh`、`python3 -m unittest discover -s Tests/LocalVoice -v`、`python3 -m unittest discover -s Tests/Release -v`全部真实通过；记录测试数量/命令/失败历史，相关新改动后重跑必要范围，不反复无变化测试。
-- [ ] **Step 2: 真实隔离引擎验证。** 挂载独立DMG并通过同一安装服务在隔离中文空格settings路径安装，复制/自检/保存/取消/修复与错误恢复留证；弹出DMG，将本轮新构建输入移开（不动原实验/备份/旧日用），用新runtime无外部Python路径运行固定probe与新的中文生成/原生播放启动/停止。核对源/候选/安装副本哈希、Pythonprefix、原生依赖闭包、冷ready/生成/峰值RSS/停止耗时及准确PID退出。保留既有600UTF16、180秒空闲/一次回退规则；既有测试已覆盖且未变的不为凑证据重复长等待。
-- [ ] **Step 3: 一次新的最终整体代码评审。** 按requesting-code-review技能审阅基线1d8f4f8至本版完整实现，保留本会话单席位/一次整体方式；有阻断项以真实RED→GREEN修复，重跑必要回归，不自动派第二评审。报告Critical/Important/Minor及有意取舍，旧0.5两项Minor仍单列。
+- [x] **Step 1: 完整回归。** `bash scripts/test.sh`、`python3 -m unittest discover -s Tests/LocalVoice -v`、`python3 -m unittest discover -s Tests/Release -v`全部真实通过；记录测试数量/命令/失败历史，相关新改动后重跑必要范围，不反复无变化测试。
+- [x] **Step 2: 真实隔离引擎验证。** 挂载独立DMG并通过同一安装服务在隔离中文空格settings路径安装，复制/自检/保存/取消/修复与错误恢复留证；弹出DMG，将本轮新构建输入移开（不动原实验/备份/旧日用），用新runtime无外部Python路径运行固定probe与新的中文生成/原生播放启动/停止。核对源/候选/安装副本哈希、Pythonprefix、原生依赖闭包、冷ready/生成/峰值RSS/停止耗时及准确PID退出。保留既有600UTF16、180秒空闲/一次回退规则；既有测试已覆盖且未变的不为凑证据重复长等待。
+- [x] **Step 3: 一次新的最终整体代码评审。** 按requesting-code-review技能审阅基线1d8f4f8至本版完整实现，保留本会话单席位/一次整体方式；有阻断项以真实RED→GREEN修复，重跑必要回归，不自动派第二评审。报告Critical/Important/Minor及有意取舍，旧0.5两项Minor仍单列。
 - [ ] **Step 4: 干净来源与双架构分发。** 先本地提交实现/修复，再`bash scripts/build-app.sh arm64`、`bash scripts/build-app.sh x86_64`、各自`bash scripts/package-app.sh <arch>`；`python3 -m unittest discover -s Tests/Distribution -v`通过。仅把本次8份App/校验文件放入单独的忽略子目录，再运行`python3 scripts/prepare-release.py --assets <该目录> --version 0.7.0 --commit <完整干净来源SHA> --check-only`，必须成功，不能把引擎DMG或dist历史附件一起传入。实查版本/14.0/签名/六适配器/原皮肤/来源/无运行时模型，ARM中文空格路径搬移及弹出DMG后重开；独立引擎DMG单独核对摘要/许可/库存，不上传。
 - [ ] **Step 5: 本地安装与记录。** 正常退出准确旧App后盲备份旧App/主配置/AI及current原字节，安装新App并核对旧设置/AI摘要/当前引擎描述未被自动改变。让用户在新UI主动安装引擎/试听，自动验证不读取私人内容或正式Keychain、不替用户绑定启用。写真实已测与待验：M4本机与可闻用户反馈分开；macOS14/其他M系列/外机Gatekeeper/Intel引擎保持未测或不支持。以`docs: record portable voice engine validation and local delivery`本地提交收尾，归档本计划ledger，不push/tag/Release。
 
