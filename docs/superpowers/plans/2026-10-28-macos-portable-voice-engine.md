@@ -70,11 +70,11 @@
 
 **Interfaces:** `assemble_engine(runtime:Path, experiment:Path, output:Path, *, engine_id:str, version:str) -> dict`消费Task1 runtime及固定资产源；`write_engine_manifest(package:Path, metadata:dict) -> dict`产生Task2格式；`package_engine_dmg(package:Path, output:Path, *, runner=subprocess.run) -> Path`只执行参数数组的系统hdiutil并生成sha256。CLI明确`--runtime --experiment --output --version`，不猜个人路径、覆盖已存在包或读取个人LocalVoice。
 
-- [ ] **Step 1: 写RED。** `test_assembly_excludes_voice_training_and_host_paths`用小资产断言无s2/reference/录音/venv/experimentPath/个人路径；`test_manifest_is_deterministic_and_hashes_final_bytes`断言排序、字节数、最终签名后哈希一致；`test_dmg_uses_argument_array_and_keeps_source`断言带空格中文路径完整作为一个参数、打包失败不删除源包。
-- [ ] **Step 2: 验RED。** `python3 -m unittest discover -s Tests/LocalVoice -p 'test_engine_package.py' -v`。
-- [ ] **Step 3: 实现并组装。** 复用既有固定源码/公共资源摘要，在新输出中生成纯运行资产清单；保持上游文件字节，收集Python/依赖/源码/底模许可与来源库存，不引入训练权重。最终包manifest覆盖全部payload文件及执行位；Task1审计通过后再封装DMG和安装说明，模型/DMG不进Git。运行时及包内链接全部转换或拒绝。
-- [ ] **Step 4: 验GREEN与跨语言合同。** Python测试通过；用真实输出的`engine.json`交给Task2 Swift解析器离线读取并核对必需路径/总量/摘要。真实DMG只读挂载，核对包与外部文件夹库存一致后弹出；记录实际下载/安装/压缩/峰值空间，不预先声称包大小或外机通过。
-- [ ] **Step 5: 本地提交。** 仅小工具/测试/说明，`git commit -m 'build: package an independent offline voice engine image'`。
+- [x] **Step 1: 写RED。** `test_assembly_excludes_voice_training_and_host_paths`用小资产断言无s2/reference/录音/venv/experimentPath/个人路径；`test_manifest_is_deterministic_and_hashes_final_bytes`断言排序、字节数、最终签名后哈希一致；`test_dmg_uses_argument_array_and_keeps_source`断言带空格中文路径完整作为一个参数、打包失败不删除源包。
+- [x] **Step 2: 验RED。** `python3 -m unittest discover -s Tests/LocalVoice -p 'test_engine_package.py' -v`。
+- [x] **Step 3: 实现并组装。** 复用既有固定源码/公共资源摘要，在新输出中生成纯运行资产清单；保持上游文件字节，收集Python/依赖/源码/底模许可与来源库存，不引入训练权重。最终包manifest覆盖全部payload文件及执行位；Task1审计通过后再封装DMG和安装说明，模型/DMG不进Git。运行时及包内链接全部转换或拒绝。
+- [x] **Step 4: 验GREEN与跨语言合同。** Python测试通过；用真实输出的`engine.json`交给Task2 Swift解析器离线读取并核对必需路径/总量/摘要。真实DMG只读挂载，核对包与外部文件夹库存一致后弹出；记录实际下载/安装/压缩/峰值空间，不预先声称包大小或外机通过。
+- [x] **Step 5: 本地提交。** 仅小工具/测试/说明，`git commit -m 'build: package an independent offline voice engine image'`。
 
 ### Task 4: 版本目录、排他锁和原子切换
 
