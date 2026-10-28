@@ -298,6 +298,7 @@ import PetCore
     func windowDidDeminiaturize(_ notification:Notification) { updatePresentation() }
     func windowDidEndSheet(_ notification:Notification) { render() }
     func windowWillClose(_ notification:Notification) {
+        voiceSettings.cancelPanel()
         if managed { presentationClose?() }
         else {
             controller.windowClosed(); resetLogicalDrafts()
@@ -308,6 +309,7 @@ import PetCore
     func cancelTermination() { terminating = false; render() }
     func dispose() {
         guard !disposed else { return }; disposed = true; observation = nil
+        voiceSettings.cancelPanel()
         NotificationCenter.default.removeObserver(self)
         window?.delegate = nil; window?.orderOut(nil)
         if !managed { onPresentationChange(false); controller.setPresented(false) }

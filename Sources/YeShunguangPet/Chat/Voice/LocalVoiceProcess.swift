@@ -4,10 +4,13 @@ import Darwin
 import PetCore
 
 enum LocalVoiceIssue: Error, LocalizedError, Equatable, Sendable {
-    case unavailable, systemUnavailable, systemPlayback, protocolFailure, timeout, memoryLimit, generation, invalidAudio, playback, stopping, cancelled
+    case unavailable, engineUnconfigured, libraryProtected, voiceMissing, systemUnavailable, systemPlayback, protocolFailure, timeout, memoryLimit, generation, invalidAudio, playback, stopping, cancelled
     var errorDescription: String? {
         switch self {
         case .unavailable: "本地语音引擎不可用，请检查本机环境和语音包。"
+        case .engineUnconfigured: "本机尚未准备可用的角色语音引擎。"
+        case .libraryProtected: "本地语音库索引受保护，请在语音设置中检查。"
+        case .voiceMissing: "角色绑定的本地音色缺失或校验失败，请重新导入。"
         case .systemUnavailable: "没有可用的系统中文音色，请在系统辅助功能的朗读内容中下载中文音色。"
         case .systemPlayback: "系统朗读未能完成，可手动重试。"
         case .protocolFailure: "本地语音引擎返回了无效响应。"

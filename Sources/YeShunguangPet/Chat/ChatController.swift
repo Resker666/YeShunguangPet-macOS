@@ -65,7 +65,9 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     private(set) var disposed = false
     private var presented = false
     private(set) var voice: ChatVoiceController?
+    private(set) var localVoices: ChatLocalVoiceController?
     private var voiceObservation: AnyCancellable?
+    private var localVoiceObservation: AnyCancellable?
     private var voiceEnvironment = VoiceEnvironment()
     private var draftRevision: UInt64 = 0
     private var voiceSelection: (snapshot: VoiceDraftSnapshot, range: NSRange)?
@@ -610,7 +612,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     }
 
     func setPresented(_ presented: Bool) { self.presented = presented }
-    func windowClosed() { cancelRequest(); memoryReview = nil; presented = false; profileEditRevision &+= 1; memoryEditRevision &+= 1; refreshCurrent() }
+    func windowClosed() { localVoices?.cancelPreview(); cancelRequest(); memoryReview = nil; presented = false; profileEditRevision &+= 1; memoryEditRevision &+= 1; refreshCurrent() }
     func setSleeping(_ sleeping: Bool) {
         guard !disposed, self.sleeping != sleeping else { return }
         self.sleeping = sleeping
@@ -618,8 +620,8 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         if sleeping { cancelRequest() }
         refreshCurrent()
     }
-    func beginTermination() { guard !disposed else { return }; terminating = true; refreshVoiceEnvironment(); cancelRequest(); memoryReview = nil; memoryEditRevision &+= 1; refreshCurrent() }
-    func cancelTermination() { guard !disposed else { return }; terminating = false; refreshVoiceEnvironment(); refreshCurrent() }
+    func beginTermination() { guard !disposed else { return }; terminating = true; localVoices?.beginTermination(); refreshVoiceEnvironment(); cancelRequest(); memoryReview = nil; memoryEditRevision &+= 1; refreshCurrent() }
+    func cancelTermination() { guard !disposed else { return }; terminating = false; localVoices?.cancelTermination(); refreshVoiceEnvironment(); refreshCurrent() }
     func waitForPendingWrites() async {
         while true {
             if let credentialTask { await credentialTask.value }
@@ -642,6 +644,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         guard !disposed else { return }
         cancelRequest(); disposed = true; presented = false
         refreshVoiceEnvironment(); voice?.dispose(); voiceObservation?.cancel(); voiceObservation = nil
+        localVoices?.dispose(); localVoiceObservation?.cancel(); localVoiceObservation = nil
         roleLoadTask?.cancel(); connectionLoadTask?.cancel()
         actions.dispose()
         stopLifecycleObservers()
@@ -650,13 +653,22 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     func configureVoice(services: VoiceServices, now: @escaping () -> Duration) {
         guard voice == nil, !disposed else { return }
         let settings = ChatVoicePreferencesController(persistence: persistence, writes: writes, canMutate: { [weak self] in self?.canMutate == true })
+        let local = ChatLocalVoiceController(persistence: persistence, writes: writes, context: { [weak self] in self?.character },
+            canMutate: { [weak self] in guard let self else { return false }; return self.canMutate && self.voice?.hasOutputActivity != true && self.voice?.blocksChat != true },
+            stopOutput: { [weak self] in await self?.voice?.stopAndWait() ?? true })
+        localVoices = local
         let value = ChatVoiceController(settings: settings, services: services, now: now,
             draft: { [weak self] in self?.voiceDraftSnapshot },
             canRecognize: { [weak self] in self?.canPrepareVoiceInput == true },
-            apply: { [weak self] expected, insertion in self?.applyVoiceInsertion(insertion, expected: expected) == true })
+            apply: { [weak self] expected, insertion in self?.applyVoiceInsertion(insertion, expected: expected) == true },
+            resolveSelection: { [weak local] character in await local?.resolve(for: character) ?? .unavailable(.unavailable) },
+            canUseServices: { [weak local] in local?.hasPendingMutation == false })
         voice = value
         voiceObservation = value.objectWillChange.sink { [weak self] _ in
             Task { @MainActor in guard let self, !self.disposed else { return }; self.objectWillChange.send() }
+        }
+        localVoiceObservation = local.objectWillChange.sink { [weak self] _ in
+            Task { @MainActor in guard let self, !self.disposed else { return }; self.refreshVoiceEnvironment(); self.objectWillChange.send() }
         }
         refreshVoiceEnvironment(); objectWillChange.send()
     }
@@ -665,7 +677,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     }
     var canPrepareVoiceInput: Bool {
         guard let id = character?.id else { return false }
-        return canMutate && pendingAction == nil && executingAction == nil && connectionLoaded && connection.enabled && connectionProtection == nil
+        return canMutate && localVoices?.hasPendingMutation != true && pendingAction == nil && executingAction == nil && connectionLoaded && connection.enabled && connectionProtection == nil
             && connectionError == nil && !connectionWriting && credentialTask == nil && credentialMutationError == nil
             && credentialAvailability != .missing && requestTask == nil && archives[id] != nil && protectedRoles[id] == nil
             && pendingPairs[id] == nil && pendingMemories[id] == nil && roleWrites[id, default: 0] == 0

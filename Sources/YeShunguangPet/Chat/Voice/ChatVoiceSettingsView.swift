@@ -8,6 +8,7 @@ import PetCore
     private let voices = NSPopUpButton(), rate = NSSlider(value: 0.5, minValue: 0.35, maxValue: 0.65, target: nil, action: nil)
     private let apply = NSButton(), disable = NSButton(), preview = NSButton(), stop = NSButton(), retry = NSButton(), discard = NSButton(), reset = NSButton()
     private let status = NSTextField(wrappingLabelWithString: "")
+    private var localSettings: ChatLocalVoiceSettingsView!
     private var rendered: VoicePreferences?, renderedVoices = [SystemVoice]()
     init(controller: ChatController, hasBlockingModal: @escaping () -> Bool, onResetRequested: @escaping () -> Void) {
         self.controller = controller; self.hasBlockingModal = hasBlockingModal; self.onResetRequested = onResetRequested
@@ -15,7 +16,7 @@ import PetCore
         configure(apply, "应用语音设置", #selector(applyPressed)); configure(disable, "立即关闭语音", #selector(disablePressed))
         configure(preview, "试听已应用音色", #selector(previewPressed)); configure(stop, "停止朗读", #selector(stopPressed))
         configure(retry, "重试本地保存", #selector(retryPressed)); configure(discard, "放弃待存设置", #selector(discardPressed)); configure(reset, "备份并重置语音设置…", #selector(resetPressed))
-        let help = NSTextField(wrappingLabelWithString: "语音默认关闭。启用或打开本页不会录音、发声或申请权限；点击录音后才检查权限。优先本机中文识别，联网只在提示后由你允许本次新录音。识别文字可编辑并由你手动发送，DeepSeek 不接收录音。\n自动朗读长回复只读开头，最多 600 个 UTF-16 单元。安静模式、隐藏、菜单及阻挡窗口期间不朗读，不补读。这里只提供已安装的 Apple 中文音色；缺失时可在系统设置的辅助功能／朗读内容中下载。")
+        let help = NSTextField(wrappingLabelWithString: "语音默认关闭。启用或打开本页不会录音、发声或申请权限；点击录音后才检查权限。优先本机中文识别，联网只在提示后由你允许本次新录音。识别文字可编辑并由你手动发送，DeepSeek 不接收录音。\n自动朗读长回复只读开头，最多 600 个 UTF-16 单元。安静模式、隐藏、菜单及阻挡窗口期间不朗读，不补读。本地音色按下方角色绑定使用；这里的 Apple 中文音色用于系统朗读与失败回退，缺失时可在系统辅助功能中下载。")
         let voiceLabel = NSTextField(labelWithString: "首选音色（保存缺失选择时会使用可用的中文回退音色）")
         let rateLabel = NSTextField(labelWithString: "语速 · 0.35 慢 — 0.65 快（默认 0.5）")
         for view in [help, enabled, automatic, voiceLabel, voices, rateLabel, rate, apply, disable, preview, stop, status, retry, discard, reset] {
@@ -25,6 +26,9 @@ import PetCore
         for field in [help, status] { field.font = .systemFont(ofSize: 12); field.widthAnchor.constraint(equalTo: widthAnchor).isActive = true }
         voices.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
         rate.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
+        localSettings = ChatLocalVoiceSettingsView(controller: controller, hasBlockingModal: hasBlockingModal)
+        addArrangedSubview(localSettings); localSettings.translatesAutoresizingMaskIntoConstraints = false
+        localSettings.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
         render()
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -46,16 +50,18 @@ import PetCore
         let editable = allowed && settings.isLoaded && !settings.isWriting && settings.protection == nil && !voice.blocksChat
         for view in [enabled, automatic, voices, rate, apply] as [NSControl] { view.isEnabled = editable }
         disable.isEnabled = allowed && settings.isLoaded
-        preview.isEnabled = allowed && settings.enabledForSession && !voice.blocksChat
+        preview.isEnabled = allowed && settings.enabledForSession && !voice.blocksChat && controller.localVoices?.hasPendingMutation != true
         stop.title = voice.isStoppingOutput ? "确认停止中…" : voice.outputStopFailed ? "重试停止朗读" : "停止朗读"
-        stop.isEnabled = allowed && !voice.isStoppingOutput && (voice.isSpeaking || voice.outputStopFailed)
+        stop.isEnabled = allowed && !voice.isStoppingOutput && (voice.hasOutputActivity || voice.hasPendingResources || voice.outputStopFailed)
         retry.isHidden = !settings.hasUnsaved; discard.isHidden = !settings.hasUnsaved
         retry.isEnabled = allowed && !settings.isWriting; discard.isEnabled = retry.isEnabled
         reset.isHidden = settings.protection == nil; reset.isEnabled = allowed && !settings.isWriting
-        let actual = voice.actualVoice.map { "实际使用：\($0.name) · \($0.language)" }
+        let actual = voice.actualOutput.map { "实际使用：\($0.displayName) · \($0.backend == .local ? "本地角色音色" : "系统音色")" }
         status.stringValue = [settings.protection, settings.error, voice.error, actual, settings.isWriting ? "正在保存语音设置" : settings.enabledForSession ? "本次语音已启用" : "本次语音已关闭"].compactMap { $0 }.joined(separator: "\n")
         status.textColor = settings.error == nil && settings.protection == nil && voice.error == nil ? .secondaryLabelColor : .systemRed
+        localSettings.render()
     }
+    func cancelPanel() { localSettings.cancelPanel() }
     @objc private func applyPressed() {
         guard allowed, let voice = controller.voice, !voice.blocksChat else { return }
         voice.settings.apply(.init(enabled: enabled.state == .on, automaticReadAloud: automatic.state == .on, voiceIdentifier: voices.selectedItem?.representedObject as? String, rate: rate.doubleValue))

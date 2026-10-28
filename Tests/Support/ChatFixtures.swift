@@ -9,6 +9,7 @@ actor ControlledChatPersistence: ChatPersisting {
     private var loadWaiters = [String: CheckedContinuation<Void, Never>]()
     private var arrivedLoads = Set<String>()
     private var holdWrite = false
+    private var failVoiceDiscard = false
     private var release: CheckedContinuation<Void, Never>?
     private var failures = Set<String>()
     private var failureIndices = Set<Int>()
@@ -33,9 +34,18 @@ actor ControlledChatPersistence: ChatPersisting {
         return result
     }
     func loadConnection() async -> ChatLoadResult<ChatConnection> { await worker.loadConnection() }
-    func loadLocalVoiceIndex() async -> ChatLoadResult<LocalVoiceIndex> { await worker.loadLocalVoiceIndex() }
+    func loadLocalVoiceIndex() async -> ChatLoadResult<LocalVoiceIndex> {
+        let result = await worker.loadLocalVoiceIndex()
+        arrivedLoads.insert("localVoice"); loadWaiters.removeValue(forKey: "localVoice")?.resume()
+        if heldLoads.remove("localVoice") != nil { await withCheckedContinuation { loadReleases["localVoice"] = $0 } }
+        return result
+    }
     func stageLocalVoice(folder: URL) async throws -> StagedLocalVoice { try await worker.stageLocalVoice(folder: folder) }
-    func discardLocalVoiceStage(_ staged: StagedLocalVoice) async throws { try await worker.discardLocalVoiceStage(staged) }
+    func failNextLocalVoiceDiscard() { failVoiceDiscard = true }
+    func discardLocalVoiceStage(_ staged: StagedLocalVoice) async throws {
+        if failVoiceDiscard { failVoiceDiscard = false; throw LocalVoiceMutationError(code: .cleanup, cleanupPending: [.init(namespace: .staging, id: staged.stageID)]) }
+        try await worker.discardLocalVoiceStage(staged)
+    }
     func localVoiceEntries() async -> [LocalVoiceLibraryEntry] { await worker.localVoiceEntries() }
     func resolveLocalVoice(libraryID: UUID) async throws -> ResolvedLocalVoice { try await worker.resolveLocalVoice(libraryID: libraryID) }
     func localVoiceEngineStatus() async -> LocalVoiceEngineStatus { await worker.localVoiceEngineStatus() }

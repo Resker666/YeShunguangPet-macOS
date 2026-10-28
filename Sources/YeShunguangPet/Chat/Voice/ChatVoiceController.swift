@@ -27,6 +27,7 @@ enum VoiceCaptureState: Equatable { case idle, stoppingOutput, requestingPermiss
     private let draft: () -> VoiceDraftSnapshot?, canRecognize: () -> Bool
     private let apply: (VoiceDraftSnapshot, VoiceInsertion) -> Bool
     private let resolveSelection: @MainActor (ChatCharacter) async -> VoiceRouteSelection
+    private let canUseServices: @MainActor () -> Bool
     private var environment = VoiceEnvironment(), disposed = false
     private struct Capture {
         let token: UUID, snapshot: VoiceDraftSnapshot, selection: NSRange, mode: VoiceRecognitionMode
@@ -60,8 +61,10 @@ enum VoiceCaptureState: Equatable { case idle, stoppingOutput, requestingPermiss
     init(settings: ChatVoicePreferencesController, services: VoiceServices, now: @escaping () -> Duration,
          draft: @escaping () -> VoiceDraftSnapshot?, canRecognize: @escaping () -> Bool,
          apply: @escaping (VoiceDraftSnapshot, VoiceInsertion) -> Bool,
-         resolveSelection: @escaping @MainActor (ChatCharacter) async -> VoiceRouteSelection = { _ in .system }) {
+         resolveSelection: @escaping @MainActor (ChatCharacter) async -> VoiceRouteSelection = { _ in .system },
+         canUseServices: @escaping @MainActor () -> Bool = { true }) {
         self.settings = settings; self.services = services; self.now = now; self.draft = draft; self.canRecognize = canRecognize; self.apply = apply; self.resolveSelection = resolveSelection
+        self.canUseServices = canUseServices
         availableVoices = Self.filter(services.output.installedSystemVoices())
         services.output.onVoicesChanged = { [weak self] in
             guard let self, !self.disposed else { return }
@@ -81,7 +84,7 @@ enum VoiceCaptureState: Equatable { case idle, stoppingOutput, requestingPermiss
     private static func filter(_ voices: [SystemVoice]) -> [SystemVoice] {
         voices.filter { $0.isAppleVoice && !$0.isPersonalVoice && $0.language.lowercased().hasPrefix("zh") }
     }
-    private var usable: Bool { !disposed && !environment.disposed && !environment.sleeping && !environment.terminating && !environment.blocked && settings.enabledForSession }
+    private var usable: Bool { !disposed && !environment.disposed && !environment.sleeping && !environment.terminating && !environment.blocked && settings.enabledForSession && canUseServices() }
     private func inputAllowed() -> Bool { usable && environment.surface == .conversation && canRecognize() }
     private func current(_ value: Capture) -> Bool {
         activity == value.token && capture?.token == value.token && inputAllowed() && draft() == value.snapshot
