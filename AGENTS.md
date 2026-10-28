@@ -170,3 +170,5 @@
 - 用户于2026-10-28反馈“good，我体验是ok的”，确认0.6.0当前M4整体体验通过；未提供逐项检查结论，也未授权push/tag/Release/模型上传。本次只本地提交验收记录，代码/测试/包/已安装来源be165f6保持，不重复测试、操作日用App或私人AI/Keychain，不恢复已完成计划workspace。
 
 - 用户随后于2026-10-28明确“好，开始执行，先正常退代码，让CI构建App”，授权按先前分析的流程普通推送codex/macos-local-character-voice并快进同步main，核验两路pushCI与双架构Artifacts；不触发prepare_release，不打标签、创建草稿、发布或上传模型/音频/venv。本次只补授权文档，产品/测试/构建代码与已通过556原生/17LocalVoice/13Release/17分发版本一致，不重复无变化本地测试或操作个人App/资料/Keychain。实际远端及云端结果另存.build/local-character-voice-validation/push-verification.json，已安装来源be165f6不随文档/云端构建改变，不恢复完成的计划workspace。
+
+- 用户于2026-10-28要求“本地语音独立安装 开始执行”，并选择本地引擎包在App内离线安装。原地本地分支codex/macos-portable-voice-engine，基线1d8f4f8；书面设计docs/superpowers/specs/2026-10-28-macos-portable-voice-engine-design.md提出0.7.0/build30、M系列/14+目标、独立可搬移Python/公共底模文件夹与DMG、原生后台安装/自检/取消/旧引擎保留和schema2兼容。只读调查发现现有Homebrew Python及jieba扩展minos27，不可复制旧venv声称兼容；新的可实施性检查结论nothing important left。现待整份设计审核，通过后写计划，尚未编写产品代码、下载/安装依赖、构建新引擎、加载模型或替换日用App。沿用本会话原地/一次最终整体评审，不重问方式，不恢复旧计划；本版push/tag/Release/模型上传未授权，原实验/备份与个人AI/Keychain保持。
