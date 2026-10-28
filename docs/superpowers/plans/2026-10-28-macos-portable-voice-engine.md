@@ -8,7 +8,7 @@
 
 **Tech Stack:** Swift 6、AppKit、Foundation/Darwin/CryptoKit、XCTest；开发侧 Python 3.12 Build Standalone、固定 GPT-SoVITS 与既有推理依赖；系统 hdiutil 仅由开发打包脚本使用。
 
-**Spec:** `docs/superpowers/specs/2026-10-28-macos-portable-voice-engine-design.md`，用户于2026-10-28明确“认可书面设计，进入实施计划”。本文待用户审核，不代表实施已获准或产物已验证。
+**Spec:** `docs/superpowers/specs/2026-10-28-macos-portable-voice-engine-design.md`，用户于2026-10-28明确“认可书面设计，进入实施计划”。用户随后已明确认可本计划并要求按本会话方式实施；当前Task1完成，后续按账本继续，不代表最终产物已验证。
 
 ## Global Constraints
 
@@ -46,11 +46,11 @@
 
 **Interfaces:** `prepare_runtime(build_root:Path, lock:dict, *, runner=subprocess.run) -> Path`返回自包含runtime；`audit_macho_tree(root:Path, *, minimum_os=(14,0)) -> dict`返回每个架构切片/最低系统/加载依赖/解析结果，失败抛异常。清单固定Python下载URL/完整版本/发行构建/官方SHA256及wheel/源码来源摘要；所有实际使用的106项直接/间接依赖必须有固定版本及制品哈希。
 
-- [ ] **Step 1: 写RED。** `test_download_digest_mismatch_never_executes`断言错误摘要调用runner次数0；`test_native_audit_rejects_external_load_and_newer_os`用小Mach-O字节/受控工具输出分别断言minos27、外部LC_LOAD、缺失@rpath目标失败，`test_dylib_id_is_not_a_load_dependency`断言单独LC_ID文本不构成宿主依赖。`test_symlink_materialization_rejects_outside_target`断言外链失败、内链转换为普通文件且字节相同。
-- [ ] **Step 2: 验RED。** `python3 -m unittest discover -s Tests/LocalVoice -p 'test_portable_runtime.py' -v`及`-p 'test_macho.py'`，确认失败来自新接口缺失/断言，而不是环境服务错误。
-- [ ] **Step 3: 最小实现。** 固定官方Python3.12 arm64制品，取得并校验后构建独立runtime；沿用兼容版本，在MACOSX_DEPLOYMENT_TARGET=14.0下重建jieba-fast等需要的扩展。删除无用绝对shebang入口，不创建venv外链；审计全部原生切片的实际依赖闭包、stdlib和minos，修改二进制后签名并记录最终哈希。不能仅搜索字符串或改minos数值。构建输入与输出均用新的忽略目录，不调用个人runtime。
-- [ ] **Step 4: 验GREEN及风险门槛。** 上述两组测试全通过；实际新runtime搬到另一中文空格目录，以系统PATH运行其`bin/python3.12`，报告`sys.executable/prefix/base_prefix`及torch/torchaudio/onnxruntime/jieba_fast等原生import。完整审计无宿主非系统依赖且全部arm64切片floor≤14.0；这不是macOS14实机结论。此门槛失败则先修复，不能继续以外部Python代替交付。
-- [ ] **Step 5: 本地提交。** `git add tools Tests/LocalVoice`（只明确新增的小源码/锁文件，检查无运行时文件），`git commit -m 'build: prepare a relocatable arm64 voice runtime'`。
+- [x] **Step 1: 写RED。** `test_download_digest_mismatch_never_executes`断言错误摘要调用runner次数0；`test_native_audit_rejects_external_load_and_newer_os`用小Mach-O字节/受控工具输出分别断言minos27、外部LC_LOAD、缺失@rpath目标失败，`test_dylib_id_is_not_a_load_dependency`断言单独LC_ID文本不构成宿主依赖。`test_symlink_materialization_rejects_outside_target`断言外链失败、内链转换为普通文件且字节相同。
+- [x] **Step 2: 验RED。** `python3 -m unittest discover -s Tests/LocalVoice -p 'test_portable_runtime.py' -v`及`-p 'test_macho.py'`，确认失败来自新接口缺失/断言，而不是环境服务错误。
+- [x] **Step 3: 最小实现。** 固定官方Python3.12 arm64制品，取得并校验后构建独立runtime；沿用兼容版本，在MACOSX_DEPLOYMENT_TARGET=14.0下重建jieba-fast等需要的扩展。删除无用绝对shebang入口，不创建venv外链；审计全部原生切片的实际依赖闭包、stdlib和minos，修改二进制后签名并记录最终哈希。不能仅搜索字符串或改minos数值。构建输入与输出均用新的忽略目录，不调用个人runtime。
+- [x] **Step 4: 验GREEN及风险门槛。** 上述两组测试全通过；实际新runtime搬到另一中文空格目录，以系统PATH运行其`bin/python3.12`，报告`sys.executable/prefix/base_prefix`及torch/torchaudio/onnxruntime/jieba_fast等原生import。完整审计无宿主非系统依赖且全部arm64切片floor≤14.0；这不是macOS14实机结论。此门槛失败则先修复，不能继续以外部Python代替交付。
+- [x] **Step 5: 本地提交。** `git add tools Tests/LocalVoice`（只明确新增的小源码/锁文件，检查无运行时文件），`git commit -m 'build: prepare a relocatable arm64 voice runtime'`。
 
 ### Task 2: 严格引擎包模型与只读预览
 
@@ -152,4 +152,4 @@
 
 作者自审，不委派计划评审。设计§1–3由Tasks1–3覆盖独立运行时/包/许可及M系列边界；§4由Task4/5/6覆盖安全文件、两代描述、固定探针与保存/取消；§5由Tasks6–8覆盖共享状态、文字不阻塞、双窗/睡眠/退出及界面；§6由Task9覆盖真实搬移、评审、干净包与如实交付。五项Review Focus均已分配明确断言。类型自查已补Core工作阶段与App UI阶段分离、候选/快照携带后台解析configuration、空普通文件合法及schema2链接检查；步骤自查保留可观察断言/真实命令，未写具体程序体。篇幅约为设计两倍，对应9项有独立验证结果的交付单元。额外只读调查仅核对CI/库存文件与现有夹具，不是第二次设计/计划评审；已据事实固定两处六文件清单及独立八附件离线目录。未把Python、模型、私人数据或整包写入CI夹具。
 
-当前仅设计已获准，实施计划待审核。沿用既定Native本会话方式，不重新要求选择执行模式；计划确认后连续完成Tasks1–9、一次最终整体评审和本地交付，不逐任务等待确认。
+设计及实施计划均已获准，当前已进入实施。沿用既定Native本会话方式，不重新要求选择执行模式；计划确认后连续完成Tasks1–9、一次最终整体评审和本地交付，不逐任务等待确认。
