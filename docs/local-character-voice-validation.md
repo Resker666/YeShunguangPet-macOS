@@ -34,8 +34,18 @@ App 仍只链接系统框架。四份 Python 适配器和小体积公共资源�
 
 评审者唯一暂不判断的范围是其他 Mac、Intel 推理和免 Python 引擎分发。实施者判断：维持用户批准的当前 M4 首版，普通 App/文字/系统语音另行可用；判断错误的代价是用户换机器使用本地音色时仍需单独准备和兼容验证，不能承诺直接搬移。
 
-## 当前交付状态与未测
+## 最终本地交付
 
-当前仍待干净双架构包、最终分发与个人 App 更新。日用 0.5.1 尚未替换；不得从上述阶段验证推定已交付。后续追加精确来源、备份、安装和状态摘要结果。
+最终 App/八份安装附件来自干净 `be165f6c38200966201a286650e6e1f6b5f76776`，0.6.0/build29，最低 14.0。两架构主程序/框架一致、只链接系统依赖、ad-hoc 签名、原皮肤摘要、五文件适配器库存和模型/venv/字节码拒绝检查通过。17 项最终真实分发回归通过，包括 ARM/Intel ZIP 与 DMG 的全库存比对、实际 ARM 中文空格路径搬移、弹出 DMG 后独立重开和位置恢复。两种 DMG/ZIP 各自 SHA-256、八附件 `prepare-release.py --check-only` 离线核验通过，没有远端调用。交叉构建、挂载与库存核验不当作 Intel 运行或 Gatekeeper 首开通过。
+
+准确旧 PID45987 正常退出，随后盲备份旧 App、settings.json 和完整 AI 到 `.build/local-character-voice-validation/personal-before-20261028-092548`。在正式 `~/Library/Application Support/YeShunguangPet-macOS` 下新建版本 `B4C570D6-7362-4876-BA6C-CEA5263EF154`，固定依赖从缓存安装、导入与资产检查成功后才写 current.json，未搬移验证 venv。准备前后主配置与 AI 摘要一致。
+
+`/Applications/YeShunguangPet.app` 已安装上述干净 arm64 来源，真实启动、正常退出 0、重新启动运行 PID67790；schema13/设置所有字段与 AI 摘要均保持，`changedSettingsKeys=[]`。没有解析私人 AI 正文、访问正式 Keychain/API、开启麦克风、变更登录项或自动启用语音。个人语音库 index 仍不存在，没有自动导入或绑定。可见候选保留在 `dist/语音包/胡桃-试用-e1`，由用户主动预览、导入、绑定和试听；e2、所有原实验与备份保留。
+
+新建正式带空格引擎路径另经隔离原生探针验证：使用隔离语音库与固定测试句，实际生成、AVAudioPlayer 启动及停止通过，总 12.868 秒、停止 0.158 秒、1034 次 MainActor 心跳，准确子进程已退出。该探针不创建个人语音绑定、不使用私人对话，也不代表人耳音色验收。
+
+最终包/安装、正式引擎、原生探针及摘要证据分别在忽略目录的 `final-bundles.json`、`eight-assets-check.json`、`personal-install.json`、`personal-engine-check.json`、`native-final-path-probe.json` 和完整日志。本文档及最后的记录提交不改变已安装 App 的来源。保留本地开发分支，不合并 main，不推送、打标签或发布。
+
+## 未测边界
 
 可闻音色/发音、实际导入绑定按钮、物理输入、真实麦克风与 Apple 在线识别、DeepSeek、睡眠/锁屏/Spaces、另一台 Mac/Intel 引擎/Gatekeeper、公证和本版云端流水线均未据此验收。旧 0.5 的两项 Minor 仍在 TODO，不在本版声称修复。
