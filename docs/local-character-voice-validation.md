@@ -24,7 +24,7 @@ App 仍只链接系统框架。四份 Python 适配器和小体积公共资源�
 
 通过真实适配器生成两条预先指定的新中文测试句，未使用聊天内容。冷 ready 8.685 秒；首句生成 5.283 秒，音频 4.900 秒/313644 字节；后句生成 2.950 秒，音频 5.380 秒/344364 字节。完整解码为 32 kHz/单声道/16位 PCM，非零数据，返回帧数一致。正常进程峰值 RSS 3892.6 MiB，各阶段观察最高 3986.8 MiB；这是一轮采样，不能当作稳定上限或性能保证。
 
-真实 worker 的 shutdown、初始化/生成中父管道 EOF 和准确 PID TERM 均已退出；本轮停止 0.002–0.209 秒，没有按名字终止其他 Python。活跃真实 worker 的共享锁确实拒绝准备工具的排他锁。原生 LocalVoiceProcess/Output/AVAudioPlayer 链的初始化、生成、播放中停止均确认准确 PID 已退出，MainActor 心跳持续；idle/timeout 正在最后核验。播放启动由真实 AVAudioPlayer 返回值和委托边界记录，不宣称人耳已听到或音色已验收。
+真实 worker 的 shutdown、初始化/生成中父管道 EOF 和准确 PID TERM 均已退出；本轮停止 0.002–0.209 秒，没有按名字终止其他 Python。活跃真实 worker 的共享锁确实拒绝准备工具的排他锁。原生 LocalVoiceProcess/Output/AVAudioPlayer 链的初始化、生成、播放中停止均确认准确 PID 已退出，分别约 0.015/0.083/0.176 秒，MainActor 心跳持续。实际等待默认 180 秒空闲计时后引擎已释放（包含启动、生成和播放总计 193.056 秒、13912 次心跳）；另用 0.02 秒启动上限验证真实 worker 超时退出，没有遗留准确 PID。播放启动由真实 AVAudioPlayer 返回值和委托边界记录，不宣称人耳已听到或音色已验收。生成后再对固定源归档复核 186 份上游 Python，零字节变化。
 
 原始指标、WAV、探针源与日志只在忽略目录 `.build/local-character-voice-validation`；Task1–8 RED/GREEN 与完整日志在本计划独立 `.superpowers/sdd/2026-10-27-macos-local-character-voice`，收尾时归档到前述忽略目录。
 
