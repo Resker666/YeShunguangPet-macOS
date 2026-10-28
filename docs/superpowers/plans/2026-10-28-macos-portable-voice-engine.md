@@ -106,11 +106,11 @@
 
 **Interfaces:** `protocol LocalVoiceEngineWorking:Sendable`提供async throws的`preview(folder:URL)->Preview`、`begin(_ preview:Preview)->Candidate`、`copy(_ candidate:Candidate,progress:@Sendable(Progress)->Void)`、`activate(_ candidate:Candidate)->Descriptor`、`discard(_ candidate:Candidate)`，以及async的`releaseLease()`、`current()->Snapshot`；名称中的Preview/Candidate/Progress/Descriptor/Snapshot均为上面完整类型别名。`actor LocalVoiceEngineWorker`持有store/唯一lease，大文件方法执行在该actor。`@MainActor ChatLocalVoiceEngineController.init(worker:any LocalVoiceEngineWorking,probe:any LocalVoiceEngineProbing,canStart:@escaping()->Bool,stopOutput:@escaping() async->Bool,onActivated:@escaping()->Void)`；提供`preview(folder:)`、`confirmInstall()`、`checkCurrent()`、`cancelPreview()`、`cancelInstallation()`、`retryPending()`、`beginTermination()`、`cancelTermination()`、`waitForPending() async`、`retryForTermination() async`、`dispose()`，可观察phase/preview/progress/error/snapshot与`isBusy/blocksServices/hasPendingResources/hasUnsaved/terminationError`。
 
-- [ ] **Step 1: 写RED。** `testOnlyOneConfirmedInstallAndProbeCanActivate`断言确认前不执行/复制、停止失败不开始、重复确认只一次；`testFailedActivationRetainsCandidateAcrossRoleAndWindowChanges`断言同一UUID重试不重新复制/自检/发声；`testPendingRetryReleasesAndReacquiresLease`断言旧引擎可用且外部描述变化拒绝覆盖；`testCancelBeforeAndAfterActivationDoesNotDeleteCurrent`断言迟到取消不回滚。`testCancelledCopyCleansOnlyItsOwnCandidate`断言清理失败保token与重试入口，子进程未退出时不删其文件。
-- [ ] **Step 2: 验RED。** `bash scripts/test.sh -only-testing:PetMacTests/LocalVoiceEngineWorkerTests -only-testing:PetMacTests/ChatLocalVoiceEngineControllerTests`。
-- [ ] **Step 3: 实现编排。** 明确prepare/copy/probe/activate边界，同一task合作取消；worker持EX覆盖复制/自检/提交，释放后的重试重新验证候选及旧描述。进度在后台节流约100ms再转MainActor，不为每chunk排一个UI任务。确认后的工作不因关窗/角色变化丢失；睡眠/退出显式取消可取消阶段，正在原子提交的短事务完成。等待用户处理activationPending时释放锁且blocksServices=false，旧引擎可用；未确认probe退出/活动copy/清理时保留资源状态。检查当前引擎用同一单飞/停止/锁/探针，缺失只报告，不创建环境。
-- [ ] **Step 4: 验GREEN。** 两组测试通过，加入取消退出不续装、检查不切换/启用、可用旧schema1和新schema2检查、旧任务晚结果忽略、清理重试不删当前，以及主线程在受控复制期间继续响应。对Task4失败通过受控存储钩子注入，不靠chmod猜测磁盘错误。
-- [ ] **Step 5: 本地提交。** `git commit -m 'feat: coordinate recoverable local voice engine installation'`。
+- [x] **Step 1: 写RED。** `testOnlyOneConfirmedInstallAndProbeCanActivate`断言确认前不执行/复制、停止失败不开始、重复确认只一次；`testFailedActivationRetainsCandidateAcrossRoleAndWindowChanges`断言同一UUID重试不重新复制/自检/发声；`testPendingRetryReleasesAndReacquiresLease`断言旧引擎可用且外部描述变化拒绝覆盖；`testCancelBeforeAndAfterActivationDoesNotDeleteCurrent`断言迟到取消不回滚。`testCancelledCopyCleansOnlyItsOwnCandidate`断言清理失败保token与重试入口，子进程未退出时不删其文件。
+- [x] **Step 2: 验RED。** `bash scripts/test.sh -only-testing:PetMacTests/LocalVoiceEngineWorkerTests -only-testing:PetMacTests/ChatLocalVoiceEngineControllerTests`。
+- [x] **Step 3: 实现编排。** 明确prepare/copy/probe/activate边界，同一task合作取消；worker持EX覆盖复制/自检/提交，释放后的重试重新验证候选及旧描述。进度在后台节流约100ms再转MainActor，不为每chunk排一个UI任务。确认后的工作不因关窗/角色变化丢失；睡眠/退出显式取消可取消阶段，正在原子提交的短事务完成。等待用户处理activationPending时释放锁且blocksServices=false，旧引擎可用；未确认probe退出/活动copy/清理时保留资源状态。检查当前引擎用同一单飞/停止/锁/探针，缺失只报告，不创建环境。
+- [x] **Step 4: 验GREEN。** 两组测试通过，加入取消退出不续装、检查不切换/启用、可用旧schema1和新schema2检查、旧任务晚结果忽略、清理重试不删当前，以及主线程在受控复制期间继续响应。对Task4失败通过受控存储钩子注入，不靠chmod猜测磁盘错误。
+- [x] **Step 5: 本地提交。** `git commit -m 'feat: coordinate recoverable local voice engine installation'`。
 
 ### Task 7: 聊天、双窗和正常退出集成
 

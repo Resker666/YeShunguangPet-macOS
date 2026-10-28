@@ -1115,6 +1115,8 @@
 				<string>F66CAC746A6B2C516AF6A342</string>
 				<string>949BE9F4725E287A4EB75C80</string>
 				<string>F4A629BC4B9208CF7C6BC24C</string>
+				<string>401B2CBA167505E72AAD6490</string>
+				<string>3E9D67DB10E768005C78F33D</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1608,6 +1610,11 @@
 				<string>EA20349E8241CCDA08C8D2FC</string>
 				<string>08AA4521888A6E02E39F309F</string>
 				<string>17DA2FD27875731E26043346</string>
+				<string>2F0FAADFE25413D9A91E3E01</string>
+				<string>A80E94881F37A8924230AFFD</string>
+				<string>06AEFD71B93DF716BAA2F2E4</string>
+				<string>4F4211B8CC0A08C6830B36FE</string>
+				<string>9D4F88A983AFE05599547287</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -2039,6 +2046,11 @@
 				<string>E57EA6D89F50FEB6A593D3F9</string>
 				<string>997EB8BE3B921024D9EB6A94</string>
 				<string>079DFC097BED787F70A2D96D</string>
+				<string>0883B92BF53425E951E7591C</string>
+				<string>D52B26ABFBE484607FAA742A</string>
+				<string>DF103780296185E95FC39919</string>
+				<string>9F668A17AC43B44FCDD343EA</string>
+				<string>77FC4C7DA94FE8E9DF0066A3</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -5779,6 +5791,110 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>079DFC097BED787F70A2D96D</string>
+		</dict>
+		<key>0883B92BF53425E951E7591C</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Tests/Support/LocalVoiceEngineServiceFixtures.swift</string>
+			<key>sourceTree</key>
+			<string>SOURCE_ROOT</string>
+		</dict>
+		<key>2F0FAADFE25413D9A91E3E01</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>0883B92BF53425E951E7591C</string>
+		</dict>
+		<key>D52B26ABFBE484607FAA742A</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/LocalVoiceEngineWorkerTests.swift</string>
+			<key>sourceTree</key>
+			<string>SOURCE_ROOT</string>
+		</dict>
+		<key>A80E94881F37A8924230AFFD</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>D52B26ABFBE484607FAA742A</string>
+		</dict>
+		<key>DF103780296185E95FC39919</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/ChatLocalVoiceEngineControllerTests.swift</string>
+			<key>sourceTree</key>
+			<string>SOURCE_ROOT</string>
+		</dict>
+		<key>06AEFD71B93DF716BAA2F2E4</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>DF103780296185E95FC39919</string>
+		</dict>
+		<key>9F668A17AC43B44FCDD343EA</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Chat/Voice/LocalVoiceEngineWorker.swift</string>
+			<key>sourceTree</key>
+			<string>SOURCE_ROOT</string>
+		</dict>
+		<key>401B2CBA167505E72AAD6490</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>9F668A17AC43B44FCDD343EA</string>
+		</dict>
+		<key>4F4211B8CC0A08C6830B36FE</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>9F668A17AC43B44FCDD343EA</string>
+		</dict>
+		<key>77FC4C7DA94FE8E9DF0066A3</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Chat/Voice/ChatLocalVoiceEngineController.swift</string>
+			<key>sourceTree</key>
+			<string>SOURCE_ROOT</string>
+		</dict>
+		<key>3E9D67DB10E768005C78F33D</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>77FC4C7DA94FE8E9DF0066A3</string>
+		</dict>
+		<key>9D4F88A983AFE05599547287</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>77FC4C7DA94FE8E9DF0066A3</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

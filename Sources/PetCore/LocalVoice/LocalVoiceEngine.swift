@@ -12,6 +12,16 @@ public struct LocalVoiceEngineConfiguration: Equatable, Sendable {
     public let cacheURL: URL
     public let assetsURL: URL
 }
+public struct LocalVoiceEngineSnapshot: Equatable, Sendable {
+    public var status: LocalVoiceEngineStatus
+    public var descriptor: LocalVoiceEngineDescriptor?
+    public var configuration: LocalVoiceEngineConfiguration?
+    public var packageName: String? { descriptor?.packageName }
+    public var packageVersion: String? { descriptor?.packageVersion }
+    public init(status: LocalVoiceEngineStatus = .unconfigured, descriptor: LocalVoiceEngineDescriptor? = nil, configuration: LocalVoiceEngineConfiguration? = nil) {
+        self.status = status; self.descriptor = descriptor; self.configuration = configuration
+    }
+}
 public struct LocalVoiceEngineDescriptor: Equatable, Sendable {
     public static let sourceCommit = "b4570b876f5c086819ba84e3215472733c6a7b70"
     public let schemaVersion: Int
