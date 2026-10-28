@@ -130,11 +130,11 @@
 
 **Interfaces:** `ChatLocalVoiceEngineView.init(controller:ChatController,hasBlockingModal:@escaping()->Bool)`及`render()`、`cancelPanel()`；嵌入现有语音页引擎区域，不另建设置窗。NSOpenPanel只选择单文件夹，按钮“安装或修复本地引擎…”/“检查当前引擎”；预览显示来源信任提示、包名/版本/体积/确认/取消，活动显示阶段和实际字节进度，失败显示相应重试/取消/清理。真离页/关窗取消panel/未确认预览；已确认工作与full/quick交接分开处理。
 
-- [ ] **Step 1: 写RED。** `testPreviewRequiresConfirmationAndDoesNotBindOrEnableVoice`断言选包后不开始、不发声、不改index/voice；`testCompactScrollableViewExposesCancelAndRetry`在440×420浅/深色断言所有操作可滚动到且busy状态准确；`testIntelAndUnconfiguredStatesRemainUsable`断言Intel安装禁用/系统语音保留、无引擎冷启动只读。库存测试先期望新增probe.py并拒绝真正runtime/models混入普通App。
-- [ ] **Step 2: 验RED。** `bash scripts/test.sh -only-testing:PetMacTests/LocalVoiceEngineWindowTests`及受影响小型库存测试，记录因新行为未实现而失败。
-- [ ] **Step 3: 实现界面与元数据。** 纯render消费缓存状态，不读文件/hash/枚举音色；文件面板/确认纳入现有阻挡规则。引擎取消按钮不复用聊天停止按钮；检查/修复与音色绑定明确分开。Info.plist升0.7.0/build30，同步verify-app.py::verify的expected_adapter及test_local_voice.py::EXPECTED为实际6文件（含probe）；Xcode资源目录已有folder引用，不逐文件登记probe。保留普通包排除模型/venv/bytecode并补runtime明显误入的校验，不给App构建脚本增加调用tools的强制钩子（现分发夹具不复制tools）。不扩充prepare-release.py::collect_assets的八附件协议或CI大模型产物。使用说明包含打开DMG/选取文件夹/角色另导入/修复/旧描述恢复/系统拦截实际边界。
-- [ ] **Step 4: 验GREEN及视图。** 新窗口测试与原LocalVoiceWindow/ChatVoiceWindow测试通过；主执行者查看隔离浅深色最小窗截图，记录缓存/程序化输入不能代替真实鼠标或Gatekeeper。全部Python离线测试及Release离线测试通过，普通包资源字节与库存一致。
-- [ ] **Step 5: 本地提交。** `git commit -m 'feat: add native offline engine installation controls'`，检查只提交源码/资源适配器/小文档。
+- [x] **Step 1: 写RED。** `testPreviewRequiresConfirmationAndDoesNotBindOrEnableVoice`断言选包后不开始、不发声、不改index/voice；`testCompactScrollableViewExposesCancelAndRetry`在440×420浅/深色断言所有操作可滚动到且busy状态准确；`testIntelAndUnconfiguredStatesRemainUsable`断言Intel安装禁用/系统语音保留、无引擎冷启动只读。库存测试先期望新增probe.py并拒绝真正runtime/models混入普通App。
+- [x] **Step 2: 验RED。** `bash scripts/test.sh -only-testing:PetMacTests/LocalVoiceEngineWindowTests`及受影响小型库存测试，记录因新行为未实现而失败。
+- [x] **Step 3: 实现界面与元数据。** 纯render消费缓存状态，不读文件/hash/枚举音色；文件面板/确认纳入现有阻挡规则。引擎取消按钮不复用聊天停止按钮；检查/修复与音色绑定明确分开。Info.plist升0.7.0/build30，同步verify-app.py::verify的expected_adapter及test_local_voice.py::EXPECTED为实际6文件（含probe）；Xcode资源目录已有folder引用，不逐文件登记probe。保留普通包排除模型/venv/bytecode并补runtime明显误入的校验，不给App构建脚本增加调用tools的强制钩子（现分发夹具不复制tools）。不扩充prepare-release.py::collect_assets的八附件协议或CI大模型产物。使用说明包含打开DMG/选取文件夹/角色另导入/修复/旧描述恢复/系统拦截实际边界。
+- [x] **Step 4: 验GREEN及视图。** 新窗口测试与原LocalVoiceWindow/ChatVoiceWindow测试通过；主执行者查看隔离浅深色最小窗截图，记录缓存/程序化输入不能代替真实鼠标或Gatekeeper。全部Python离线测试及Release离线测试通过，普通包资源字节与库存一致。
+- [x] **Step 5: 本地提交。** `git commit -m 'feat: add native offline engine installation controls'`，检查只提交源码/资源适配器/小文档。
 
 ### Task 9: 完整回归、一次最终评审和真实本地交付
 

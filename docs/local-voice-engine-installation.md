@@ -38,3 +38,7 @@ python3 tools/package-local-voice-engine.py \
 ## 旧环境与回退
 
 已有0.6.0描述和引擎继续读取，App不会自动迁移。新引擎使用版本目录及schema2描述，旧App不能读取schema2；需要回到旧App时，先完整退出新App，再恢复安装前备份的原`current.json`，并保留其所指旧版本目录。不要只改UUID猜测版本，也不要把旧venv搬到新路径。实际备份/恢复文件名及失败处理由安装交付记录给出。
+
+安装目录为设置文件同级的 `LocalVoice/Engine/Versions/<UUID>`。成功切换前，旧的普通 `current.json` 原字节备份到 `LocalVoice/Engine/Backups/current-<新UUID>.json`；若原描述不存在则没有这份备份。恢复前退出全部 App/引擎进程，把对应备份复制回 `LocalVoice/Engine/current.json`，保留原版本目录。未知或损坏的旧描述也会原样备份，备份不意味着它本身有效。链接或超过16KiB的旧描述会阻止覆盖，需要先由使用者检查。
+
+引擎1.0.0当前本地DMG约2.30GB，展开内容约3.01GB。安装要求可用空间至少为新内容总量加 `max(256MiB, 10%)`，并保留原有引擎；复制仍可能因实际磁盘错误失败。保存失败时使用“重试引擎切换或清理”；显式取消只移除本次未启用UUID，旧版本不会自动删除。等待切换重试时旧引擎可以继续使用；其他进程改变current后会拒绝覆盖。

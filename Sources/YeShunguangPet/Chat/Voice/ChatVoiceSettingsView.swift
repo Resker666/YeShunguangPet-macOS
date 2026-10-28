@@ -9,6 +9,7 @@ import PetCore
     private let apply = NSButton(), disable = NSButton(), preview = NSButton(), stop = NSButton(), retry = NSButton(), discard = NSButton(), reset = NSButton()
     private let status = NSTextField(wrappingLabelWithString: "")
     private var localSettings: ChatLocalVoiceSettingsView!
+    private var engineSettings: ChatLocalVoiceEngineView!
     private var rendered: VoicePreferences?, renderedVoices = [SystemVoice]()
     init(controller: ChatController, hasBlockingModal: @escaping () -> Bool, onResetRequested: @escaping () -> Void) {
         self.controller = controller; self.hasBlockingModal = hasBlockingModal; self.onResetRequested = onResetRequested
@@ -26,6 +27,9 @@ import PetCore
         for field in [help, status] { field.font = .systemFont(ofSize: 12); field.widthAnchor.constraint(equalTo: widthAnchor).isActive = true }
         voices.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
         rate.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
+        engineSettings = ChatLocalVoiceEngineView(controller:controller,hasBlockingModal:hasBlockingModal)
+        addArrangedSubview(engineSettings);engineSettings.translatesAutoresizingMaskIntoConstraints = false
+        engineSettings.widthAnchor.constraint(equalTo:widthAnchor).isActive = true
         localSettings = ChatLocalVoiceSettingsView(controller: controller, hasBlockingModal: hasBlockingModal)
         addArrangedSubview(localSettings); localSettings.translatesAutoresizingMaskIntoConstraints = false
         localSettings.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
@@ -50,7 +54,7 @@ import PetCore
         let editable = allowed && settings.isLoaded && !settings.isWriting && settings.protection == nil && !voice.blocksChat
         for view in [enabled, automatic, voices, rate, apply] as [NSControl] { view.isEnabled = editable }
         disable.isEnabled = allowed && settings.isLoaded
-        preview.isEnabled = allowed && settings.enabledForSession && !voice.blocksChat && controller.localVoices?.hasPendingMutation != true
+        preview.isEnabled = allowed && settings.enabledForSession && !voice.blocksChat && controller.localVoices?.hasPendingMutation != true && controller.localEngine?.blocksServices != true
         stop.title = voice.isStoppingOutput ? "确认停止中…" : voice.outputStopFailed ? "重试停止朗读" : "停止朗读"
         stop.isEnabled = allowed && !voice.isStoppingOutput && (voice.hasOutputActivity || voice.hasPendingResources || voice.outputStopFailed)
         retry.isHidden = !settings.hasUnsaved; discard.isHidden = !settings.hasUnsaved
@@ -59,9 +63,9 @@ import PetCore
         let actual = voice.actualOutput.map { "实际使用：\($0.displayName) · \($0.backend == .local ? "本地角色音色" : "系统音色")" }
         status.stringValue = [settings.protection, settings.error, voice.error, voice.outputStatus, actual, settings.isWriting ? "正在保存语音设置" : settings.enabledForSession ? "本次语音已启用" : "本次语音已关闭"].compactMap { $0 }.joined(separator: "\n")
         status.textColor = settings.error == nil && settings.protection == nil && voice.error == nil ? .secondaryLabelColor : .systemRed
-        localSettings.render()
+        engineSettings.render(); localSettings.render()
     }
-    func cancelPanel() { localSettings.cancelPanel() }
+    func cancelPanel() { engineSettings.cancelPanel(); localSettings.cancelPanel() }
     @objc private func applyPressed() {
         guard allowed, let voice = controller.voice, !voice.blocksChat else { return }
         voice.settings.apply(.init(enabled: enabled.state == .on, automaticReadAloud: automatic.state == .on, voiceIdentifier: voices.selectedItem?.representedObject as? String, rate: rate.doubleValue))

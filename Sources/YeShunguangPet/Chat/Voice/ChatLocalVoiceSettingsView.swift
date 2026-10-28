@@ -13,7 +13,7 @@ import PetCore
         self.controller = controller; self.hasBlockingModal = hasBlockingModal
         super.init(frame: .zero); orientation = .vertical; alignment = .leading; spacing = 8
         let heading = NSTextField(labelWithString: "本地角色音色"); heading.font = .boldSystemFont(ofSize: 13)
-        let help = NSTextField(wrappingLabelWithString: "首版使用本机独立引擎，仅支持已准备环境的 Apple Silicon Mac。导入只登记音色，不会启用语音、绑定角色或发声。请只导入可信来源的语音包；摘要只检查文件完整性，不证明来源。")
+        let help = NSTextField(wrappingLabelWithString: "本地角色音色使用上方独立引擎，仅支持 Apple Silicon Mac。导入只登记音色，不会启用语音、绑定角色或发声。请只导入可信来源的语音包；摘要只检查文件完整性，不证明来源。")
         configure(apply, "应用当前角色音色", #selector(applyPressed)); configure(importButton, "导入语音包…", #selector(importPressed))
         configure(confirmImport, "确认导入语音包", #selector(confirmPressed)); configure(cancel, "取消预览", #selector(cancelPressed))
         configure(delete, "删除选中语音包…", #selector(deletePressed)); configure(refresh, "刷新本地语音库", #selector(refreshPressed))
@@ -32,15 +32,16 @@ import PetCore
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     private func configure(_ button: NSButton, _ title: String, _ selector: Selector) { button.title = title; button.target = self; button.action = selector; button.bezelStyle = .rounded }
-    private var allowed: Bool { !hasBlockingModal() && !controller.disposed && !controller.terminating && !controller.sleeping && controller.voice?.hasOutputActivity != true && controller.voice?.blocksChat != true }
+    private var allowed: Bool { !hasBlockingModal() && !controller.disposed && !controller.terminating && !controller.sleeping && controller.localEngine?.blocksServices != true && controller.voice?.hasOutputActivity != true && controller.voice?.blocksChat != true }
     private var selectedID: UUID? { (voices.selectedItem?.representedObject as? String).flatMap(UUID.init(uuidString:)) }
     func render() {
         guard let model = controller.localVoices else { engine.stringValue = "本地语音服务尚未配置。"; return }
         switch model.engineStatus {
-        case .unconfigured: engine.stringValue = "引擎未配置。请先按项目说明准备本机语音环境；App 不会自动安装依赖。"
+        case .unconfigured: engine.stringValue = "引擎未配置，请使用上方安装入口。"
         case .configured: engine.stringValue = "本机引擎已配置，首次朗读时才检查并加载。"
         case .unavailable(let message): engine.stringValue = message
         }
+        engine.isHidden = controller.localEngine != nil
         let context = controller.character, binding = context.flatMap { model.index.binding(for: $0.id) }
         if renderedContext != context || renderedEntries != model.entries || renderedBinding != binding {
             let selection = renderedContext == context && renderedBinding == binding ? selectedID : binding

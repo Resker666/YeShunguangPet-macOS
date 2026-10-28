@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from test_architecture import ROOT, inventory
 
-EXPECTED = {"worker.py", "worker_protocol.py", "gpt_sovits_backend.py", "voice_assets.py", "engine-assets.json"}
+EXPECTED = {"worker.py", "worker_protocol.py", "gpt_sovits_backend.py", "voice_assets.py", "engine-assets.json", "probe.py"}
 
 
 class LocalVoiceDistributionTests(unittest.TestCase):
@@ -43,12 +43,14 @@ class LocalVoiceDistributionTests(unittest.TestCase):
 
     def test_missing_file_link_weights_venv_and_bytecode_are_rejected(self):
         for arch in ("arm64", "x86_64"):
-            for mutation in ("missing", "link", "s2.pth", "venv", "__pycache__"):
+            for mutation in ("missing", "link", "s2.pth", "venv", "__pycache__", "runtime", "foreign-runtime", "foreign.so"):
                 with self.subTest(architecture=arch, mutation=mutation), tempfile.TemporaryDirectory() as temporary:
                     app = self.copy_app(arch, Path(temporary)); folder = app / "Contents/Resources/LocalVoice"
                     if mutation in ("missing", "link"):
                         (folder / "worker.py").unlink()
                         if mutation == "link": (folder / "worker.py").symlink_to("worker_protocol.py")
+                    elif mutation == "foreign-runtime": (app / "Contents/Resources/runtime").mkdir()
+                    elif mutation == "foreign.so": (app / "Contents/Resources/foreign.so").write_bytes(b"native")
                     elif mutation == "s2.pth": (folder / mutation).write_bytes(b"not a model")
                     else: (folder / mutation).mkdir()
                     self.resign(app)

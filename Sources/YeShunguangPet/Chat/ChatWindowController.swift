@@ -179,6 +179,7 @@ import PetCore
     }
     func selectPage(_ value:Int) {
         guard (0..<5).contains(value) else { return }
+        if page == 4 && value != 4 { voiceSettings.cancelPanel() }
         if page == 1 || value == 1 { reloadProfile() }
         page = value; pages.selectedSegment = value; rebuildPage(); render(); updatePresentation()
     }
@@ -270,13 +271,13 @@ import PetCore
     @discardableResult func presentForHandoff(selection: NSRange) -> Bool {
         guard canPresent else { return false }
         // Returning to conversation must not run selectPage's persona-reset rule.
-        if page != 0 { page = 0; pages.selectedSegment = 0; rebuildPage() }
+        if page != 0 { voiceSettings.cancelPanel(); page = 0; pages.selectedSegment = 0; rebuildPage() }
         render(); inputSelection = selection
         window?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
         window?.makeFirstResponder(composer); updatePresentation()
         return window?.isVisible == true
     }
-    func hideForHandoff() { window?.orderOut(nil); updatePresentation() }
+    func hideForHandoff() { voiceSettings.cancelPanel(); window?.orderOut(nil); updatePresentation() }
     func resetLogicalDrafts() { key.stringValue = ""; reloadProfile(); memoryView.resetDrafts() }
     func windowShouldClose(_ sender: NSWindow) -> Bool { !terminating && !hasBlockingSheet && !hasMarkedInput }
     override func cancelOperation(_ sender: Any?) {

@@ -25,7 +25,7 @@ def verify(app, expected_architecture=None):
         raise ValueError("unexpected deployment target")
     resources = app / "Contents/Resources"
     adapter = resources / "LocalVoice"
-    expected_adapter = {"worker.py", "worker_protocol.py", "gpt_sovits_backend.py", "voice_assets.py", "engine-assets.json"}
+    expected_adapter = {"worker.py", "worker_protocol.py", "gpt_sovits_backend.py", "voice_assets.py", "engine-assets.json", "probe.py"}
     if adapter.is_symlink() or not adapter.is_dir() or {p.name for p in adapter.iterdir()} != expected_adapter:
         raise ValueError("incomplete or unexpected local voice adapter inventory")
     for name in expected_adapter:
@@ -33,7 +33,7 @@ def verify(app, expected_architecture=None):
         if path.is_symlink() or not path.is_file() or not 0 < path.stat().st_size <= 262144:
             raise ValueError("invalid local voice adapter file: " + name)
     for path in resources.rglob("*"):
-        if path.suffix.lower() in {".pth", ".ckpt", ".onnx", ".safetensors", ".pyc"} or path.name in {"venv", "__pycache__"}:
+        if path.suffix.lower() in {".pth", ".ckpt", ".onnx", ".safetensors", ".pyc", ".so", ".dylib", ".pt", ".bin"} or path.name in {"venv", "__pycache__", "runtime"}:
             raise ValueError("runtime or model must not be bundled: " + path.name)
     for filename, digest in [
         ("pet.json", "70052fd6a39c3cbe3396369f9b19d5501c236b4abb18a56d3705642ed3e08811"),

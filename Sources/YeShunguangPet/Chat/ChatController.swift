@@ -692,14 +692,14 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         }
         refreshVoiceEnvironment(); objectWillChange.send()
     }
-    func configureLocalVoiceEngine(worker: any LocalVoiceEngineWorking, probe: any LocalVoiceEngineProbing) {
+    func configureLocalVoiceEngine(worker: any LocalVoiceEngineWorking, probe: any LocalVoiceEngineProbing, isSupported: Bool = ChatLocalVoiceEngineController.hostSupported) {
         guard localEngine == nil, voice != nil, !disposed else { return }
         let engine = ChatLocalVoiceEngineController(worker:worker,probe:probe,
             canStart:{ [weak self] in
                 guard let self else { return false }
                 return self.canMutate && !self.voiceEnvironment.blocked && self.localVoices?.isLoaded == true && self.localVoices?.hasPendingMutation != true && self.localVoices?.hasUnsaved != true && self.localVoices?.preview == nil
             }, stopOutput:{ [weak self] in await self?.voice?.stopAndWait() ?? true },
-            onActivated:{ [weak self] in guard let self, !self.disposed, !self.terminating else { return }; self.localVoices?.refresh() })
+            onActivated:{ [weak self] in guard let self, !self.disposed, !self.terminating else { return }; self.localVoices?.refresh() }, isSupported:isSupported)
         localEngine = engine
         engineObservation = engine.objectWillChange.sink { [weak self] _ in
             Task { @MainActor in guard let self, !self.disposed else { return }; self.objectWillChange.send() }

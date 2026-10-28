@@ -1,6 +1,6 @@
 # YeShunguangPet macOS
 
-为 Mac mini M4 日常使用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前源码 **0.6.0 / build29**，加入独立本地角色音色、文件夹语音包和按角色绑定，系统语音输入与回退保留。当前 M4 已通过真实新句生成与分阶段停止验证，最终评审和交付状态见[验证记录](docs/local-character-voice-validation.md)，使用方式见[本地音色](docs/local-voice-usage.md)。普通 App 不含模型/Python，独立引擎首版仅准备当前 M4；仍需用户主动导入、绑定、启用与试听。最低 macOS14.0，推送、标签与 Release 按明确指令执行。原[0.5.0记录](docs/system-voice-chat-validation.md)的两项 Minor 仍保留。
+为 Mac mini M4 日常使用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前源码 **0.7.0 / build30**，加入独立 ARM 本地语音引擎的离线安装、检查与修复。普通 App 仍不含模型/Python，完整聊天「语音」页可选择独立引擎 DMG 中的文件夹安装；角色音色仍需另行导入、绑定并主动启用。安装方式见[独立引擎说明](docs/local-voice-engine-installation.md)。兼容目标 macOS14+，真实外机与最低系统验证另记；推送、标签与 Release 按明确指令执行。原[0.5.0记录](docs/system-voice-chat-validation.md)的两项 Minor 仍保留。
 
 此前完成0.1.20待机、隐藏、安静与专注各10分钟同源资源采样，并发现真实跨日崩溃。原始条件、结果、失败复测和0.1.21修复验证见[资源调查记录](docs/resource-baseline-validation.md)；这些数据不代表功耗、过夜稳定性或新版性能提升。
 
