@@ -39,6 +39,25 @@ import PetCore
         XCTAssertEqual(selection, .system)
         await f.close()
     }
+    func testAcceptedBindingRetryKeepsFrozenRoleAfterRoleOrSkinRevisionChanges() async throws {
+        for (changeRole, atExit) in [(true, true), (true, false), (false, true), (false, false)] {
+            let f = try LocalVoiceManagementFixture(), id = try await f.importVoice(), original = f.character
+            await f.persistence.failNext("localVoice")
+            f.model.applyBinding(id, expected: original); await f.model.waitForPendingMutations()
+            XCTAssertTrue(f.model.hasUnsaved); XCTAssertNil(f.model.index.binding(for: original.id))
+            f.character = .init(id: changeRole ? "robin" : original.id, name: "新角色", description: "新皮肤", skinRevision: original.skinRevision + 1)
+            if atExit { f.model.beginTermination(); f.model.retryPendingForTermination() }
+            else { f.model.retryPendingSave() }
+            await f.model.waitForPendingMutations()
+            XCTAssertEqual(f.model.index.binding(for: original.id), id)
+            if changeRole { XCTAssertNil(f.model.index.binding(for: "robin")) }
+            XCTAssertFalse(f.model.hasUnsaved); XCTAssertNil(f.model.terminationError)
+            let reopened = ChatArchiveWorker(settingsURL: f.root.appendingPathComponent("settings.json"))
+            if case .loaded(let index) = await reopened.loadLocalVoiceIndex() { XCTAssertEqual(index.binding(for: original.id), id) }
+            else { XCTFail("confirmed binding was not persisted") }
+            await f.close()
+        }
+    }
     func testBindingCommitsBeforeOutputSelectionChanges() async throws {
         let f = try LocalVoiceManagementFixture(), id = try await f.importVoice()
         let count = await f.persistence.operations.count

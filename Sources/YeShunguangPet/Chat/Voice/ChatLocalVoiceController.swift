@@ -145,7 +145,9 @@ import PetCore
         operationTask = Task { [self] in
             let stopped = await stopOutput()
             guard operationID == id else { return }
-            if let expected = candidate.expected, context() != expected {
+            // A retry persists an already accepted transaction for its frozen
+            // role ID. Changing the visible role cannot discard that intent.
+            if !retrying, let expected = candidate.expected, context() != expected {
                 error = "角色已改变，音色绑定未应用。请重新选择当前角色。"; finishOperation(id); return
             }
             guard stopped else {
