@@ -82,11 +82,11 @@
 
 **Interfaces:** `LocalVoiceEngineStore.init(dataRoot:URL, hooks:Hooks = .live)`；`acquire() throws -> LocalVoiceEngineLease`持有use.lock非阻塞EX锁；`begin(_ preview:LocalVoiceEnginePreview, lease:LocalVoiceEngineLease) throws -> LocalVoiceEngineCandidate`产生私有最终UUID和旧描述快照；`copy(_ candidate:LocalVoiceEngineCandidate, progress:@Sendable(LocalVoiceEngineProgress)->Void, checkCancelled:@Sendable()->Bool) throws`；`activate(_ candidate:LocalVoiceEngineCandidate, lease:LocalVoiceEngineLease, checkCancelled:@Sendable()->Bool) throws -> LocalVoiceEngineDescriptor`；`discard(versionID:UUID, lease:LocalVoiceEngineLease) throws`拒绝当前UUID。Hooks仅注入空间/读取期间观察/原子写/删除等真实失败边界，不提供绕过验证的产品开关。
 
-- [ ] **Step 1: 写RED。** `testInstallCopiesAndVerifiesWithoutChangingCurrentBeforeActivation`断言复制后旧描述原字节、目标权限/摘要正确；`testSourceMutationOrLinkedParentCannotEscape`在读取钩子替换源目录/中间父目录/增长文件并断言失败；`testCommitCancellationHasOneLinearizationPoint`断言rename前取消保旧、rename后取消结果为成功且不删当前；`testRetryRejectsChangedDescriptorAndKeepsOldVersion`断言旧身份变化拒绝覆盖。另测空间不足、部分复制/备份/写失败及清理失败保留明确UUID。
-- [ ] **Step 2: 验RED。** `bash scripts/test.sh -only-testing:PetCoreTests/LocalVoiceEngineStoreTests -only-testing:PetCoreTests/LocalVoiceEngineTests`。
-- [ ] **Step 3: 实现事务。** 分组件`openat/O_NOFOLLOW`枚举并复制，检查源FD前后stat、目录身份、总预算及取消，每64KiB流式摘要；0700目录、0600普通文件/0700执行文件。空间至少总内容+max(256MiB,总量10%)，实际ENOSPC仍处理。完整重验后才允许activate；首次切换前备份有界普通旧描述（缺失则无需），备份失败不切换。schema2在原schema1字段之外增加`packageID,packageVersion,packageName,manifestSHA256`、python固定新路径，版本目录保留`engine.json`用于检查；current上限16KiB。坏/未知旧描述不被启动重写，明确修复时只备份≤16KiB普通原字节，链接/超限拒绝覆盖。锁对象作用域释放，所有失败返回可定位本次候选及清理状态。
-- [ ] **Step 4: 验GREEN。** 上述测试及原schema1测试通过，`testSchema2RejectsLinkedRuntimeAndKeepsLegacyReadable`断言schema2解释器/中间目录链接与清单身份不符失败、legacy原合法venv仍可读；实际小包复制后全量字节重验、取消测试保旧；持SH锁的独立子进程令EX失败且不建立版本目录，释放后可重试；外部描述修改、当前候选误删、目标父目录链接均拒绝。
-- [ ] **Step 5: 本地提交。** `git commit -m 'feat: install voice engines with versioned atomic activation'`，只暂存本Task文件。
+- [x] **Step 1: 写RED。** `testInstallCopiesAndVerifiesWithoutChangingCurrentBeforeActivation`断言复制后旧描述原字节、目标权限/摘要正确；`testSourceMutationOrLinkedParentCannotEscape`在读取钩子替换源目录/中间父目录/增长文件并断言失败；`testCommitCancellationHasOneLinearizationPoint`断言rename前取消保旧、rename后取消结果为成功且不删当前；`testRetryRejectsChangedDescriptorAndKeepsOldVersion`断言旧身份变化拒绝覆盖。另测空间不足、部分复制/备份/写失败及清理失败保留明确UUID。
+- [x] **Step 2: 验RED。** `bash scripts/test.sh -only-testing:PetCoreTests/LocalVoiceEngineStoreTests -only-testing:PetCoreTests/LocalVoiceEngineTests`。
+- [x] **Step 3: 实现事务。** 分组件`openat/O_NOFOLLOW`枚举并复制，检查源FD前后stat、目录身份、总预算及取消，每64KiB流式摘要；0700目录、0600普通文件/0700执行文件。空间至少总内容+max(256MiB,总量10%)，实际ENOSPC仍处理。完整重验后才允许activate；首次切换前备份有界普通旧描述（缺失则无需），备份失败不切换。schema2在原schema1字段之外增加`packageID,packageVersion,packageName,manifestSHA256`、python固定新路径，版本目录保留`engine.json`用于检查；current上限16KiB。坏/未知旧描述不被启动重写，明确修复时只备份≤16KiB普通原字节，链接/超限拒绝覆盖。锁对象作用域释放，所有失败返回可定位本次候选及清理状态。
+- [x] **Step 4: 验GREEN。** 上述测试及原schema1测试通过，`testSchema2RejectsLinkedRuntimeAndKeepsLegacyReadable`断言schema2解释器/中间目录链接与清单身份不符失败、legacy原合法venv仍可读；实际小包复制后全量字节重验、取消测试保旧；持SH锁的独立子进程令EX失败且不建立版本目录，释放后可重试；外部描述修改、当前候选误删、目标父目录链接均拒绝。
+- [x] **Step 5: 本地提交。** `git commit -m 'feat: install voice engines with versioned atomic activation'`，只暂存本Task文件。
 
 ### Task 5: 固定离线自检与有界子进程
 

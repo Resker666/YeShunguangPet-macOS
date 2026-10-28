@@ -52,7 +52,7 @@ enum LocalVoiceEngineFiles {
               info.st_mode & S_IFMT == S_IFREG || info.st_mode & S_IFMT == S_IFDIR else { throw LocalVoiceError("引擎包不能包含链接或特殊文件") }
         return info
     }
-    static func inspect(payload: Int32, manifest: LocalVoiceEngineManifest) throws {
+    static func inspect(payload: Int32, manifest: LocalVoiceEngineManifest, includesManifest: Bool = false) throws {
         let records = Dictionary(uniqueKeysWithValues: manifest.files.map { ($0.path, $0) })
         var children = [String: Set<String>]()
         for file in manifest.files {
@@ -62,9 +62,10 @@ enum LocalVoiceEngineFiles {
         var found = Set<String>()
         func visit(_ descriptor: Int32, prefix: String) throws {
             let expected = children[prefix] ?? []
-            for name in try names(at: descriptor, maximum: expected.count + 1) {
+            for name in try names(at: descriptor, maximum: expected.count + 1 + (includesManifest && prefix.isEmpty ? 1 : 0)) {
                 let value = try info(name, at: descriptor)
                 if name == ".DS_Store", value.st_mode & S_IFMT == S_IFREG { continue }
+                if includesManifest, prefix.isEmpty, name == "engine.json", value.st_mode & S_IFMT == S_IFREG { continue }
                 guard expected.contains(name) else { throw LocalVoiceError("引擎包包含未列入清单的文件或目录") }
                 let path = prefix.isEmpty ? name : prefix + "/" + name
                 if value.st_mode & S_IFMT == S_IFDIR {
