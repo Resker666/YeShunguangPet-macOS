@@ -58,11 +58,11 @@
 
 **Interfaces:** `LocalVoiceEngineManifest.decode(_ data:Data) throws -> Self`；清单准确键为`schemaVersion,id,version,name,architecture,minimumOS,pythonVersion,profile,sourceCommit,files`，files准确键为`path,bytes,sha256,executable`。`id`复用现有皮肤ID规则、version为稳定三段数字、name≤80UTF16、Python为3.12完整数字版本；固定arm64/14.0/profile/commit。`LocalVoiceEnginePackage.preview(folder:URL) throws -> LocalVoiceEnginePreview`只读有界清单/目录类型，不执行、不复制大包。必需文件`runtime/bin/python3.12`、`engine-assets.json`及非空source/licenses子树；文件记录路径相对于payload。
 
-- [ ] **Step 1: 写RED。** `testStrictManifestAndFixedContract`断言合法小包解析、非布尔executable/重复键/未知键/源版本或架构错误失败；普通空文件（如__init__.py）允许且摘要必须为真实空字节摘要，固定解释器不得为空。`testLimitsAndNormalizedPathCollisions`断言16MiB+1、100001记录、33层、2GiB+1单项、12GiB+1总量、UInt64溢出、NFC/大小写冲突、文件与父目录冲突失败。`testPreviewDoesNotExecuteOrCreateDataRoot`断言包内可执行文件未调用、目标root不存在、候选源字节不变。
-- [ ] **Step 2: 验RED。** `bash scripts/test.sh -only-testing:PetCoreTests/LocalVoiceEngineManifestTests -only-testing:PetCoreTests/LocalVoiceEnginePackageTests`。
-- [ ] **Step 3: 实现模型/预览。** 使用StrictJSON及流式/有界读取，拒绝路径逃逸、控制字符、反斜线/空片段、根和内部链接/特殊文件；只忽略不复制`.DS_Store`。清单预览保留原字节SHA，记录源身份；本机平台检查由注入条件决定，Intel入口可测试为拒绝。不要复用只能承载16KiB角色清单的旧包类型。
-- [ ] **Step 4: 验GREEN。** 上述测试通过，加入包根/中间目录链接、缺少固定解释器、清单中的额外脚本入口字段、空licenses/source、重复斜线及`..`路径回归；原LocalVoiceManifest/Package测试通过。
-- [ ] **Step 5: 本地提交。** 仅暂存本Task的Core/Tests/工程文件，`git commit -m 'feat: validate offline local voice engine packages'`。
+- [x] **Step 1: 写RED。** `testStrictManifestAndFixedContract`断言合法小包解析、非布尔executable/重复键/未知键/源版本或架构错误失败；普通空文件（如__init__.py）允许且摘要必须为真实空字节摘要，固定解释器不得为空。`testLimitsAndNormalizedPathCollisions`断言16MiB+1、100001记录、33层、2GiB+1单项、12GiB+1总量、UInt64溢出、NFC/大小写冲突、文件与父目录冲突失败。`testPreviewDoesNotExecuteOrCreateDataRoot`断言包内可执行文件未调用、目标root不存在、候选源字节不变。
+- [x] **Step 2: 验RED。** `bash scripts/test.sh -only-testing:PetCoreTests/LocalVoiceEngineManifestTests -only-testing:PetCoreTests/LocalVoiceEnginePackageTests`。
+- [x] **Step 3: 实现模型/预览。** 使用StrictJSON及流式/有界读取，拒绝路径逃逸、控制字符、反斜线/空片段、根和内部链接/特殊文件；只忽略不复制`.DS_Store`。清单预览保留原字节SHA，记录源身份；本机平台检查由注入条件决定，Intel入口可测试为拒绝。不要复用只能承载16KiB角色清单的旧包类型。
+- [x] **Step 4: 验GREEN。** 上述测试通过，加入包根/中间目录链接、缺少固定解释器、清单中的额外脚本入口字段、空licenses/source、重复斜线及`..`路径回归；原LocalVoiceManifest/Package测试通过。
+- [x] **Step 5: 本地提交。** 仅暂存本Task的Core/Tests/工程文件，`git commit -m 'feat: validate offline local voice engine packages'`。
 
 ### Task 3: 生成公共引擎文件夹与独立DMG
 
