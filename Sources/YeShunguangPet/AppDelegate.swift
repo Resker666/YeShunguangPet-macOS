@@ -71,7 +71,7 @@ enum TerminationResourceDecision { case retry, exit, cancel }
     private func confirmChatTermination(_ chat:ChatController?) async -> Bool {
         guard let chat else { return true }
         while let message=chat.terminationSaveError {
-            let alert=NSAlert(); alert.messageText="聊天、记忆或语音资料尚未保存"; alert.informativeText=message
+            let alert=NSAlert(); alert.messageText="聊天、记忆、语音或引擎更改尚未保存"; alert.informativeText=message
             let canRetry=chat.canRetryTerminationSave
             if canRetry { alert.addButton(withTitle:"重试本地保存") }
             alert.addButton(withTitle:"继续退出"); alert.addButton(withTitle:"取消退出")
@@ -82,7 +82,7 @@ enum TerminationResourceDecision { case retry, exit, cancel }
         return true
     }
     private func confirmResourceTermination(_ message: String) async -> TerminationResourceDecision {
-        let alert = NSAlert(); alert.messageText = "语音资源尚未清理"; alert.informativeText = message
+        let alert = NSAlert(); alert.messageText = "语音或引擎资源尚未清理"; alert.informativeText = message
         alert.addButton(withTitle: "重试停止与清理"); alert.addButton(withTitle: "继续退出"); alert.addButton(withTitle: "取消退出")
         switch alert.runModal() {
         case .alertFirstButtonReturn: return .retry

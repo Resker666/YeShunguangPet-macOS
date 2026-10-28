@@ -14,6 +14,8 @@ final class EngineFailureFlag: @unchecked Sendable {
 @MainActor final class ControlledEngineProbe: LocalVoiceEngineProbing {
     var hasResources = false, hold = false, fail = false, stopResult = true
     var runs = 0, stops = 0
+    var holdStop = false
+    var stopWaiter: CheckedContinuation<Void,Never>?
     var waiter: CheckedContinuation<LocalVoiceEngineProbeReport, Error>?
     func run(configuration: LocalVoiceEngineConfiguration, requestID: UUID) async throws -> LocalVoiceEngineProbeReport {
         runs += 1; hasResources = true
@@ -21,8 +23,10 @@ final class EngineFailureFlag: @unchecked Sendable {
         if hold { return try await withCheckedThrowingContinuation { waiter = $0 } }
         hasResources = false; return .init(pythonVersion:"3.12.14",profile:LocalVoiceManifest.profile,sourceCommit:LocalVoiceEngineDescriptor.sourceCommit)
     }
+    func releaseStop() { holdStop = false; stopWaiter?.resume(); stopWaiter = nil }
     func stop() async -> Bool {
         stops += 1
+        if holdStop { await withCheckedContinuation { stopWaiter = $0 } }
         if stopResult { hasResources = false; waiter?.resume(throwing:CancellationError()); waiter = nil }
         return stopResult
     }

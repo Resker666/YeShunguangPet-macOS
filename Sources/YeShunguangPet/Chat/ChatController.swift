@@ -66,6 +66,8 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     private var presented = false
     private(set) var voice: ChatVoiceController?
     private(set) var localVoices: ChatLocalVoiceController?
+    private(set) var localEngine: ChatLocalVoiceEngineController?
+    private var engineObservation: AnyCancellable?
     private var voiceObservation: AnyCancellable?
     private var localVoiceObservation: AnyCancellable?
     private var voiceEnvironment = VoiceEnvironment()
@@ -75,8 +77,11 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     var unsavedCharacterIDs: [String] { pendingPairs.keys.sorted() }
     var pendingMemoryCharacterIDs: [String] { pendingMemories.keys.sorted() }
     var hasPendingWrites: Bool { writes.hasPending || credentialTask != nil || executingAction != nil }
-    var hasPendingTerminationResources: Bool { localVoices?.hasPendingMutation == true || localVoices?.hasUnsaved == true || voice?.hasActivity == true || voice?.hasPendingResources == true || voice?.outputStopFailed == true }
-    var terminationResourceError: String? { voice?.outputStopFailed == true || voice?.hasPendingResources == true ? "语音进程、播放或临时文件尚未确认停止与清理。可重试停止、取消退出，或明确继续退出。" : nil }
+    var hasPendingTerminationResources: Bool { localEngine?.hasPendingResources == true || localEngine?.hasUnsaved == true || localVoices?.hasPendingMutation == true || localVoices?.hasUnsaved == true || voice?.hasActivity == true || voice?.hasPendingResources == true || voice?.outputStopFailed == true }
+    var terminationResourceError: String? {
+        if localEngine?.hasPendingResources == true { return localEngine?.terminationError ?? "引擎安装、自检或清理尚未确认结束。可重试、取消退出或明确继续退出。" }
+        return voice?.outputStopFailed == true || voice?.hasPendingResources == true ? "语音进程、播放或临时文件尚未确认停止与清理。可重试停止、取消退出，或明确继续退出。" : nil
+    }
     var isGenerating: Bool { requestTask != nil }
     var isGeneratingConversation: Bool { activeRequestKind == .conversation && isGenerating }
     var isExtractingMemories: Bool { activeRequestKind == .memoryExtraction }
@@ -108,7 +113,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     var currentArchiveProtection: String? { character.flatMap { protectedRoles[$0.id] } }
     var canRetryPendingSave: Bool { canMutate && character.map { pendingPairs[$0.id] != nil && roleWrites[$0.id, default: 0] == 0 } == true }
     var canRetryConnectionSave: Bool { canChangeConnection && pendingConnection != nil }
-    var canRetryTerminationSave: Bool { !pendingPairs.isEmpty || !pendingMemories.isEmpty || pendingConnection != nil || voice?.settings.hasUnsaved == true || localVoices?.hasUnsaved == true }
+    var canRetryTerminationSave: Bool { localEngine?.hasUnsaved == true || !pendingPairs.isEmpty || !pendingMemories.isEmpty || pendingConnection != nil || voice?.settings.hasUnsaved == true || localVoices?.hasUnsaved == true }
     var terminationSaveError: String? {
         var messages = [String]()
         if executingAction != nil { messages.append("操作正在执行，回执尚未保存。") }
@@ -116,6 +121,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         if !pendingMemories.isEmpty { messages.append("有 \(pendingMemories.count) 个角色的已确认记忆变更尚未保存。") }
         if voice?.settings.hasUnsaved == true { messages.append(voice?.settings.error ?? "语音偏好尚未保存。") }
         if let localError = localVoices?.terminationError { messages.append(localError) }
+        if localEngine?.hasUnsaved == true, let message = localEngine?.terminationError { messages.append(message) }
         if let connectionError { messages.append(connectionError) }
         if let credentialMutationError { messages.append(credentialMutationError) }
         return messages.isEmpty ? nil : messages.joined(separator: "\n")
@@ -615,21 +621,23 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     }
 
     func setPresented(_ presented: Bool) { self.presented = presented }
-    func windowClosed() { localVoices?.cancelPreview(); cancelRequest(); memoryReview = nil; presented = false; profileEditRevision &+= 1; memoryEditRevision &+= 1; refreshCurrent() }
+    func windowClosed() { localEngine?.cancelPreview(); localVoices?.cancelPreview(); cancelRequest(); memoryReview = nil; presented = false; profileEditRevision &+= 1; memoryEditRevision &+= 1; refreshCurrent() }
     func setSleeping(_ sleeping: Bool) {
         guard !disposed, self.sleeping != sleeping else { return }
         self.sleeping = sleeping
         refreshVoiceEnvironment()
-        if sleeping { cancelRequest() }
+        if sleeping { localEngine?.cancelPreview(); if localEngine?.isBusy == true { localEngine?.cancelInstallation() }; cancelRequest() }
         refreshCurrent()
     }
-    func beginTermination() { guard !disposed else { return }; terminating = true; localVoices?.beginTermination(); refreshVoiceEnvironment(); cancelRequest(); memoryReview = nil; memoryEditRevision &+= 1; refreshCurrent() }
-    func cancelTermination() { guard !disposed else { return }; terminating = false; localVoices?.cancelTermination(); refreshVoiceEnvironment(); refreshCurrent() }
+    func beginTermination() { guard !disposed else { return }; terminating = true; localEngine?.beginTermination(); localVoices?.beginTermination(); refreshVoiceEnvironment(); cancelRequest(); memoryReview = nil; memoryEditRevision &+= 1; refreshCurrent() }
+    func cancelTermination() { guard !disposed else { return }; terminating = false; localEngine?.cancelTermination(); localVoices?.cancelTermination(); refreshVoiceEnvironment(); refreshCurrent() }
     func waitForTerminationResources() async -> Bool {
         await localVoices?.waitForPendingMutations()
-        return await voice?.stopAndWait() ?? true
+        await localEngine?.waitForPending()
+        let stopped = await voice?.stopAndWait() ?? true
+        return stopped && localEngine?.hasPendingResources != true
     }
-    func retryTerminationResources() async -> Bool { await voice?.stopAndWait() ?? true }
+    func retryTerminationResources() async -> Bool { await localEngine?.retryForTermination(); let stopped = await voice?.stopAndWait() ?? true; return stopped && localEngine?.hasPendingResources != true }
     func waitForPendingWrites() async {
         while true {
             if let credentialTask { await credentialTask.value }
@@ -646,6 +654,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         if let value = pendingConnection, !connectionWriting { enqueueConnection(value) }
         voice?.settings.retryPendingSaveForTermination()
         localVoices?.retryPendingForTermination()
+        await localEngine?.retryForTermination()
         await localVoices?.waitForPendingMutations()
         await waitForPendingWrites()
         return terminationSaveError == nil
@@ -654,6 +663,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         guard !disposed else { return }
         cancelRequest(); disposed = true; presented = false
         refreshVoiceEnvironment(); voice?.dispose(); voiceObservation?.cancel(); voiceObservation = nil
+        localEngine?.dispose(); engineObservation?.cancel(); engineObservation = nil
         localVoices?.dispose(); localVoiceObservation?.cancel(); localVoiceObservation = nil
         roleLoadTask?.cancel(); connectionLoadTask?.cancel()
         actions.dispose()
@@ -664,7 +674,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         guard voice == nil, !disposed else { return }
         let settings = ChatVoicePreferencesController(persistence: persistence, writes: writes, canMutate: { [weak self] in self?.canMutate == true })
         let local = ChatLocalVoiceController(persistence: persistence, writes: writes, context: { [weak self] in self?.character },
-            canMutate: { [weak self] in guard let self else { return false }; return self.canMutate && self.voice?.hasOutputActivity != true && self.voice?.blocksChat != true },
+            canMutate: { [weak self] in guard let self else { return false }; return self.canMutate && self.localEngine?.blocksServices != true && self.voice?.hasOutputActivity != true && self.voice?.blocksChat != true },
             stopOutput: { [weak self] in await self?.voice?.stopAndWait() ?? true })
         localVoices = local
         let value = ChatVoiceController(settings: settings, services: services, now: now,
@@ -672,7 +682,7 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
             canRecognize: { [weak self] in self?.canPrepareVoiceInput == true },
             apply: { [weak self] expected, insertion in self?.applyVoiceInsertion(insertion, expected: expected) == true },
             resolveSelection: { [weak local] character in await local?.resolve(for: character) ?? .unavailable(.unavailable) },
-            canUseServices: { [weak local] in local?.hasPendingMutation == false })
+            canUseServices: { [weak self, weak local] in local?.hasPendingMutation == false && self?.localEngine?.blocksServices != true })
         voice = value
         voiceObservation = value.objectWillChange.sink { [weak self] _ in
             Task { @MainActor in guard let self, !self.disposed else { return }; self.objectWillChange.send() }
@@ -682,12 +692,26 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         }
         refreshVoiceEnvironment(); objectWillChange.send()
     }
+    func configureLocalVoiceEngine(worker: any LocalVoiceEngineWorking, probe: any LocalVoiceEngineProbing) {
+        guard localEngine == nil, voice != nil, !disposed else { return }
+        let engine = ChatLocalVoiceEngineController(worker:worker,probe:probe,
+            canStart:{ [weak self] in
+                guard let self else { return false }
+                return self.canMutate && !self.voiceEnvironment.blocked && self.localVoices?.isLoaded == true && self.localVoices?.hasPendingMutation != true && self.localVoices?.hasUnsaved != true && self.localVoices?.preview == nil
+            }, stopOutput:{ [weak self] in await self?.voice?.stopAndWait() ?? true },
+            onActivated:{ [weak self] in guard let self, !self.disposed, !self.terminating else { return }; self.localVoices?.refresh() })
+        localEngine = engine
+        engineObservation = engine.objectWillChange.sink { [weak self] _ in
+            Task { @MainActor in guard let self, !self.disposed else { return }; self.objectWillChange.send() }
+        }
+        engine.refreshSnapshot()
+    }
     var voiceDraftSnapshot: VoiceDraftSnapshot? {
         character.map { .init(character: $0, revision: draftRevision, text: drafts[$0.id] ?? "") }
     }
     var canPrepareVoiceInput: Bool {
         guard let id = character?.id else { return false }
-        return canMutate && localVoices?.hasPendingMutation != true && pendingAction == nil && executingAction == nil && connectionLoaded && connection.enabled && connectionProtection == nil
+        return canMutate && localEngine?.blocksServices != true && localVoices?.hasPendingMutation != true && pendingAction == nil && executingAction == nil && connectionLoaded && connection.enabled && connectionProtection == nil
             && connectionError == nil && !connectionWriting && credentialTask == nil && credentialMutationError == nil
             && credentialAvailability != .missing && requestTask == nil && archives[id] != nil && protectedRoles[id] == nil
             && pendingPairs[id] == nil && pendingMemories[id] == nil && roleWrites[id, default: 0] == 0

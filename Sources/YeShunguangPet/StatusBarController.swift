@@ -70,6 +70,7 @@ import PetCore
                 let worker = Bundle.main.resourceURL!.appendingPathComponent("LocalVoice/worker.py")
                 let local = LocalVoiceOutput(dataRoot: session.settings.url.deletingLastPathComponent(), workerURL: worker)
                 self.chat?.configureVoice(services: VoiceServices(input: NativeSpeechInput(), routing: VoiceOutputRouter(system: NativeSpeechOutput(), local: local)), now: session.now)
+                self.chat?.configureLocalVoiceEngine(worker: LocalVoiceEngineWorker(dataRoot: session.settings.url.deletingLastPathComponent()), probe: LocalVoiceEngineProbe(scriptURL: Bundle.main.resourceURL!.appendingPathComponent("LocalVoice/probe.py")))
             }
             if let controller=self.chat {
                 let presentation=ChatPresentationCoordinator(controller:controller,onPresented:{ [weak session] in session?.setChatPresented($0) },canPresent:{[weak self] in self?.canUseSupportCommands == true})

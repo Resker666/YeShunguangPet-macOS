@@ -118,11 +118,11 @@
 
 **Interfaces:** ChatController新增只读`localEngine:ChatLocalVoiceEngineController?`及`configureLocalVoiceEngine(worker:any LocalVoiceEngineWorking,probe:any LocalVoiceEngineProbing)`，只能配置一次；production在configureVoice之后、创建双窗之前调用。复用voice.stopAndWait作安装停止屏障；安装onActivated刷新语音库engine状态。既有`hasPendingTerminationResources/terminationResourceError/canRetryTerminationSave/terminationSaveError/waitForTerminationResources/retryTerminationResources/retryAllPendingSaves`同时覆盖installer，保留原FIFO/语音等待语义。
 
-- [ ] **Step 1: 写RED。** `testTextSendAndArchiveFIFORemainUsableDuringInstallation`断言阻挡复制时文字往返/保存完成、无自动朗读/录音；`testEngineMutationBlocksNewVoiceAndRolePackageMutation`断言旧输出先停止、并发入口被拒、结束后恢复；`testExitWaitsForProbeWithEmptyChatQueue`断言队列空仍terminateLater等待，停止失败三种决定可达。`testFullQuickHandoffAndRoleChangeKeepOneAcceptedInstall`断言安装实例/候选不变、未确认预览真关闭才取消。
-- [ ] **Step 2: 验RED。** `bash scripts/test.sh -only-testing:PetMacTests/LocalVoiceEngineIntegrationTests`。
-- [ ] **Step 3: 集成。** `canPrepareVoiceInput`及voice.canUseServices加入安装blocksServices；localVoices.canMutate加入同一门控，不能把它加进文字canSend的共同canMutate。复用现有objectWillChange异步MainActor转发，不引入通知回调同步跨线程等待。setSleeping/beginTermination/dispose明确通知installer，正常退出既等待FIFO也等待安装/自检，资源错误不被保存成功掩盖；状态检查不读取个人AI。日用启动不自动安装/检查/迁移引擎。
-- [ ] **Step 4: 验GREEN。** 新测试、ChatVoiceIntegrationTests/LocalVoiceProductionIntegrationTests通过；受控安装保存失败退出重试后只启用一次，取消退出后不恢复旧声音/安装；旧voice输出停止失败规则不倒退，两个窗口共享同一实例。onActivated不能抢占正在退出或语音库原事务。
-- [ ] **Step 5: 本地提交。** `git commit -m 'feat: integrate engine installation with voice and app lifecycle'`。
+- [x] **Step 1: 写RED。** `testTextSendAndArchiveFIFORemainUsableDuringInstallation`断言阻挡复制时文字往返/保存完成、无自动朗读/录音；`testEngineMutationBlocksNewVoiceAndRolePackageMutation`断言旧输出先停止、并发入口被拒、结束后恢复；`testExitWaitsForProbeWithEmptyChatQueue`断言队列空仍terminateLater等待，停止失败三种决定可达。`testFullQuickHandoffAndRoleChangeKeepOneAcceptedInstall`断言安装实例/候选不变、未确认预览真关闭才取消。
+- [x] **Step 2: 验RED。** `bash scripts/test.sh -only-testing:PetMacTests/LocalVoiceEngineIntegrationTests`。
+- [x] **Step 3: 集成。** `canPrepareVoiceInput`及voice.canUseServices加入安装blocksServices；localVoices.canMutate加入同一门控，不能把它加进文字canSend的共同canMutate。复用现有objectWillChange异步MainActor转发，不引入通知回调同步跨线程等待。setSleeping/beginTermination/dispose明确通知installer，正常退出既等待FIFO也等待安装/自检，资源错误不被保存成功掩盖；状态检查不读取个人AI。日用启动不自动安装/检查/迁移引擎。
+- [x] **Step 4: 验GREEN。** 新测试、ChatVoiceIntegrationTests/LocalVoiceProductionIntegrationTests通过；受控安装保存失败退出重试后只启用一次，取消退出后不恢复旧声音/安装；旧voice输出停止失败规则不倒退，两个窗口共享同一实例。onActivated不能抢占正在退出或语音库原事务。
+- [x] **Step 5: 本地提交。** `git commit -m 'feat: integrate engine installation with voice and app lifecycle'`。
 
 ### Task 8: 原生安装界面、版本和普通包库存
 
