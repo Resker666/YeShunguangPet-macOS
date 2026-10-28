@@ -1,5 +1,7 @@
 """Build an optional local engine image; ordinary App packaging never calls it."""
+import ast
 import hashlib
+import pickle
 import importlib.util
 import json
 import os
@@ -85,6 +87,24 @@ def write_engine_manifest(package: Path, metadata: dict) -> dict:
     return result
 
 
+def prepare_polyphonic_cache(source):
+    # The pinned upstream archive ships an out-of-date MD5 marker. Its first
+    # generation otherwise rewrites files covered by our immutable manifest.
+    # Build the same ordered dictionary from literals, without importing ML,
+    # evaluating source expressions, or trusting a pre-existing pickle.
+    folder = Path(source) / "GPT_SoVITS/text/g2pw"
+    values, hashes = {}, []
+    for name in ("polyphonic.rep", "polyphonic-fix.rep"):
+        path = safe_path(folder, name)
+        data = path.read_bytes()
+        hashes.append(hashlib.md5(data).hexdigest())
+        for line in data.decode("utf-8").splitlines():
+            key, value = line.split(":", 1)
+            values[key.strip()] = ast.literal_eval(value.strip())
+    safe_path(folder,"polyphonic.pickle").write_bytes(pickle.dumps(values,protocol=4))
+    safe_path(folder,"polyphonic.md5").write_text("".join(hashes),encoding="utf-8")
+
+
 def _collect_licenses(payload):
     licenses = payload / "licenses"; licenses.mkdir()
     for subtree in ("runtime", "source"):
@@ -126,6 +146,7 @@ def assemble_engine(runtime: Path, experiment: Path, output: Path, *, engine_id:
         public_files.append({k: row[k] for k in ("path", "bytes", "sha256")})
     clean_assets = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, files=public_files)
     (payload / "engine-assets.json").write_text(json.dumps(clean_assets, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    prepare_polyphonic_cache(payload / "source")
     _collect_licenses(payload)
     # Archive/installer tools may leave empty directories; packages list all real content.
     for path in sorted(payload.rglob("*"), reverse=True):

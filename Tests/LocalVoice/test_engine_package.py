@@ -1,4 +1,5 @@
 import hashlib
+import pickle
 import json
 import subprocess
 import sys
@@ -20,6 +21,11 @@ class EnginePackageTests(unittest.TestCase):
         (self.runtime / "bin").mkdir(parents=True); self.experiment.mkdir()
         (self.runtime / "bin/python3.12").write_bytes(binary()); (self.runtime / "bin/python3.12").chmod(0o700)
         source = self.root / "source"; source.mkdir(); (source / "module.py").write_bytes(b"UNCHANGED = True\n"); (source / "LICENSE").write_bytes(b"source license")
+        g2pw = source / "GPT_SoVITS/text/g2pw";g2pw.mkdir(parents=True)
+        (g2pw / "polyphonic.rep").write_text("测试: ['ce4', 'shi4']\n覆盖: ['jiu4']\n")
+        (g2pw / "polyphonic-fix.rep").write_text("覆盖: ['xin1']\n")
+        (g2pw / "polyphonic.pickle").write_bytes(b"obsolete cache")
+        (g2pw / "polyphonic.md5").write_text("stale")
         archive = self.experiment / "source.tar.gz"
         with tarfile.open(archive, "w:gz") as bundle: bundle.add(source, arcname="fixed-source")
         asset = self.experiment / "public.bin"; asset.write_bytes(b"public model")
@@ -42,6 +48,16 @@ class EnginePackageTests(unittest.TestCase):
         paths = {p.name for p in self.output.rglob("*")}
         self.assertTrue({"e1.pth", "private.wav", "venv"}.isdisjoint(paths))
         self.assertTrue((self.output / "payload/licenses/THIRD_PARTY_NOTICES.md").is_file())
+
+    def test_packaged_polyphonic_cache_matches_its_dictionaries_before_first_generation(self):
+        self.assemble()
+        folder = self.output / "payload/source/GPT_SoVITS/text/g2pw"
+        expected = hashlib.md5((folder/"polyphonic.rep").read_bytes()).hexdigest() + hashlib.md5((folder/"polyphonic-fix.rep").read_bytes()).hexdigest()
+        self.assertEqual((folder/"polyphonic.md5").read_text(),expected)
+        self.assertEqual(pickle.loads((folder/"polyphonic.pickle").read_bytes()),{"测试":["ce4","shi4"],"覆盖":["xin1"]})
+        before = {p.name:p.read_bytes() for p in folder.iterdir()}
+        package.prepare_polyphonic_cache(self.output/"payload/source")
+        self.assertEqual(before,{p.name:p.read_bytes() for p in folder.iterdir()})
 
     def test_manifest_is_deterministic_and_hashes_final_bytes(self):
         self.assemble(); before = (self.output / "engine.json").read_bytes()
