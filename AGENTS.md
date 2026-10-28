@@ -176,3 +176,5 @@
 - 用户随后于2026-10-28明确“认可书面设计，进入实施计划”。九项计划docs/superpowers/plans/2026-10-28-macos-portable-voice-engine.md已由主执行者自审，先验证独立Python/原生依赖搬移，再完成严格包/独立DMG、版本事务、固定探针、单飞安装与恢复、双窗退出、原生界面及最终回归/一次整体评审/本地交付。额外只读调查只核对两个五文件库存门控、Xcode文件夹资源引用和八附件/CI边界，不是计划评审；已补清后台configuration、空模块文件、取消提交点、等待重试释放锁及外部描述身份。现待计划审核，保留本会话原地/一次最终整体评审，不重问执行方式；尚未编写产品代码、运行新产品测试、下载/安装依赖、加载模型或替换日用App。主schema13/角色v2/voice1/个人AI/Keychain/原实验与备份保持，本版push/tag/Release/模型上传仍未授权。
 
 - 用户于2026-10-28明确认可0.7.0九项计划并要求本会话方式实施，授权连续本地TDD/一次最终整体评审/本地交付，不逐任务确认、不另建worktree。只使用本计划.superpowers/sdd/2026-10-28-macos-portable-voice-engine；Task1已提交9ec5c19，独立Python3.12.14/106依赖来源固定、3源码wheel双目录重建一致、实际搬移主要import和PCM重采样通过，320原生文件闭包/minos≤14审计通过但非macOS14实测。Task2严格包/只读预览新增8项、完整564原生通过；尚未交付独立引擎DMG/安装UI，日用0.6.0及个人资料、实验/备份保持；本版仍不push/tag/Release或上传模型。
+
+- 0.7.0 Tasks1–8已连续本会话本地提交776521c：独立Python/公共底模DMG、严格清单与版本事务、固定离线probe、共享恢复控制器、文字不阻塞的双窗/退出及原生安装页完成。完整597原生（192Core/405Mac）、37LocalVoice、13Release、13相关窗口及两架构中间构建/签名/六文件库存通过；真实隔离安装/最终整体评审/干净包/日用交付仍进行中，见docs/portable-voice-engine-validation.md。仅本计划.superpowers/sdd/2026-10-28-macos-portable-voice-engine，旧计划不恢复；原实验/备份及个人0.6.0/引擎/AI/Keychain未改，不push/tag/Release或上传模型。
