@@ -42,15 +42,20 @@ enum LocalVoiceAudioSnapshot {
     private let configuration: @Sendable () async throws -> LocalVoiceEngineConfiguration
     private let now: @MainActor () -> TimeInterval
     private let idleSeconds: TimeInterval
+    private let removeAudio: @Sendable (URL) throws -> Void
     private var voice: ResolvedLocalVoice?, workDirectory: URL?, active: UUID?
     private var callback: (@MainActor (UUID, LocalVoiceOutputEvent) -> Void)?
-    private var generation: Task<Void, Never>?, idleTask: Task<Void, Never>?, stopTask: Task<Bool, Never>?
+    private var generation: Task<Void, Never>?, idleTask: Task<Void, Never>?, cleanupTask: Task<Void, Never>?, stopTask: Task<Bool, Never>?
     private var played = false
     private var idleSince: TimeInterval?
     var hasResources: Bool { active != nil || process.hasResources || player.hasResources || workDirectory != nil || stopTask != nil }
     init(process: any LocalVoiceProcessDriving, player: any LocalVoicePlayerDriving, configuration: @escaping @Sendable () async throws -> LocalVoiceEngineConfiguration,
-         now: @escaping @MainActor () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }, idleSeconds: TimeInterval = 180) {
+         now: @escaping @MainActor () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }, idleSeconds: TimeInterval = 180,
+         removeAudio: @escaping @Sendable (URL) throws -> Void = { url in
+             if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
+         }) {
         self.process = process; self.player = player; self.configuration = configuration; self.now = now; self.idleSeconds = idleSeconds
+        self.removeAudio = removeAudio
     }
     convenience init(dataRoot: URL, workerURL: URL) {
         self.init(process: LocalVoiceProcess(workerURL: workerURL), player: LocalVoicePlayer(), configuration: {
@@ -58,6 +63,7 @@ enum LocalVoiceAudioSnapshot {
         })
     }
     func prepare(voice: ResolvedLocalVoice) async -> Bool {
+        if let cleanupTask { await cleanupTask.value }
         if let stopTask, !(await stopTask.value) { return false }
         if active == nil, self.voice == voice, process.hasResources, !player.hasResources {
             idleTask?.cancel(); idleTask = nil; idleSince = nil
@@ -116,12 +122,22 @@ enum LocalVoiceAudioSnapshot {
         }
     }
     private func finish(_ token: UUID, _ event: LocalVoiceOutputEvent) {
-        guard active == token else { return }
-        let callback = callback, audio = workDirectory?.appendingPathComponent(token.uuidString + ".wav")
-        active = nil; self.callback = nil; generation = nil
-        if let audio { Task.detached(priority: .utility) { try? FileManager.default.removeItem(at: audio) } }
-        callback?(token, event)
-        guard active == nil, stopTask == nil, process.hasResources else { return }
+        guard active == token, cleanupTask == nil else { return }
+        let audio = workDirectory?.appendingPathComponent(token.uuidString + ".wav"), removeAudio = removeAudio
+        cleanupTask = Task { [self] in
+            let cleaned = await Task.detached(priority: .utility) {
+                do { if let audio { try removeAudio(audio) }; return true } catch { return false }
+            }.value
+            cleanupTask = nil
+            guard current(token) else { return }
+            let callback = callback
+            active = nil; self.callback = nil; generation = nil
+            callback?(token, cleaned ? event : .failed(issue: .cleanup, playbackStarted: played))
+            guard cleaned, active == nil, stopTask == nil, process.hasResources else { return }
+            scheduleIdle()
+        }
+    }
+    private func scheduleIdle() {
         idleSince = now()
         idleTask = Task { [weak self, idleSeconds] in
             do { try await Task.sleep(for: .nanoseconds(Int64(idleSeconds * 1_000_000_000))) } catch { return }
@@ -138,7 +154,9 @@ enum LocalVoiceAudioSnapshot {
         let oldToken = active, oldCallback = callback
         active = nil; callback = nil
         let directory = workDirectory
+        let cleanupTask = cleanupTask
         let task = Task { [self] in
+            await cleanupTask?.value
             async let outputStopped = player.stop()
             async let engineStopped = process.stop()
             let results = await (outputStopped, engineStopped)

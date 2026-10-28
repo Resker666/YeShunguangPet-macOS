@@ -75,6 +75,8 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     var unsavedCharacterIDs: [String] { pendingPairs.keys.sorted() }
     var pendingMemoryCharacterIDs: [String] { pendingMemories.keys.sorted() }
     var hasPendingWrites: Bool { writes.hasPending || credentialTask != nil || executingAction != nil }
+    var hasPendingTerminationResources: Bool { localVoices?.hasPendingMutation == true || localVoices?.hasUnsaved == true || voice?.hasActivity == true || voice?.hasPendingResources == true || voice?.outputStopFailed == true }
+    var terminationResourceError: String? { voice?.outputStopFailed == true || voice?.hasPendingResources == true ? "语音进程、播放或临时文件尚未确认停止与清理。可重试停止、取消退出，或明确继续退出。" : nil }
     var isGenerating: Bool { requestTask != nil }
     var isGeneratingConversation: Bool { activeRequestKind == .conversation && isGenerating }
     var isExtractingMemories: Bool { activeRequestKind == .memoryExtraction }
@@ -106,13 +108,14 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     var currentArchiveProtection: String? { character.flatMap { protectedRoles[$0.id] } }
     var canRetryPendingSave: Bool { canMutate && character.map { pendingPairs[$0.id] != nil && roleWrites[$0.id, default: 0] == 0 } == true }
     var canRetryConnectionSave: Bool { canChangeConnection && pendingConnection != nil }
-    var canRetryTerminationSave: Bool { !pendingPairs.isEmpty || !pendingMemories.isEmpty || pendingConnection != nil || voice?.settings.hasUnsaved == true }
+    var canRetryTerminationSave: Bool { !pendingPairs.isEmpty || !pendingMemories.isEmpty || pendingConnection != nil || voice?.settings.hasUnsaved == true || localVoices?.hasUnsaved == true }
     var terminationSaveError: String? {
         var messages = [String]()
         if executingAction != nil { messages.append("操作正在执行，回执尚未保存。") }
         if !pendingPairs.isEmpty { messages.append("有 \(pendingPairs.count) 个角色的完整对话尚未保存。") }
         if !pendingMemories.isEmpty { messages.append("有 \(pendingMemories.count) 个角色的已确认记忆变更尚未保存。") }
         if voice?.settings.hasUnsaved == true { messages.append(voice?.settings.error ?? "语音偏好尚未保存。") }
+        if let localError = localVoices?.terminationError { messages.append(localError) }
         if let connectionError { messages.append(connectionError) }
         if let credentialMutationError { messages.append(credentialMutationError) }
         return messages.isEmpty ? nil : messages.joined(separator: "\n")
@@ -622,6 +625,11 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
     }
     func beginTermination() { guard !disposed else { return }; terminating = true; localVoices?.beginTermination(); refreshVoiceEnvironment(); cancelRequest(); memoryReview = nil; memoryEditRevision &+= 1; refreshCurrent() }
     func cancelTermination() { guard !disposed else { return }; terminating = false; localVoices?.cancelTermination(); refreshVoiceEnvironment(); refreshCurrent() }
+    func waitForTerminationResources() async -> Bool {
+        await localVoices?.waitForPendingMutations()
+        return await voice?.stopAndWait() ?? true
+    }
+    func retryTerminationResources() async -> Bool { await voice?.stopAndWait() ?? true }
     func waitForPendingWrites() async {
         while true {
             if let credentialTask { await credentialTask.value }
@@ -637,6 +645,8 @@ enum ChatState: Equatable { case idle, loading, readingCredential, streaming, ex
         for change in pendingMemories.values { enqueueMemoryChange(change) }
         if let value = pendingConnection, !connectionWriting { enqueueConnection(value) }
         voice?.settings.retryPendingSaveForTermination()
+        localVoices?.retryPendingForTermination()
+        await localVoices?.waitForPendingMutations()
         await waitForPendingWrites()
         return terminationSaveError == nil
     }

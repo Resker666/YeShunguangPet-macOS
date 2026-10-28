@@ -57,7 +57,7 @@ import PetCore
         retry.isEnabled = allowed && !settings.isWriting; discard.isEnabled = retry.isEnabled
         reset.isHidden = settings.protection == nil; reset.isEnabled = allowed && !settings.isWriting
         let actual = voice.actualOutput.map { "实际使用：\($0.displayName) · \($0.backend == .local ? "本地角色音色" : "系统音色")" }
-        status.stringValue = [settings.protection, settings.error, voice.error, actual, settings.isWriting ? "正在保存语音设置" : settings.enabledForSession ? "本次语音已启用" : "本次语音已关闭"].compactMap { $0 }.joined(separator: "\n")
+        status.stringValue = [settings.protection, settings.error, voice.error, voice.outputStatus, actual, settings.isWriting ? "正在保存语音设置" : settings.enabledForSession ? "本次语音已启用" : "本次语音已关闭"].compactMap { $0 }.joined(separator: "\n")
         status.textColor = settings.error == nil && settings.protection == nil && voice.error == nil ? .secondaryLabelColor : .systemRed
         localSettings.render()
     }

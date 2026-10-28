@@ -2,6 +2,24 @@ import AppKit
 import PetCore
 import Darwin
 
+enum TerminationResourceDecision { case retry, exit, cancel }
+@MainActor enum ChatTerminationCoordinator {
+    static func finish(chat: ChatController?, confirmSave: (ChatController?) async -> Bool,
+                       resourceDecision: (String) async -> TerminationResourceDecision) async -> Bool {
+        _ = await chat?.waitForTerminationResources()
+        await chat?.waitForPendingWrites()
+        guard await confirmSave(chat) else { return false }
+        while let message = chat?.terminationResourceError {
+            switch await resourceDecision(message) {
+            case .retry: _ = await chat?.retryTerminationResources()
+            case .exit: return true
+            case .cancel: return false
+            }
+        }
+        return true
+    }
+}
+
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
     var session: PetSession?
     var status: StatusBarController?
@@ -34,12 +52,11 @@ import Darwin
         status?.beginTermination()
         let model=status?.skinModel
         let chat=status?.chat
-        if model?.hasPendingMutation == true || chat?.hasPendingWrites == true || chat?.terminationSaveError != nil {
+        if model?.hasPendingMutation == true || chat?.hasPendingWrites == true || chat?.terminationSaveError != nil || chat?.hasPendingTerminationResources == true {
             terminationPending=true
             Task {
                 await model?.waitForPendingMutations()
-                await chat?.waitForPendingWrites()
-                let chatProceed=await confirmChatTermination(chat)
+                let chatProceed=await ChatTerminationCoordinator.finish(chat: chat, confirmSave: confirmChatTermination, resourceDecision: confirmResourceTermination)
                 let proceed=chatProceed && confirmTermination(model:model)
                 if !proceed { status?.cancelTermination() }
                 terminationPending=false
@@ -54,7 +71,7 @@ import Darwin
     private func confirmChatTermination(_ chat:ChatController?) async -> Bool {
         guard let chat else { return true }
         while let message=chat.terminationSaveError {
-            let alert=NSAlert(); alert.messageText="聊天与记忆资料尚未保存"; alert.informativeText=message
+            let alert=NSAlert(); alert.messageText="聊天、记忆或语音资料尚未保存"; alert.informativeText=message
             let canRetry=chat.canRetryTerminationSave
             if canRetry { alert.addButton(withTitle:"重试本地保存") }
             alert.addButton(withTitle:"继续退出"); alert.addButton(withTitle:"取消退出")
@@ -63,6 +80,15 @@ import Darwin
             return answer == (canRetry ? .alertSecondButtonReturn : .alertFirstButtonReturn)
         }
         return true
+    }
+    private func confirmResourceTermination(_ message: String) async -> TerminationResourceDecision {
+        let alert = NSAlert(); alert.messageText = "语音资源尚未清理"; alert.informativeText = message
+        alert.addButton(withTitle: "重试停止与清理"); alert.addButton(withTitle: "继续退出"); alert.addButton(withTitle: "取消退出")
+        switch alert.runModal() {
+        case .alertFirstButtonReturn: return .retry
+        case .alertSecondButtonReturn: return .exit
+        default: return .cancel
+        }
     }
     private func confirmTermination(model: SettingsModel?) -> Bool {
         if let error=model?.terminationCleanupError {

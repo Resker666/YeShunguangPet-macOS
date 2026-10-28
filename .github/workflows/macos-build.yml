@@ -27,6 +27,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 30
     env:
+      PYTHONDONTWRITEBYTECODE: "1"
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     outputs:
       version: ${{ steps.metadata.outputs.version }}
@@ -71,6 +72,9 @@ jobs:
 
       - name: Run release preparation tests
         run: python3 -m unittest discover -s Tests/Release -v 2>&1 | tee .build/ci-logs/release-tests.log
+
+      - name: Run offline local voice adapter tests
+        run: python3 -m unittest discover -s Tests/LocalVoice -v 2>&1 | tee .build/ci-logs/local-voice-tests.log
 
       - name: Run native tests
         run: bash scripts/test.sh -resultBundlePath .build/ci-logs/native-tests.xcresult 2>&1 | tee .build/ci-logs/native-tests.log

@@ -34,13 +34,13 @@ import AppKit
         else { input.title = state == .finishing ? "等待最终识别…" : "准备录音…" }
         input.isEnabled = allowed && (!enabled || state == .recording || (state == .idle && controller.canPrepareVoiceInput))
         cancel.isHidden = state == .idle; cancel.isEnabled = allowed
-        read.title = voice?.isStoppingOutput == true ? "确认停止中…" : voice?.outputStopFailed == true ? "重试停止朗读" : voice?.isSpeaking == true ? "停止朗读" : "朗读最近回复"
+        read.title = voice?.isStoppingOutput == true ? "确认停止中…" : voice?.outputStopFailed == true ? "重试停止朗读" : voice?.hasOutputActivity == true ? "停止朗读" : "朗读最近回复"
         read.isHidden = !enabled && voice?.isStoppingOutput != true && voice?.outputStopFailed != true
-        read.isEnabled = allowed && voice?.blocksChat != true && voice?.isStoppingOutput != true && (voice?.isSpeaking == true || voice?.outputStopFailed == true || controller.conversation?.messages.contains(where: { $0.role == .assistant }) == true)
+        read.isEnabled = allowed && voice?.blocksChat != true && voice?.isStoppingOutput != true && (voice?.hasOutputActivity == true || voice?.outputStopFailed == true || controller.conversation?.messages.contains(where: { $0.role == .assistant }) == true)
         let phase: String
         switch state {
-        case .idle: phase = voice?.isStoppingOutput == true ? "正在确认系统朗读已停止" : voice?.isSpeaking == true ? "正在朗读 · 长回复自动朗读开头，最多 600 个 UTF-16 单元" : "主动录音，最长 45 秒；识别填入草稿后请手动发送。"
-        case .stoppingOutput: phase = "正在确认系统朗读已停止"
+        case .idle: phase = voice?.outputStatus ?? "主动录音，最长 45 秒；识别填入草稿后请手动发送。"
+        case .stoppingOutput: phase = "正在确认语音输出已停止"
         case .requestingPermissions: phase = "正在检查麦克风与语音识别权限，可取消"
         case .recording: phase = "正在录音 · 最长 45 秒"
         case .finishing: phase = "正在等待最终识别 · 最多 5 秒"
@@ -62,7 +62,7 @@ import AppKit
     @objc private func cancelPressed() { guard allowed else { return }; controller.voice?.cancelInput() }
     @objc private func readPressed() {
         guard allowed, let voice = controller.voice else { return }
-        if voice.isSpeaking || voice.outputStopFailed || voice.isStoppingOutput { voice.stop() }
+        if voice.hasOutputActivity || voice.outputStopFailed || voice.isStoppingOutput { voice.stop() }
         else if let text = controller.conversation?.messages.last(where: { $0.role == .assistant })?.content { voice.readLatest(text) }
     }
     @objc private func acceptPressed() { guard allowed else { return }; controller.voice?.acceptPreview() }

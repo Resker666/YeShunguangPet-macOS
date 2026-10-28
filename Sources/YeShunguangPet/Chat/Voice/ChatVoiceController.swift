@@ -54,6 +54,16 @@ enum VoiceCaptureState: Equatable { case idle, stoppingOutput, requestingPermiss
     private(set) var availableVoices = [SystemVoice]()
     var blocksChat: Bool { captureState != .idle }
     var suppressesCompletionAudio: Bool { captureState == .recording || captureState == .finishing }
+    var outputStatus: String? {
+        switch outputPhase {
+        case .idle: return nil
+        case .resolving: return "正在读取角色音色"
+        case .starting: return "正在启动语音输出"
+        case .generating: return "正在生成本地语音，可停止"
+        case .playing: return "正在朗读" + (actualOutput.map { " · " + $0.displayName + ($0.backend == .local ? " · 本地角色音色" : " · 系统音色") } ?? "")
+        case .stopping: return "正在确认语音输出已停止并清理资源"
+        }
+    }
     var hasOutputActivity: Bool { outputToken != nil || (outputContext != nil && preparation != nil) }
     var hasPendingResources: Bool { outputStop != nil || services.output.hasResources }
     private var hasCancellableActivity: Bool { blocksChat || hasOutputActivity || preparation != nil || !preview.isEmpty || canOfferNetwork || (services.output.hasResources && !isStoppingOutput && !outputStopFailed) }

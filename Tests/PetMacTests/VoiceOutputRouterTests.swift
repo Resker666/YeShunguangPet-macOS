@@ -23,6 +23,16 @@ import PetCore
 }
 
 @MainActor final class VoiceOutputRouterTests: XCTestCase {
+    func testCancelledSelectionNeverFallsBackToSystem() async throws {
+        let f = try RoutedVoiceFixture()
+        var terminal = false
+        try f.router.speak(.init(token: UUID(), text: "已取消", rate: 0.5, preferredSystemVoiceID: nil, selection: .unavailable(.cancelled))) { _, event in
+            if event == .cancelled { terminal = true }
+        }
+        for _ in 0..<30 { await Task.yield() }
+        XCTAssertTrue(terminal); XCTAssertTrue(f.system.spoken.isEmpty)
+        await f.close()
+    }
     func testLocalOutputStartsWithNoInstalledAppleVoice() async throws {
         let f = try RoutedVoiceFixture(), h = try VoiceControllerHarness(); f.system.voices = []
         h.routing = f.router; h.selection = .local(f.voice)
@@ -129,7 +139,7 @@ import PetCore
         try await chatEventually { h.settings.isLoaded }
         h.settings.apply(.init(enabled: true)); await h.writes.waitForPending(); h.controller.updateEnvironment(h.environment)
         h.controller.readLatest("第一句")
-        try await chatEventually { f.player.plays == 1 }; f.player.finish()
+        try await chatEventually { f.player.plays == 1 }; f.player.finish(); try await chatEventually { !h.controller.hasOutputActivity }
         XCTAssertFalse(h.controller.hasOutputActivity); XCTAssertTrue(h.controller.hasPendingResources)
         let old = h.snapshot.character
         h.snapshot = .init(character: .init(id: old.id, name: old.name, description: old.description, skinRevision: 2), revision: 1, text: "")
@@ -144,8 +154,8 @@ import PetCore
         h.routing = f.router; h.selection = .local(f.voice)
         try await chatEventually { h.settings.isLoaded }
         h.settings.apply(.init(enabled: true)); await h.writes.waitForPending(); h.controller.updateEnvironment(h.environment)
-        h.controller.readLatest("第一句"); try await chatEventually { f.player.plays == 1 }; f.player.finish()
-        h.controller.readLatest("第二句"); try await chatEventually { f.player.plays == 2 }; f.player.finish()
+        h.controller.readLatest("第一句"); try await chatEventually { f.player.plays == 1 }; f.player.finish(); try await chatEventually { !h.controller.hasOutputActivity }
+        h.controller.readLatest("第二句"); try await chatEventually { f.player.plays == 2 }; f.player.finish(); try await chatEventually { !h.controller.hasOutputActivity }
         XCTAssertEqual(f.process.starts, 1); XCTAssertEqual(f.process.stops, 0)
         XCTAssertEqual(f.process.speeds, [1, 1])
         f.process.stopResult = false

@@ -1,6 +1,9 @@
 import hashlib
 import importlib.util
 import json
+import os
+import shutil
+import sys
 from pathlib import Path
 import subprocess
 import tarfile
@@ -15,6 +18,36 @@ spec.loader.exec_module(prepare_voice)
 
 
 class PrepareTests(unittest.TestCase):
+    def test_help_does_not_write_bytecode_into_repository_resources(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "tools").mkdir(); (root / "Resources/LocalVoice").mkdir(parents=True)
+            script = root / "tools/prepare-local-voice.py"
+            shutil.copyfile(REPO / "tools/prepare-local-voice.py", script)
+            shutil.copyfile(REPO / "Resources/LocalVoice/voice_assets.py", root / "Resources/LocalVoice/voice_assets.py")
+            env = dict(os.environ)
+            env.pop("PYTHONDONTWRITEBYTECODE", None); env.pop("PYTHONPYCACHEPREFIX", None)
+            result = subprocess.run([sys.executable, "-X", "pycache_prefix=" + str(root / "bytecode"), str(script), "--help"], capture_output=True, env=env)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(list(root.rglob("voice_assets*.pyc")), [])
+
+    def test_active_runtime_lock_prevents_prepare_without_changing_current(self):
+        import fcntl
+        engine = self.settings.parent / "LocalVoice/Engine"
+        engine.mkdir(parents=True)
+        current = engine / "current.json"; current.write_bytes(b"old descriptor")
+        script = "import fcntl,sys,time;f=open(sys.argv[1],'a');fcntl.flock(f,fcntl.LOCK_SH);print('locked',flush=True);time.sleep(30)"
+        child = subprocess.Popen([sys.executable, "-c", script, str(engine / "use.lock")], stdout=subprocess.PIPE)
+        try:
+            self.assertEqual(child.stdout.readline(), b"locked\n")
+            with patch.object(prepare_voice.platform, "machine", return_value="arm64"), patch.object(prepare_voice, "ensure_inactive"):
+                with self.assertRaisesRegex(RuntimeError, "引擎"):
+                    prepare_voice.prepare(self.experiment, Path("/explicit/python3.12"), self.settings, manifest=self.manifest, runner=self.runner)
+            self.assertEqual(current.read_bytes(), b"old descriptor")
+            self.assertFalse((engine / "Versions").exists())
+        finally:
+            child.terminate(); child.wait(timeout=3); child.stdout.close()
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)

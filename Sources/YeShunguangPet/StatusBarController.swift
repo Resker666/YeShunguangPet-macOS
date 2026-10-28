@@ -67,7 +67,9 @@ import PetCore
                 self.chat=ChatController(persistence:ChatArchiveWorker(settingsURL:session.settings.url),credentials:KeychainChatCredentialStore(),client:DeepSeekChatClient(),memoryClient:DeepSeekMemoryClient(),actions:actionBridge,canDispatch:{ [weak self] in self?.canUseSupportCommands == true },onFeedback:{ [weak self] text in self?.presentChatReply(text) })
             }
             if chat == nil {
-                self.chat?.configureVoice(services: VoiceServices(input: NativeSpeechInput(), output: NativeSpeechOutput()), now: session.now)
+                let worker = Bundle.main.resourceURL!.appendingPathComponent("LocalVoice/worker.py")
+                let local = LocalVoiceOutput(dataRoot: session.settings.url.deletingLastPathComponent(), workerURL: worker)
+                self.chat?.configureVoice(services: VoiceServices(input: NativeSpeechInput(), routing: VoiceOutputRouter(system: NativeSpeechOutput(), local: local)), now: session.now)
             }
             if let controller=self.chat {
                 let presentation=ChatPresentationCoordinator(controller:controller,onPresented:{ [weak session] in session?.setChatPresented($0) },canPresent:{[weak self] in self?.canUseSupportCommands == true})

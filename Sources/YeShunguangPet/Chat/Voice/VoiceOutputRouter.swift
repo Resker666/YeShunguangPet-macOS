@@ -39,6 +39,7 @@ import PetCore
         self.request = request; callback = onEvent; attemptedFallback = false
         switch request.selection {
         case .system: startSystem(request.token)
+        case .unavailable(.cancelled): finish(request.token, .cancelled)
         case .unavailable(let issue): fallback(request.token, issue: issue)
         case .local(let voice):
             if request.text.utf16.count > 600 { useSystemForLongText(request.token); return }
@@ -91,7 +92,7 @@ import PetCore
         case .finished: finish(token, .finished)
         case .cancelled: finish(token, .cancelled)
         case .failed(let issue, let playbackStarted):
-            if playbackStarted || issue == .cancelled { finish(token, .failed(issue)) }
+            if playbackStarted || issue == .cancelled || issue == .cleanup { finish(token, .failed(issue)) }
             else { fallback(token, issue: issue) }
         }
     }

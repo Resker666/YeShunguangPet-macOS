@@ -5,7 +5,9 @@ import os
 from pathlib import Path
 import sys
 
+sys.dont_write_bytecode = True
 from worker_protocol import serve
+from voice_assets import acquire_engine_lock
 
 
 def main():
@@ -23,6 +25,7 @@ def main():
     class Factory:
         session_id = args.session_id
         def __call__(self):
+            self.lock = acquire_engine_lock(args.engine_root.parents[1], exclusive=False)
             from gpt_sovits_backend import GPTSoVITSBackend
             return GPTSoVITSBackend(args.engine_root, args.voice_root, args.work_root)
     return serve(sys.stdin.buffer, protocol, Factory())

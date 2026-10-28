@@ -12,6 +12,8 @@ import subprocess
 import tempfile
 import unittest
 
+from test_architecture import inventory
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -59,6 +61,7 @@ class DistributionTests(unittest.TestCase):
         # Native extraction interprets ditto's Unicode path metadata like macOS.
         extracted = self.root / "extracted"
         subprocess.run(["ditto", "-x", "-k", str(archive), str(extracted)], check=True)
+        self.assertEqual(inventory(extracted / stem / "YeShunguangPet.app"), inventory(self.app))
         self.assertTrue((extracted / stem / "安装说明.txt").is_file())
         self.assertTrue((extracted / stem / "YeShunguangPet.app/Contents/Resources/AppIcon.icns").is_file())
         subprocess.run(["codesign", "--verify", "--strict", str(extracted / stem / "YeShunguangPet.app")], check=True)
@@ -66,6 +69,7 @@ class DistributionTests(unittest.TestCase):
         entity = next(e for e in plistlib.loads(attached)["system-entities"] if "mount-point" in e)
         try:
             volume = Path(entity["mount-point"])
+            self.assertEqual(inventory(volume / "YeShunguangPet.app"), inventory(self.app))
             self.assertEqual(os.readlink(volume / "Applications"), "/Applications")
             self.assertTrue((volume / "安装说明.txt").is_file())
             self.assertTrue((volume / "YeShunguangPet.app/Contents/Resources/Notices/LICENSE.txt").is_file())

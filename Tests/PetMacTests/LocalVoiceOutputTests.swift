@@ -3,6 +3,22 @@ import XCTest
 import PetCore
 
 @MainActor final class LocalVoiceOutputTests: XCTestCase {
+    func testAudioCleanupFailureIsVisibleAndExplicitStopCanRetryWithoutReplay() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let configuration = try LocalVoiceServiceFixtures.configuration(root: root), voice = try LocalVoiceServiceFixtures.voice(root: root)
+        let process = ControlledLocalVoiceProcess(), player = ControlledLocalVoicePlayer()
+        let output = LocalVoiceOutput(process: process, player: player, configuration: { configuration }, removeAudio: { _ in throw CocoaError(.fileWriteNoPermission) })
+        var terminal: LocalVoiceOutputEvent?
+        try output.start(.init(token: UUID(), voice: voice, text: "清理失败测试", rate: 0.5)) { _, event in
+            if case .failed = event { terminal = event }; if event == .finished { terminal = event }
+        }
+        try await chatEventually { player.plays == 1 }; player.finish()
+        try await chatEventually { terminal != nil }
+        XCTAssertEqual(terminal, .failed(issue: .cleanup, playbackStarted: true)); XCTAssertTrue(output.hasResources)
+        let stopped = await output.stop(); XCTAssertTrue(stopped); XCTAssertFalse(output.hasResources)
+        XCTAssertEqual(player.plays, 1); XCTAssertFalse(FileManager.default.fileExists(atPath: process.directory!.path))
+    }
     func testStopDuringLaunchGenerationAndPlaybackWaitsForResources() async throws {
         for phase in ["launch", "generate", "play"] {
             let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -45,12 +61,12 @@ import PetCore
         defer { try? FileManager.default.removeItem(at: root) }
         let configuration = try LocalVoiceServiceFixtures.configuration(root: root), voice = try LocalVoiceServiceFixtures.voice(root: root)
         let process = ControlledLocalVoiceProcess(), player = ControlledLocalVoicePlayer()
-        var now = 0.0
+        var now = 0.0, finished = false
         let output = LocalVoiceOutput(process: process, player: player, configuration: { configuration }, now: { now })
-        try output.start(.init(token: UUID(), voice: voice, text: "测试", rate: 0.5)) { _, _ in }
+        try output.start(.init(token: UUID(), voice: voice, text: "测试", rate: 0.5)) { _, event in if event == .finished { finished = true } }
         try await chatEventually { player.plays == 1 }
         now = 500; await output.checkIdle(); XCTAssertEqual(process.stops, 0)
-        player.finish(); now = 679.999; await output.checkIdle(); XCTAssertEqual(process.stops, 0)
+        player.finish(); try await chatEventually { finished }; now = 679.999; await output.checkIdle(); XCTAssertEqual(process.stops, 0)
         now = 680; await output.checkIdle(); XCTAssertEqual(process.stops, 1)
     }
     func testInvalidAudioFailsBeforePlaybackAndStopFailureCanRetry() async throws {

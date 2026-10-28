@@ -2,6 +2,21 @@
 import hashlib
 from pathlib import Path
 import stat
+import os
+import fcntl
+
+
+def acquire_engine_lock(engine, *, exclusive):
+    """Hold the returned descriptor for the entire installer or worker lifetime."""
+    descriptor = os.open(Path(engine) / "use.lock", os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
+    try:
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            raise ValueError("invalid engine lock")
+        fcntl.flock(descriptor, (fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH) | fcntl.LOCK_NB)
+        return descriptor
+    except BaseException:
+        os.close(descriptor)
+        raise
 
 
 def safe_file(root, relative):

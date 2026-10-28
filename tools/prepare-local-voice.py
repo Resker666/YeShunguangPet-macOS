@@ -15,8 +15,9 @@ import wave
 
 REPO = Path(__file__).resolve().parents[1]
 RESOURCES = REPO / "Resources/LocalVoice"
+sys.dont_write_bytecode = True
 sys.path.insert(0, str(RESOURCES))
-from voice_assets import safe_file, verify_assets, verify_file
+from voice_assets import safe_file, verify_assets, verify_file, acquire_engine_lock
 
 PROFILE = "gpt-sovits-v2proplus-cpu1"
 COMMIT = "b4570b876f5c086819ba84e3215472733c6a7b70"
@@ -93,6 +94,22 @@ def offline_environment(cache):
 
 
 def prepare(experiment, python, settings, *, manifest=None, runner=subprocess.run):
+    if platform.machine() != "arm64":
+        raise RuntimeError("首版环境仅支持当前 Apple Silicon Mac")
+    ensure_inactive(Path(settings).parent)
+    engine = Path(settings).parent / "LocalVoice/Engine"
+    engine.mkdir(parents=True, exist_ok=True, mode=0o700)
+    try:
+        lock = acquire_engine_lock(engine, exclusive=True)
+    except BlockingIOError:
+        raise RuntimeError("本地语音引擎正在使用或准备中，请先停止引擎。") from None
+    try:
+        return _prepare(experiment, python, settings, manifest=manifest, runner=runner)
+    finally:
+        os.close(lock)
+
+
+def _prepare(experiment, python, settings, *, manifest=None, runner=subprocess.run):
     experiment, settings, python = Path(experiment), Path(settings), Path(python)
     if platform.machine() != "arm64":
         raise RuntimeError("首版环境仅支持当前 Apple Silicon Mac")
