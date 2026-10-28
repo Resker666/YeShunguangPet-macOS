@@ -94,11 +94,11 @@
 
 **Interfaces:** `LocalVoiceEngineProbeReport`含pythonVersion/profile/sourceCommit；`@MainActor protocol LocalVoiceEngineProbing: AnyObject, Sendable { var hasResources:Bool { get }; func run(configuration:LocalVoiceEngineConfiguration, requestID:UUID) async throws -> LocalVoiceEngineProbeReport; func stop() async -> Bool }`。真实`LocalVoiceEngineProbe.init(scriptURL:URL,limits:Limits = .init())`仅调用固定Python和固定App脚本。脚本CLI为`--engine-root --cache-root --request-id`，stdout只输出单条`v=1,event=checked,requestID,pythonVersion,profile,sourceCommit`成功JSON，非零/未知字段/错ID失败。
 
-- [ ] **Step 1: 写RED。** `testProbeValidatesOfflineWithoutVoiceOrDownloads`用替身模块断言不加载S2/声卡、不联网/不调用pip、不写source；`testProbeRejectsWrongReplyAndOversizedOutput`断言64KiB行/stdout256KiB/stderr1MiB边界；`testCancelAndTimeoutConfirmOwnedPIDExit`用真实小助手覆盖无输出挂起、忽略TERM及停止失败；`testParentPipeEOFEndsBlockedProbe`断言关闭父输入管道后准确子PID退出、其他哨兵进程不动。`testMainActorRemainsResponsiveWhileProbeImports`以握手阻挡助手并断言主线程回调继续。
-- [ ] **Step 2: 验RED。** `python3 -m unittest discover -s Tests/LocalVoice -p 'test_engine_probe.py' -v`；`bash scripts/test.sh -only-testing:PetMacTests/LocalVoiceEngineProbeTests`。
-- [ ] **Step 3: 实现。** 脚本先检查版本/架构/固定公共资产，复用现有离线guard/cache路径与主要推理import，不构造TTS模型、不改上游配置。父进程已持EX锁，probe不再请求SH锁；启动环境仅系统PATH及固定离线变量，无用户PYTHONPATH。launch/管道读写在后台、读端非阻塞，stdout/stderr持续排空而不记录私人信息；120秒超时，TERM2秒再KILL2秒，结果仅在准确PID退出及句柄清理确认后完成。probe监听父输入管道EOF以退出阻塞初始化，不在stdin接收任意命令。可复用原LocalVoiceProcess的明确停止机制，避免无必要的全局进程框架重构。
-- [ ] **Step 4: 验GREEN。** 两组测试及原LocalVoiceProcessTests通过；在新独立runtime+公共payload真实运行固定probe，离线import成功且源字节不变。缺少资产/错误Python/缺库给明确分类，不用捕获所有错误后报成功。
-- [ ] **Step 5: 本地提交。** `git commit -m 'feat: check voice engines with a cancellable offline probe'`。
+- [x] **Step 1: 写RED。** `testProbeValidatesOfflineWithoutVoiceOrDownloads`用替身模块断言不加载S2/声卡、不联网/不调用pip、不写source；`testProbeRejectsWrongReplyAndOversizedOutput`断言64KiB行/stdout256KiB/stderr1MiB边界；`testCancelAndTimeoutConfirmOwnedPIDExit`用真实小助手覆盖无输出挂起、忽略TERM及停止失败；`testParentPipeEOFEndsBlockedProbe`断言关闭父输入管道后准确子PID退出、其他哨兵进程不动。`testMainActorRemainsResponsiveWhileProbeImports`以握手阻挡助手并断言主线程回调继续。
+- [x] **Step 2: 验RED。** `python3 -m unittest discover -s Tests/LocalVoice -p 'test_engine_probe.py' -v`；`bash scripts/test.sh -only-testing:PetMacTests/LocalVoiceEngineProbeTests`。
+- [x] **Step 3: 实现。** 脚本先检查版本/架构/固定公共资产，复用现有离线guard/cache路径与主要推理import，不构造TTS模型、不改上游配置。父进程已持EX锁，probe不再请求SH锁；启动环境仅系统PATH及固定离线变量，无用户PYTHONPATH。launch/管道读写在后台、读端非阻塞，stdout/stderr持续排空而不记录私人信息；120秒超时，TERM2秒再KILL2秒，结果仅在准确PID退出及句柄清理确认后完成。probe监听父输入管道EOF以退出阻塞初始化，不在stdin接收任意命令。可复用原LocalVoiceProcess的明确停止机制，避免无必要的全局进程框架重构。
+- [x] **Step 4: 验GREEN。** 两组测试及原LocalVoiceProcessTests通过；在新独立runtime+公共payload真实运行固定probe，离线import成功且源字节不变。缺少资产/错误Python/缺库给明确分类，不用捕获所有错误后报成功。
+- [x] **Step 5: 本地提交。** `git commit -m 'feat: check voice engines with a cancellable offline probe'`。
 
 ### Task 6: 唯一安装工作者与可恢复控制器
 

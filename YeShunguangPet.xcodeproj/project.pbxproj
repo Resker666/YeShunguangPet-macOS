@@ -1114,6 +1114,7 @@
 				<string>F11F49AE5014E4AB56FE8B4C</string>
 				<string>F66CAC746A6B2C516AF6A342</string>
 				<string>949BE9F4725E287A4EB75C80</string>
+				<string>F4A629BC4B9208CF7C6BC24C</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -1605,6 +1606,8 @@
 				<string>4AD41AA6E9DF39A83753F2FF</string>
 				<string>D0A8A10FF4E22F13D45C9099</string>
 				<string>EA20349E8241CCDA08C8D2FC</string>
+				<string>08AA4521888A6E02E39F309F</string>
+				<string>17DA2FD27875731E26043346</string>
 			</array>
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<integer>0</integer>
@@ -2034,6 +2037,8 @@
 				<string>19A86A67345D460B528EC34F</string>
 				<string>5A5A6BFAA7111138D92414C6</string>
 				<string>E57EA6D89F50FEB6A593D3F9</string>
+				<string>997EB8BE3B921024D9EB6A94</string>
+				<string>079DFC097BED787F70A2D96D</string>
 			</array>
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
@@ -5731,6 +5736,49 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>E57EA6D89F50FEB6A593D3F9</string>
+		</dict>
+		<key>997EB8BE3B921024D9EB6A94</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Tests/PetMacTests/LocalVoiceEngineProbeTests.swift</string>
+			<key>sourceTree</key>
+			<string>SOURCE_ROOT</string>
+		</dict>
+		<key>08AA4521888A6E02E39F309F</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>997EB8BE3B921024D9EB6A94</string>
+		</dict>
+		<key>079DFC097BED787F70A2D96D</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Sources/YeShunguangPet/Chat/Voice/LocalVoiceEngineProbe.swift</string>
+			<key>sourceTree</key>
+			<string>SOURCE_ROOT</string>
+		</dict>
+		<key>F4A629BC4B9208CF7C6BC24C</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>079DFC097BED787F70A2D96D</string>
+		</dict>
+		<key>17DA2FD27875731E26043346</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>079DFC097BED787F70A2D96D</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>
