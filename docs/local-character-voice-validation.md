@@ -46,6 +46,10 @@ App 仍只链接系统框架。四份 Python 适配器和小体积公共资源�
 
 最终包/安装、正式引擎、原生探针及摘要证据分别在忽略目录的 `final-bundles.json`、`eight-assets-check.json`、`personal-install.json`、`personal-engine-check.json`、`native-final-path-probe.json` 和完整日志。本文档及最后的记录提交不改变已安装 App 的来源。保留本地开发分支，不合并 main，不推送、打标签或发布。
 
-## 未测边界
+## 用户验收
 
-可闻音色/发音、实际导入绑定按钮、物理输入、真实麦克风与 Apple 在线识别、DeepSeek、睡眠/锁屏/Spaces、另一台 Mac/Intel 引擎/Gatekeeper、公证和本版云端流水线均未据此验收。旧 0.5 的两项 Minor 仍在 TODO，不在本版声称修复。
+2026-10-28 用户反馈“good，我体验是ok的”，确认 0.6.0 在当前 M4 上的整体体验通过。此反馈没有授权推送、标签、Release 或模型上传；本次只补本地验收记录，不重新运行无变化测试或操作日用 App。已安装 App 来源仍为 be165f6。
+
+## 未逐项确认的边界
+
+本机整体体验已获用户确认；具体音色/发音、各按钮与输入路径、首次等待/停止、最小窗浅深色、真实麦克风与 Apple 在线识别、DeepSeek、睡眠/锁屏/Spaces 等没有逐项反馈。另一台 Mac/Intel 引擎/Gatekeeper、公证和本版云端流水线仍未验证。旧 0.5 的两项 Minor 仍在 TODO，不在本版声称修复。
