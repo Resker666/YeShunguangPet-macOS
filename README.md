@@ -1,6 +1,6 @@
 # YeShunguangPet macOS
 
-为 Mac mini M4 日常使用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前源码版本 **0.5.1 / build28**，修复试用语音后系统音色通知与主线程互相等待、整个App卡住的问题，最低 macOS14.0。完整491项原生、13项离线发版、14项分发通过，真实系统只读音色查询与20次后台通知通过；双架构包与ARM本地恢复完成，见[修复记录](docs/voice-hang-fix-validation.md)。语音默认关闭，两窗共享，识别文字由你检查并手动发送；原[0.5.0记录](docs/system-voice-chat-validation.md)的两项Minor仍保留。实际录音、可闻效果与本版 Intel 运行待实机验证；本版推送、标签及 Release 需明确指令。
+为 Mac mini M4 日常使用制作的原生 Swift + AppKit 单角色桌宠，沿用 [Windows 版](https://github.com/Resker666/YeShunguangPet) 的皮肤格式与真实素材。当前源码 **0.6.0 / build29**，加入独立本地角色音色、文件夹语音包和按角色绑定，系统语音输入与回退保留。当前 M4 已通过真实新句生成与分阶段停止验证，最终评审和交付状态见[验证记录](docs/local-character-voice-validation.md)，使用方式见[本地音色](docs/local-voice-usage.md)。普通 App 不含模型/Python，独立引擎首版仅准备当前 M4；仍需用户主动导入、绑定、启用与试听。最低 macOS14.0，推送、标签与 Release 按明确指令执行。原[0.5.0记录](docs/system-voice-chat-validation.md)的两项 Minor 仍保留。
 
 此前完成0.1.20待机、隐藏、安静与专注各10分钟同源资源采样，并发现真实跨日崩溃。原始条件、结果、失败复测和0.1.21修复验证见[资源调查记录](docs/resource-baseline-validation.md)；这些数据不代表功耗、过夜稳定性或新版性能提升。
 
@@ -142,7 +142,7 @@ python3 scripts/smoke-app.py --app /绝对路径/YeShunguangPet.app --check-rest
 
 也可在 Xcode 打开 `YeShunguangPet.xcodeproj`，选择共享 scheme `YeShunguangPet`。测试使用临时目录，不修改个人配置。`.build/` 和 `dist/` 不进入 Git。
 
-本地角色语音目前处于独立实验阶段，尚未接入 App。源码、配置与模型清单可以进入 Git；权重、原始录音及运行环境单独保存，不随普通 App 构建或 CI 上传。胡桃候选的存放、备份和恢复边界见[本地语音模型管理](docs/local-voice-storage.md)。
+0.6.0 已接入本地角色音色。源码、配置与模型清单可以进入 Git；权重、原始录音及运行环境单独保存，不随普通 App 构建或 CI 上传。胡桃候选的存放、备份和恢复边界见[本地语音模型管理](docs/local-voice-storage.md)。
 
 构建需要 Xcode；使用 App 不需要。默认ARM App在`dist/YeShunguangPet.app`，Intel App在`dist/x86_64/YeShunguangPet.app`。两者主程序和嵌入框架架构必须一致；打包核对所选架构、Info.plist声明和两个Mach-O的实际macOS 14.0最低版本，拒绝错误标签、混合框架或最低版本不符的包。
 
