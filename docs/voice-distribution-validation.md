@@ -53,3 +53,20 @@
 评审范围判断及代价：外部推送/标签/上传/云端CI/匿名下载仍须具体指令，可能遭遇认证或服务失败；普通App永久公开发行另行授权，当前用户仍依赖会过期的CI包；第三方再分发权利披露保持，技术评审不能证明法律充分性，公开后可能仍需澄清或撤下；macOS14/其他M系列/Intel引擎/Gatekeeper/可闻质量不据当前证据宣称通过，其他设备可能失败；任意DMG与源包对应依靠事先挂载验证，本候选已做，未来维护者误选另一镜像会产生错误来源；任意第三方ZIP解压器未逐个验证，当前生成包/macOS解压正确不保证所有工具一致；单操作者流程无法原子排除另一远端写入者，最后一次远端复核之后仍可能被其他人修改。这七项均已在本计划ledger逐一记录，没有静默略过。
 
 最终公开指令后的上传/匿名回下载仍待完成。
+
+## 最终冻结候选，待公开审核
+
+最终干净工具来源`9c89d47d4f503a96084b78f92c154ef8762c17d8`，六附件位于`dist/语音分发/voice-assets-v1.0.0-final/`；原初次候选目录保留，不用于本次公开。
+
+| 最终附件 | 字节数 | SHA256 |
+| --- | ---: | --- |
+| YeShunguangPet-Voice-hutao-pilot-e1.zip | 160615265 | `4975c7524e726ac3165c5d8f3deededb6eba883ea2679960ddac8bb6cc33520c` |
+| YeShunguangPet-Voice-hutao-pilot-e1.zip.sha256 | 106 | `0425703c23cb98f8b26a142d0f605c6f58c6387e3a0401cf9c079c128a8ee343` |
+| YeShunguangPet-VoiceEngine-1.0.0-macOS-arm64.dmg | 2052866765 | `75a586de07c813345f80c7b34c5d6788a86518d6c45996c569c37f4b5e89c895` |
+| YeShunguangPet-VoiceEngine-1.0.0-macOS-arm64.dmg.sha256 | 115 | `26f4f9d3bca868a09b26e9625707df0dbecb173580db690148bc9c02de0bbac5` |
+| voice-assets.json | 4232 | `a85b56073a8782f77db83cccfa73eea3de3763858b2136b640ea2e717d7ee317` |
+| voice-installation.md | 2713 | `894e48a82facd8b52eca74971d286b5bb0ce1a9f146e48b2d143e3ffe3a26790` |
+
+最终DMG与ZIP字节/SHA和初次候选完全相同；安装说明只改公开文件名，中文内容原字节保留。小清单因工具来源改为修复提交而更新。最终六附件离线check-only退出0；再次用真实最终ZIP/DMG执行原生stage/discard与preview，通过后另行全量SHA/执行位核验28,828文件，清单保持、准确自有卷已弹出。原生步骤0.935秒、逐文件摘要10.995秒，证据`final-native-compatibility.json`；不调用语音生成或个人App。
+
+完整六文件大小/摘要与拟公开正文已保存`.build/voice-distribution-validation/final-publication-review.md`，实际API正文为`final-publication-body.md`。资源tag仍`voice-assets-v1.0.0`，预发布、非Latest。原始DMG/清单/e1模型/参考音频复核不变，新增Git对象均为小文本，没有模型/音频/runtime。Task6本地完成后保持Task7未完成，待具体推送并公开指令；没有创建远端标签、草稿或上传任何附件。

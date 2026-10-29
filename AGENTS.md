@@ -192,3 +192,5 @@
 - 用户随后于2026-10-29明确“认可计划，按本会话方式实施”，授权连续实施本地Tasks1–6、真实资源验证及一次最终整体评审，不逐任务确认、不另建worktree、不派逐任务实现/评审。仅使用本计划.superpowers/sdd/2026-10-29-macos-voice-distribution；Task7须待具体附件/正文就绪后的明确同步与公开指令。当前开始压缩可行性验证，不操作日用App/个人引擎/AI/Keychain；旧计划不恢复。
 
 - GitHub独立语音分发Tasks1–5完成，真实首候选UDZO2052866765字节、28,828文件/原清单/执行位及现有0.7公开stage/discard/preview通过，仅临时目录。本轮一次新gpt-6-astra/high整体评审375ff36..c8a0e9f为0Critical/2Important/1Minor：独立安装说明改ASCII voice-installation.md避免GitHub改名，ZIP固定最初三文件摘要防验证后被替换；两项同一pass经RED→GREEN，完整52Release/38LocalVoice通过，未派第二评审。泛化远端冲突提示的Minor入TODO；外部执行与七项未测/接口边界逐一记录本计划ledger。待用最终干净源码重生成候选并展示具体文件/正文，本轮未push/tag/上传/公开、未操作日用App/个人引擎/AI/Keychain；Task7仍待明确具体指令。
+
+- 独立语音分发本地Tasks1–6最终就绪：干净工具来源9c89d47，dist/语音分发/voice-assets-v1.0.0-final六文件，DMG2052866765/ZIP160615265字节与首候选相同，独立中文说明以voice-installation.md公开名保留内容；实际最终包再次原生stage/discard/preview、全28,828摘要/执行位、准确自有卷弹出及离线check-only通过，52Release/38LocalVoice。一次评审修复及七项范围判断/代价见docs/voice-distribution-validation.md，本计划ledger只归档不删除、Task7待具体同步公开指令；未操作日用App/私人资料或远端发布，不把本地完成写作匿名下载通过。
