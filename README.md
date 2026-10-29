@@ -8,6 +8,8 @@
 
 ## 安装体验版
 
+独立语音资源正在准备GitHub分发，当前尚未公开，见[资源下载与安装说明](docs/local-voice-downloads.md)。本地角色语音需要App0.7.0；下方公开0.1.19的普通桌宠下载不包含该功能。普通App安装包、公共引擎和角色音色包分开获取。
+
 普通用户从[最新 Release](https://github.com/Resker666/YeShunguangPet-macOS/releases/latest)下载安装包，无需从源码构建或登录后下载Actions产物。当前公开版为0.1.19，选择`arm64.dmg`用于M系列Mac，`x86_64.dmg`用于Intel实验测试。
 
 使用者不需要安装 Xcode、Swift 或其他依赖。日用包请选择 M 系列 Mac（arm64）；另提供x86_64实验包。两种包分开，文件名标明架构。从0.1.19起部署目标为14.0，0.1.18及更早的现有包仍要求15.0。既有版本有 M4 / macOS 27.0 日用证据，本版M4用户整体体验待确认，另有macOS 26.6.2云端自动回归；0.1.19已获用户在一台Sonoma14.8.9 / Intel Core i5黑苹果上的整体体验通过反馈，其他硬件/系统及未逐项确认的场景继续待测，见[兼容记录](docs/sonoma-compatibility-validation.md)。

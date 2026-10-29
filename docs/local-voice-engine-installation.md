@@ -2,6 +2,8 @@
 
 0.7.0 已本地交付；当前M4的安装、自检、搬移生成和限制见[验证记录](portable-voice-engine-validation.md)。普通 App、公共引擎和角色音色包分开保存，更新 App 不会自动重装引擎。
 
+GitHub资源分发正在本地准备，尚未上传/公开，下载状态与逐步安装见[资源下载说明](local-voice-downloads.md)。新压缩容器已验证约2.05GB且payload不变，原2.31GB本地DMG继续保留，不能混用两者摘要。
+
 ## 使用者安装流程
 
 1. 在 Apple Silicon Mac 上打开独立引擎 DMG。首版只提供 arm64；macOS 14+为目标，当前真实设备验证仅覆盖 M4。
