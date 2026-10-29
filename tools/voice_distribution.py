@@ -52,15 +52,22 @@ def checked_reader(path, maximum=MAX_ASSET):
     path = Path(path)
     try:
         fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
-        with os.fdopen(fd, 'rb') as f:
-            before = os.fstat(f.fileno())
-            if not stat.S_ISREG(before.st_mode) or not 0 <= before.st_size <= maximum:
-                raise ValueError('invalid file type or size: '+path.name)
-            yield f, before
-            if _stamp(before) != _stamp(os.fstat(f.fileno())) or _stamp(before) != _stamp(path.lstat()):
-                raise ValueError('source changed while reading: '+path.name)
     except OSError as error:
         raise ValueError('file unavailable: '+path.name) from error
+    with os.fdopen(fd, 'rb') as f:
+        try:
+            before = os.fstat(f.fileno())
+        except OSError as error:
+            raise ValueError('file unavailable: '+path.name) from error
+        if not stat.S_ISREG(before.st_mode) or not 0 <= before.st_size <= maximum:
+            raise ValueError('invalid file type or size: '+path.name)
+        # Exceptions in the consumer (e.g. a failed network send) belong to it.
+        yield f, before
+        try:
+            if _stamp(before) != _stamp(os.fstat(f.fileno())) or _stamp(before) != _stamp(path.lstat()):
+                raise ValueError('source changed while reading: '+path.name)
+        except OSError as error:
+            raise ValueError('file unavailable: '+path.name) from error
 
 def snapshot_asset(path):
     path = Path(path)
