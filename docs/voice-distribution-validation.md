@@ -70,3 +70,15 @@
 最终DMG与ZIP字节/SHA和初次候选完全相同；安装说明只改公开文件名，中文内容原字节保留。小清单因工具来源改为修复提交而更新。最终六附件离线check-only退出0；再次用真实最终ZIP/DMG执行原生stage/discard与preview，通过后另行全量SHA/执行位核验28,828文件，清单保持、准确自有卷已弹出。原生步骤0.935秒、逐文件摘要10.995秒，证据`final-native-compatibility.json`；不调用语音生成或个人App。
 
 完整六文件大小/摘要与拟公开正文已保存`.build/voice-distribution-validation/final-publication-review.md`，实际API正文为`final-publication-body.md`。资源tag仍`voice-assets-v1.0.0`，预发布、非Latest。原始DMG/清单/e1模型/参考音频复核不变，新增Git对象均为小文本，没有模型/音频/runtime。Task6本地完成后保持Task7未完成，待具体推送并公开指令；没有创建远端标签、草稿或上传任何附件。
+
+## 已授权同步；公开等待认证（2026-10-29）
+
+用户在最终六附件/正文与来源未知项展示后，明确选择“推送代码并公开这份资源预发布”。普通快进原子推送已完成：main和codex/macos-voice-distribution均到6f802cd7b5164fd2dbdadc4bf19739bc6713016e；资源轻量标签voice-assets-v1.0.0准确指向9c89d47d4f503a96084b78f92c154ef8762c17d8。没有强推或改资源字节。
+
+[主干CI40861117830](https://github.com/Resker666/YeShunguangPet-macOS/actions/runs/40861117830)首轮成功；[开发分支40861117950](https://github.com/Resker666/YeShunguangPet-macOS/actions/runs/40861117950)第二次成功。两路均597原生（192Core/405Mac）、52Release、38LocalVoice、17分发测试通过，arm64与x86_64构建/打包/来源核对/Artifacts上传成功，普通Release草稿步骤跳过。本轮只核对新云端日志和附件元数据，未另行下载App产物，不冒充本轮云端App回下载验证。
+
+开发分支首次失败是未变化的LocalVoiceProcessTests.testReadyFloodOrTimeoutKeepsMainActorResponsiveAndKillsOnlyOwnedPID第25行：150ms启动窗口内心跳ticks=3未满足>3；Core192、新Release52/LocalVoice38均通过。相同提交的主干原生全通过；保留首次失败记录后，仅重跑失败job一次，原断言与全部后续步骤通过。没有修改产品或测试阈值，不把这次不稳定性藏掉；已列TODO后续处理。证据位于忽略目录push-verification.json、feature-ci-first-failure.json及main-cloud-log-evidence.json。
+
+当前公开资源Release按tag读取仍404，六附件未上传、未公开、未匿名下载。终端没有GH_TOKEN/GITHUB_TOKEN或gh，现有GitHub连接器无Release写接口；Safari原生CUA选择被工具的URL访问规则终止，没有绕过或再读该页面。已提供现成CLI登录/网页发布接续文档，等待用户完成必要认证。此为能力/认证阻挡，不是再次请求发布许可；Task7保持未完成、ledger保留。
+
+最后读取普通App Latest仍是v0.1.19，ID420471790、来源37a73f0cd163dbb172300d0df269a4b7575180b5。资源标签推送不等于Release公开，也没有另发App0.7.0。本次文档收尾不改变已验证程序/工具；仅Markdown提交使用[skip ci]避免再次构建相同程序，云端通过的实际来源仍为6f802cd，文档提交未另建App产物。最终匿名回下载和公开状态/完整来源/Latest核验将在认证接续后按原授权完成。

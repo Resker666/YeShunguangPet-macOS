@@ -196,3 +196,5 @@
 - 独立语音分发本地Tasks1–6最终就绪：干净工具来源9c89d47，dist/语音分发/voice-assets-v1.0.0-final六文件，DMG2052866765/ZIP160615265字节与首候选相同，独立中文说明以voice-installation.md公开名保留内容；实际最终包再次原生stage/discard/preview、全28,828摘要/执行位、准确自有卷弹出及离线check-only通过，52Release/38LocalVoice。一次评审修复及七项范围判断/代价见docs/voice-distribution-validation.md，本计划ledger只归档不删除、Task7待具体同步公开指令；未操作日用App/私人资料或远端发布，不把本地完成写作匿名下载通过。
 
 - 用户于2026-10-29在具体六附件及正文审核后明确选择“推送代码并公开这份资源预发布”，授权普通快进同步工具分支与main、固定voice-assets-v1.0.0工具来源9c89d47、上传并公开六附件及匿名下载/Latest复核；不含普通App公开Release。当前任务7开始，fetch确认远端main仍375ff36且无额外改动。终端无主动提供的GitHub发布凭据，现有连接器无Release写入接口；Safari自动化被工具URL访问限制终止，不绕过、不读私人凭据。代码同步与云端核验继续，公开结果按真实状态记录，授权不等于已成功发布。
+
+- 2026-10-29语音资源授权同步实际完成：main/工具分支普通快进至6f802cd，voice-assets-v1.0.0轻量tag固定9c89d47；主干40861117830首轮与开发40861117950第二次均597原生/52Release/38LocalVoice/17分发及双架构上传通过，普通草稿跳过。开发首次既有LocalVoiceProcess心跳ticks3>3断言失败、同源重跑通过，原证据与TODO保留，无代码/阈值改动。本轮未回下载新App。Release仍404、模型六附件未上传/公开/匿名下载，缺主动提供的发布认证；Safari CUA被URL规则终止，不绕过，待用户CLI登录或网页接续，授权保持无须重批。仅Markdown事实收尾使用[skip ci]，程序云端验证来源6f802cd不变；Task7未完成、只保留本计划ledger，不碰个人App/AI/Keychain。

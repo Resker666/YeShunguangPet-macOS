@@ -1,6 +1,6 @@
 # 独立语音资源下载与安装
 
-2026-10-29：资源分发工具本地准备中，尚未上传或公开。计划使用现有项目的`voice-assets-v1.0.0`独立资源预发布；真正发布及匿名下载校验后，在本页补充长期链接。普通App更新与资源版本分别管理。
+2026-10-29：资源工具代码已同步main与开发分支，资源标签`voice-assets-v1.0.0`已固定到9c89d47。六附件本地校验就绪，但Release尚未创建、附件尚未上传或公开；当前等待可用的GitHub发布认证。用户已明确批准本份资源公开，无需重复审批；真正发布及匿名下载校验后，在本页补充长期链接。普通App更新与资源版本分别管理。
 
 需要App **0.7.0/build30或后续兼容版**、M系列Mac，以及两份资源：
 
@@ -10,7 +10,7 @@
 | `YeShunguangPet-Voice-hutao-pilot-e1.zip` | 胡桃试用音色，先解压后导入 |
 | 两份对应`.sha256`、`voice-assets.json`、`voice-installation.md` | 文件摘要、来源/兼容信息与安装步骤 |
 
-目前App0.7.0仍是[本次Actions构建](https://github.com/Resker666/YeShunguangPet-macOS/actions/runs/40832259690)的需登录下载产物，按CI设置保留14天；资源预发布不等于另行发布App。公开Latest的旧0.1.19不支持这些本地角色语音功能，不能用作兼容App入口。普通App公开Release等待单独发布指令。
+目前App0.7.0仍是[本次Actions构建](https://github.com/Resker666/YeShunguangPet-macOS/actions/runs/40861117830)的需登录下载产物，按CI设置保留14天；资源预发布不等于另行发布App。公开Latest的旧0.1.19不支持这些本地角色语音功能，不能用作兼容App入口。普通App公开Release等待单独发布指令。
 
 ## 安装引擎
 
