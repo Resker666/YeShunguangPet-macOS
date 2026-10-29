@@ -11,3 +11,22 @@
 转换和挂载命令产生当前系统的hdiutil弃用提示，但均实际退出0；未把提示改写为兼容故障。当前M4实际挂载和完整性通过不等于macOS14、其他M系列、Intel或外机Gatekeeper通过。
 
 证据：忽略目录`.build/voice-distribution-validation/compression-result.json`、`compression-trial.py`与`logs/`。新候选暂存该目录，原始DMG、e1、实验与备份保留。此阶段未创建六附件成品、远端标签/草稿或公开发布。
+
+## 六附件本地候选
+
+已从干净工具来源`3382e44085cb6ac674a832d81fc3b1a9940bdb49`生成`dist/语音分发/voice-assets-v1.0.0/`，尚未上传。App兼容基线375ff36与上游b4570b8分别记录；App二进制仍0.7.0/build30，源码和普通八附件流程未改。
+
+| 附件 | 字节数 | SHA256 |
+| --- | ---: | --- |
+| 引擎DMG | 2052866765 | `75a586de07c813345f80c7b34c5d6788a86518d6c45996c569c37f4b5e89c895` |
+| 引擎DMG.sha256 | 115 | `26f4f9d3bca868a09b26e9625707df0dbecb173580db690148bc9c02de0bbac5` |
+| 胡桃e1 ZIP | 160615265 | `4975c7524e726ac3165c5d8f3deededb6eba883ea2679960ddac8bb6cc33520c` |
+| 胡桃ZIP.sha256 | 106 | `0425703c23cb98f8b26a142d0f605c6f58c6387e3a0401cf9c079c128a8ee343` |
+| voice-assets.json | 4232 | `9090c0e1747df71f89cbf033bf4a47ee6e43083b98e433928a8626f374a224cf` |
+| 安装说明.md | 2713 | `894e48a82facd8b52eca74971d286b5bb0ce1a9f146e48b2d143e3ffe3a26790` |
+
+50项Release离线测试（含原13项App发版）及38项LocalVoice测试通过。新增测试用小PCM/假模型、假HTTP/API，不上传或访问真实凭据；默认/check-only路径不初始化认证客户端。覆盖严格六附件、64KiB小文件、ZIP路径/类型/CRC和三文件布局、PCM、保留源/拒绝覆盖、流式发送/中断/源变化、精确草稿补传/冲突/显式公开、匿名下载和Latest保护。普通App CI会自动发现新增Release测试，工作流与模型上传范围没有改变。
+
+源包小文本的独立只读调查未发现当前用户实验目录、个人配置或凭据；发现的上游训练/CI路径与原来源资料一致，保留原字节。该调查只覆盖指定类型的小文本，不将其夸大为任意二进制内容检查。来源许可补充见`local-voice-resource-notices.md`；ERes checkpoint、G2PW内部对应及胡桃公开分发声明仍未核实，不写作已取得许可。
+
+当前只完成本地准备。真实0.7.0原生接口兼容、一次最终整体代码评审及最终公开指令后的上传/匿名回下载，以后续事实记录为准。
