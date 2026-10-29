@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python标准库（兼容现有本机/CI的python3，无新增依赖）、系统hdiutil/ditto、现有PetCore公开接口作隔离兼容探针；GitHub Releases REST API与现有用户登录能力。
 
-**Spec:** `docs/superpowers/specs/2026-10-29-macos-voice-distribution-design.md`，用户于2026-10-29明确“认可设计，进入实施计划”。当前计划待审，不把设计批准写成产品/工具实施已批准。
+**Spec:** `docs/superpowers/specs/2026-10-29-macos-voice-distribution-design.md`，用户于2026-10-29先认可设计，随后明确“认可计划，按本会话方式实施”。本计划已获准，真实进度以本计划ledger及验证记录为准，不代表已交付或发布。
 
 ## Global Constraints
 
@@ -124,4 +124,4 @@
 
 作者自行审查，不委派计划评审：设计的大小/容器限制由Task1/2覆盖，六附件/来源/ZIP由Task2/5覆盖，流式上传/来源/补传/显式状态由Task3/4覆盖，真实现有App兼容与一次评审由Task6覆盖，具体公开指令与匿名复核/Latest由Task7覆盖。五项Review Focus均有归属及可观察断言；四个打包接口、两个数据值和发布/下载接口在各任务保持同名，明确Core preview不代替全摘要、内部Swift方法不跨模块调用、原App脚本不复用大文件read_bytes、清单不自引用。
 
-尚待用户审核本计划。沿用已选Native本会话方式，不重新询问执行模式；计划通过后连续推进本地Tasks1–6，不逐任务等待确认，Task7只等待已说明的最终具体同步/公开指令或必要登录操作。
+用户已审核并认可本计划。沿用已选Native本会话方式，不重新询问执行模式；连续推进本地Tasks1–6，不逐任务等待确认，Task7只等待已说明的最终具体同步/公开指令或必要登录操作。
