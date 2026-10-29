@@ -8,7 +8,7 @@
 | --- | --- |
 | `YeShunguangPet-VoiceEngine-1.0.0-macOS-arm64.dmg` | 公共推理引擎，约2.05GB，只需独立安装一次 |
 | `YeShunguangPet-Voice-hutao-pilot-e1.zip` | 胡桃试用音色，先解压后导入 |
-| 两份对应`.sha256`、`voice-assets.json`、`安装说明.md` | 文件摘要、来源/兼容信息与安装步骤 |
+| 两份对应`.sha256`、`voice-assets.json`、`voice-installation.md` | 文件摘要、来源/兼容信息与安装步骤 |
 
 目前App0.7.0仍是[本次Actions构建](https://github.com/Resker666/YeShunguangPet-macOS/actions/runs/40832259690)的需登录下载产物，按CI设置保留14天；资源预发布不等于另行发布App。公开Latest的旧0.1.19不支持这些本地角色语音功能，不能用作兼容App入口。普通App公开Release等待单独发布指令。
 

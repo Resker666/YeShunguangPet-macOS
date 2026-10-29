@@ -19,7 +19,7 @@ import zipfile
 
 ENGINE = 'YeShunguangPet-VoiceEngine-1.0.0-macOS-arm64.dmg'
 VOICE = 'YeShunguangPet-Voice-hutao-pilot-e1.zip'
-FILES = frozenset((ENGINE, ENGINE+'.sha256', VOICE, VOICE+'.sha256', 'voice-assets.json', '安装说明.md'))
+FILES = frozenset((ENGINE, ENGINE+'.sha256', VOICE, VOICE+'.sha256', 'voice-assets.json', 'voice-installation.md'))
 PROFILE = 'gpt-sovits-v2proplus-cpu1'
 APP_COMMIT = '375ff361e02de30f5ccab8a03e9f5b3412d44800'
 UPSTREAM = 'b4570b876f5c086819ba84e3215472733c6a7b70'
@@ -228,9 +228,11 @@ def build_voice_zip(source, output, *, notices):
     if os.path.lexists(output): raise ValueError('ZIP output exists')
     if {p.name for p in source.iterdir()} != {'voice.json','s2.pth','reference.wav'}: raise ValueError('voice folder requires exactly three files')
     raw=_read(source/'voice.json',16384);m=_voice_manifest(raw)
+    pinned={'voice.json':(len(raw),hashlib.sha256(raw).hexdigest())}
     for key in ['model','reference']:
         a=snapshot_asset(source/m[key]['file'])
         if a.bytes!=m[key]['bytes'] or a.sha256!=m[key]['sha256']: raise ValueError('voice source digest mismatch')
+        pinned[m[key]['file']]=(a.bytes,a.sha256)
     _pcm(_read(source/'reference.wav',1048576)); notice=_read(notices,65536)
     output.parent.mkdir(parents=True,exist_ok=True)
     owned=None
@@ -241,7 +243,13 @@ def build_voice_zip(source, output, *, notices):
                 entry=zipfile.ZipInfo('胡桃-试用-e1/'+name,(2026,1,1,0,0,0));entry.compress_type=zipfile.ZIP_DEFLATED
                 entry.create_system=3;entry.external_attr=(stat.S_IFREG|0o644)<<16
                 with checked_reader(source/name) as (f,s),z.open(entry,'w') as target:
-                    shutil.copyfileobj(f,target,CHUNK)
+                    if s.st_size!=pinned[name][0]: raise ValueError('voice source changed before archiving')
+                    h=hashlib.sha256();total=0
+                    for chunk in iter(lambda:f.read(CHUNK),b''):
+                        total+=len(chunk)
+                        if total>pinned[name][0]: raise ValueError('voice source grew while archiving')
+                        target.write(chunk);h.update(chunk)
+                    if (total,h.hexdigest())!=pinned[name]: raise ValueError('voice source changed after validation')
             entry=zipfile.ZipInfo('来源与许可.md',(2026,1,1,0,0,0));entry.create_system=3;entry.external_attr=(stat.S_IFREG|0o644)<<16
             z.writestr(entry,notice)
         verify_voice_zip(output)
@@ -287,7 +295,7 @@ def build_bundle(engine_dmg, voice_zip, output, *, tools_commit, app_commit, rea
             _copy_verified(Path(source),stage/name);a=snapshot_asset(stage/name)
             records.append({'name':name,'bytes':a.bytes,'sha256':a.sha256})
             (stage/(name+'.sha256')).write_text(a.sha256+'  '+name+'\n',encoding='utf-8')
-        (stage/'安装说明.md').write_bytes(installation)
+        (stage/'voice-installation.md').write_bytes(installation)
         manifest=dict(schemaVersion=1,version='1.0.0',toolsCommit=tools_commit,
             app={'minimumVersion':'0.7.0','sourceCommit':app_commit},
             engine={'id':'gpt-sovits-macos-arm64','version':'1.0.0','profile':PROFILE,'architecture':'arm64','minimumOS':'14.0','upstreamCommit':UPSTREAM},
@@ -303,7 +311,7 @@ def build_bundle(engine_dmg, voice_zip, output, *, tools_commit, app_commit, rea
 def read_bundle(folder, *, version, tools_commit):
     folder=Path(folder);_directory(folder)
     if {p.name for p in folder.iterdir()}!=FILES: raise ValueError('expected exactly six resource assets')
-    records=tuple(snapshot_asset(folder/name,maximum=MAX_ASSET if name in (ENGINE,VOICE) else 65536 if name in ('voice-assets.json','安装说明.md') else 1024) for name in sorted(FILES))
+    records=tuple(snapshot_asset(folder/name,maximum=MAX_ASSET if name in (ENGINE,VOICE) else 65536 if name in ('voice-assets.json','voice-installation.md') else 1024) for name in sorted(FILES))
     by_name={a.name:a for a in records}
     m=decode_json(_read(folder/'voice-assets.json',65536),65536)
     if set(m)!={'schemaVersion','version','toolsCommit','app','engine','voice','assets','provenance','installation'} or type(m['schemaVersion']) is not int or m['schemaVersion']!=1 or m['version']!=version or version!='1.0.0' or not _hex(tools_commit,40) or m['toolsCommit']!=tools_commit:
@@ -314,7 +322,7 @@ def read_bundle(folder, *, version, tools_commit):
     if not isinstance(m['assets'],list) or any(not isinstance(a,dict) or type(a.get('bytes')) is not int for a in m['assets']) or m['assets']!=expected: raise ValueError('resource bytes or digest mismatch')
     for name in [ENGINE,VOICE]:
         if _read(folder/(name+'.sha256'),1024)!=(by_name[name].sha256+'  '+name+'\n').encode(): raise ValueError('checksum mismatch')
-    installation=by_name['安装说明.md']
+    installation=by_name['voice-installation.md']
     if not isinstance(m['installation'],dict) or type(m['installation'].get('bytes')) is not int or m['installation']!={'bytes':installation.bytes,'sha256':installation.sha256}: raise ValueError('instructions changed')
     voice,voice_sha=verify_voice_zip(folder/VOICE)
     if m['voice']!={'id':'hutao-pilot-e1','manifestSHA256':voice_sha}: raise ValueError('voice identity mismatch')

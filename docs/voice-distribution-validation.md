@@ -12,7 +12,7 @@
 
 证据：忽略目录`.build/voice-distribution-validation/compression-result.json`、`compression-trial.py`与`logs/`。新候选暂存该目录，原始DMG、e1、实验与备份保留。此阶段未创建六附件成品、远端标签/草稿或公开发布。
 
-## 六附件本地候选
+## 初次六附件本地候选（已保留，最终候选另列）
 
 已从干净工具来源`3382e44085cb6ac674a832d81fc3b1a9940bdb49`生成`dist/语音分发/voice-assets-v1.0.0/`，尚未上传。App兼容基线375ff36与上游b4570b8分别记录；App二进制仍0.7.0/build30，源码和普通八附件流程未改。
 
@@ -39,4 +39,17 @@
 
 50项Release和38项LocalVoice最终离线回归再次通过，真实六附件check-only通过。新增Git对象审计没有模型、录音或runtime，最大blob小于1MiB。具体候选发布正文已渲染到忽略目录`publication-body.md`，带完整工具提交及资源清单摘要标记。
 
-一次最终整体代码评审和最终公开指令后的上传/匿名回下载仍待完成。
+## 唯一一次整体评审与修复
+
+新gpt-6-astra/high只读评审覆盖375ff36..c8a0e9f，结果0 Critical、2 Important、1 Minor。两个Important经作者核实，均在同一次修复中完成RED→GREEN，没有第二次评审：
+
+1. GitHub对附件名存在规范化行为，[官方API说明](https://docs.github.com/en/rest/releases/assets#upload-a-release-asset)及[上游维护者复现](https://github.com/softprops/action-gh-release/issues/542#issuecomment-4063661020)支持该风险。模拟重命名服务器让原中文独立说明在首次准备和补传时均失败；改为ASCII `voice-installation.md`后同一草稿、重试及公开流程通过。中文说明内容与六附件数量不变，不放宽远端冲突检查。原设计/计划的最小文件名修正已记录，最终具体公开审核仍保留。
+2. 在ZIP创建前替换已验证的voice.json，或连同模型/参考音频替换为另一套内部一致的资料，原实现均错误接受。现对最初清单、模型与参考音频的长度/SHA固定预期，流式归档实际写入字节必须匹配。三个替换场景由原来的3个失败断言变为拒绝成功，失败只清理本次ZIP，源资料保留。没有证据表明初次真实候选发生该竞态。
+
+修复后完整52项Release及38项LocalVoice通过。RED日志为`.superpowers/sdd/2026-10-29-macos-voice-distribution/final-review-fixes-red.log`（39项语音相关测试，4个失败断言），GREEN为同目录`final-review-fixes-green.log`（52项完整Release）。最终实际包须重新由干净工具提交生成，原候选不覆盖。
+
+暂缓的Minor：远端冲突报错未列明附件名、Release ID或差异字段；拒绝覆盖的行为正确，但恢复操作需要手工查看六附件。本轮不增加第二次修复或评审，此项入TODO。
+
+评审范围判断及代价：外部推送/标签/上传/云端CI/匿名下载仍须具体指令，可能遭遇认证或服务失败；普通App永久公开发行另行授权，当前用户仍依赖会过期的CI包；第三方再分发权利披露保持，技术评审不能证明法律充分性，公开后可能仍需澄清或撤下；macOS14/其他M系列/Intel引擎/Gatekeeper/可闻质量不据当前证据宣称通过，其他设备可能失败；任意DMG与源包对应依靠事先挂载验证，本候选已做，未来维护者误选另一镜像会产生错误来源；任意第三方ZIP解压器未逐个验证，当前生成包/macOS解压正确不保证所有工具一致；单操作者流程无法原子排除另一远端写入者，最后一次远端复核之后仍可能被其他人修改。这七项均已在本计划ledger逐一记录，没有静默略过。
+
+最终公开指令后的上传/匿名回下载仍待完成。

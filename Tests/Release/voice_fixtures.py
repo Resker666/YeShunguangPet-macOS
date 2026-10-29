@@ -10,7 +10,7 @@ APP_COMMIT = '375ff361e02de30f5ccab8a03e9f5b3412d44800'
 UPSTREAM = 'b4570b876f5c086819ba84e3215472733c6a7b70'
 ENGINE = 'YeShunguangPet-VoiceEngine-1.0.0-macOS-arm64.dmg'
 VOICE = 'YeShunguangPet-Voice-hutao-pilot-e1.zip'
-FILES = {ENGINE, ENGINE + '.sha256', VOICE, VOICE + '.sha256', 'voice-assets.json', '安装说明.md'}
+FILES = {ENGINE, ENGINE + '.sha256', VOICE, VOICE + '.sha256', 'voice-assets.json', 'voice-installation.md'}
 
 def sha(data):
     return hashlib.sha256(data).hexdigest()

@@ -16,7 +16,7 @@
 - 单附件`0 < bytes < 2**31`，小清单上限64KiB、正文上限64KiB；文件须普通、非链接。引擎原清单6,897,725字节、28,828份payload/3,010,860,533字节，原DMG2,310,377,547字节；不能删内容或改权重来过上限。
 - 原件只读：`dist/引擎包/YeShunguangPet-VoiceEngine-1.0.0-macOS-arm64.dmg`、`.build/portable-voice-engine-validation/moved-inputs/final-engine-package`、`dist/语音包/胡桃-试用-e1`；新输出用`dist/语音分发/voice-assets-v1.0.0/`，实验与备份不移动，已有输出拒绝覆盖。
 - 先UDZO level9，再按结果验证ULMO；不采用UDBZ、分段DMG、外部账号/付费托管、App下载/合并器。两种完整单DMG均未达标则记录实测并另行确认路线，不继续上传不可用附件。
-- 六个公开附件：`YeShunguangPet-VoiceEngine-1.0.0-macOS-arm64.dmg`及`.sha256`，`YeShunguangPet-Voice-hutao-pilot-e1.zip`及`.sha256`，`voice-assets.json`，`安装说明.md`。
+- 六个公开附件：`YeShunguangPet-VoiceEngine-1.0.0-macOS-arm64.dmg`及`.sha256`，`YeShunguangPet-Voice-hutao-pilot-e1.zip`及`.sha256`，`voice-assets.json`，`voice-installation.md`。
 - 资源预发布标签`voice-assets-v1.0.0`、名称“本地语音资源1.0.0（M系列预览）”、`prerelease=true`、`make_latest='false'`。发布工具完整提交、App兼容基线`375ff361e02de30f5ccab8a03e9f5b3412d44800`和引擎上游提交`b4570b876f5c086819ba84e3215472733c6a7b70`分别记录。
 - 普通App CI只运行小夹具，不消费真实模型；现有`prepare-release.py`与普通App的八附件/≤256MiB合同保持。新增`Tests/Release/test_*.py`由既有发现命令自动执行，无需改工作流。
 - 不读取私人AI/正式Keychain/私钥/令牌文件，不申请麦克风、不调用生成或朗读，不自动清除隔离属性。认证使用用户主动提供给受支持工具的登录/环境凭据，秘密不输出；无法认证则保留已校验结果并明确待用户操作。
@@ -125,3 +125,5 @@
 作者自行审查，不委派计划评审：设计的大小/容器限制由Task1/2覆盖，六附件/来源/ZIP由Task2/5覆盖，流式上传/来源/补传/显式状态由Task3/4覆盖，真实现有App兼容与一次评审由Task6覆盖，具体公开指令与匿名复核/Latest由Task7覆盖。五项Review Focus均有归属及可观察断言；四个打包接口、两个数据值和发布/下载接口在各任务保持同名，明确Core preview不代替全摘要、内部Swift方法不跨模块调用、原App脚本不复用大文件read_bytes、清单不自引用。
 
 用户已审核并认可本计划。沿用已选Native本会话方式，不重新询问执行模式；连续推进本地Tasks1–6，不逐任务等待确认，Task7只等待已说明的最终具体同步/公开指令或必要登录操作。
+
+最终评审修正：独立安装说明的原拟名称`安装说明.md`改为`voice-installation.md`，避免GitHub文件名规范化破坏精确上传和下载合同；中文正文不变。见设计补记、执行ledger及验证记录，最终公开仍待具体指令。

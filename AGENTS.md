@@ -190,3 +190,5 @@
 - 用户于2026-10-29明确认可语音云端分发书面设计并要求进入实施计划。七项计划docs/superpowers/plans/2026-10-29-macos-voice-distribution.md已由主执行者自审，覆盖真实单DMG压缩/全量内容、六附件/严格ZIP、流式上传、精确来源与可恢复资源Release、安装/许可说明、现有App隔离兼容/一次最终整体评审，以及具体同步公开指令后的匿名下载和Latest核验。额外只读调查只核对现有接口/测试路径，不是计划评审。保持本会话Native原地方式，不重新询问执行模式；当前待计划审核，未压缩或实现工具、未写ledger、未推送/建tag/上传/公开资源。0.7.0普通App发行仍独立，原三文件/引擎payload/个人资料均不改；未知来源权利如实列明，不冒称MIT或已获公开许可。
 
 - 用户随后于2026-10-29明确“认可计划，按本会话方式实施”，授权连续实施本地Tasks1–6、真实资源验证及一次最终整体评审，不逐任务确认、不另建worktree、不派逐任务实现/评审。仅使用本计划.superpowers/sdd/2026-10-29-macos-voice-distribution；Task7须待具体附件/正文就绪后的明确同步与公开指令。当前开始压缩可行性验证，不操作日用App/个人引擎/AI/Keychain；旧计划不恢复。
+
+- GitHub独立语音分发Tasks1–5完成，真实首候选UDZO2052866765字节、28,828文件/原清单/执行位及现有0.7公开stage/discard/preview通过，仅临时目录。本轮一次新gpt-6-astra/high整体评审375ff36..c8a0e9f为0Critical/2Important/1Minor：独立安装说明改ASCII voice-installation.md避免GitHub改名，ZIP固定最初三文件摘要防验证后被替换；两项同一pass经RED→GREEN，完整52Release/38LocalVoice通过，未派第二评审。泛化远端冲突提示的Minor入TODO；外部执行与七项未测/接口边界逐一记录本计划ledger。待用最终干净源码重生成候选并展示具体文件/正文，本轮未push/tag/上传/公开、未操作日用App/个人引擎/AI/Keychain；Task7仍待明确具体指令。

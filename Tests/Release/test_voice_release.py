@@ -73,6 +73,27 @@ class VoiceReleaseTests(unittest.TestCase):
         self.assertEqual(posts[0][2]['make_latest'],'false')
         self.assertEqual(self.api.latest['tag_name'],'v0.1.19')
 
+    def test_six_asset_release_survives_github_filename_normalization(self):
+        original=self.api.request
+        def normalizing_server(method,path,**kwargs):
+            result=original(method,path,**kwargs)
+            asset=kwargs.get('asset')
+            if method=='POST' and asset is not None and not asset.name.isascii():
+                self.api.assets[-1]['name']='default.md'
+                result['name']='default.md'
+            return result
+        self.api.request=normalizing_server
+        try:
+            first=vr.prepare_voice_release(self.api,self.bundle,self.notes)
+            again=vr.prepare_voice_release(self.api,self.bundle,self.notes)
+            published=vr.publish_voice_release(self.api,self.bundle,self.notes)
+        except ValueError as error:
+            self.fail('Public filename contract cannot survive GitHub normalization: '+str(error))
+        self.assertEqual(first['id'],again['id'])
+        self.assertEqual(len(published['assets']),6)
+        self.assertFalse(published['draft'])
+        self.assertTrue(all(a['name'].isascii() for a in published['assets']))
+
     def test_retry_only_uploads_missing_files_after_interrupt(self):
         ordered=sorted(FILES);self.api.fail_name=ordered[2];self.api.fail_after_store=True
         with self.assertRaises(vr.VoiceAPIError):vr.prepare_voice_release(self.api,self.bundle,self.notes)
@@ -111,7 +132,7 @@ class VoiceReleaseTests(unittest.TestCase):
         self.assertEqual(len([c for c in self.api.calls if c[0]!='GET']),mutations)
 
     def test_source_changed_before_network_is_rejected(self):
-        (self.root/'assets/安装说明.md').write_text('changed')
+        (self.root/'assets/voice-installation.md').write_text('changed')
         with self.assertRaises(ValueError):vr.prepare_voice_release(self.api,self.bundle,self.notes)
         self.assertEqual(self.api.calls,[])
 

@@ -140,6 +140,33 @@ class VoiceAssetTests(unittest.TestCase):
         self.assertNotEqual(proc.returncode, 0)
         self.assertEqual((out / 'sentinel').read_bytes(), b'keep')
 
+    def test_zip_rejects_consistent_source_replacement_after_initial_validation(self):
+        # Initial validation must remain authoritative even if a different,
+        # internally consistent source appears before the first archive write.
+        for changed in ['manifest','model','reference']:
+            with self.subTest(changed=changed):
+                case=self.root/changed;case.mkdir()
+                folder,image,readme,notices=inputs(case)
+                original_manifest=(folder/'voice.json').read_bytes()
+                out=case/'race.zip';constructor=zipfile.ZipFile
+                def replace_source(path,mode='r',**kwargs):
+                    if mode=='x':
+                        manifest=json.loads(original_manifest)
+                        if changed=='manifest':manifest['promptText']='换了一份转写。'
+                        else:
+                            name=manifest[changed]['file']
+                            data=bytearray((folder/name).read_bytes());data[-1]^=1
+                            (folder/name).write_bytes(data)
+                            manifest[changed]['sha256']=sha(data)
+                        (folder/'voice.json').write_text(json.dumps(manifest,ensure_ascii=False))
+                    return constructor(path,mode,**kwargs)
+                with patch.object(vd.zipfile,'ZipFile',side_effect=replace_source):
+                    with self.assertRaises(ValueError):
+                        vd.build_voice_zip(folder,out,notices=notices)
+                self.assertFalse(out.exists())
+                self.assertNotEqual((folder/'voice.json').read_bytes(),original_manifest)
+                self.assertTrue((folder/'s2.pth').is_file())
+
     def test_zip_creation_race_does_not_delete_someone_elses_file(self):
         folder, image, readme, notices = inputs(self.root)
         out = self.root / 'raced.zip'
@@ -187,7 +214,7 @@ class VoiceAssetTests(unittest.TestCase):
 
     def test_installation_instructions_have_a_64k_limit(self):
         bundle(vd,self.root)
-        path=self.root/'assets/安装说明.md';data=b'x'*65537;path.write_bytes(data)
+        path=self.root/'assets/voice-installation.md';data=b'x'*65537;path.write_bytes(data)
         catalog=self.root/'assets/voice-assets.json';m=json.loads(catalog.read_text())
         m['installation']={'bytes':len(data),'sha256':sha(data)};catalog.write_text(json.dumps(m))
         with self.assertRaises(ValueError):vd.read_bundle(self.root/'assets',version='1.0.0',tools_commit=COMMIT)
