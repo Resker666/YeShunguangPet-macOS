@@ -29,4 +29,14 @@
 
 源包小文本的独立只读调查未发现当前用户实验目录、个人配置或凭据；发现的上游训练/CI路径与原来源资料一致，保留原字节。该调查只覆盖指定类型的小文本，不将其夸大为任意二进制内容检查。来源许可补充见`local-voice-resource-notices.md`；ERes checkpoint、G2PW内部对应及胡桃公开分发声明仍未核实，不写作已取得许可。
 
-当前只完成本地准备。真实0.7.0原生接口兼容、一次最终整体代码评审及最终公开指令后的上传/匿名回下载，以后续事实记录为准。
+## 现有0.7.0实际兼容
+
+六附件中的真实胡桃ZIP已解压到新的中文/空格目录，三文件目录无额外说明。优化Swift探针使用本机0.7.0构建的公开PetCore接口，在临时LocalVoice库实际完成`stage`、模型/参考音频SHA与PCM校验及`discard`，清理确认通过；没有访问个人音色库或发声。包contentID为`361099c24e5093c6a02d39f5919cf42959e405ee1e06c69a814d68bad406e271`。
+
+最终六附件中的DMG在唯一中文/空格路径只读挂载，现有`LocalVoiceEnginePackage.preview`读取28,828文件及原manifest通过；另行用新的只读验证器逐文件核对全部SHA、大小与执行位，用时11.314秒。原生语音stage/discard及引擎preview合计1.312秒。本次记录的准确卷已弹出，没有操作既有挂载卷。证据为`.build/voice-distribution-validation/native-compatibility.json`、临时探针源码和同目录日志。
+
+探针编译首次遇到受限默认模块缓存、随后发现分发App会剥离Swift Modules；改用本机同版构建目录的公开编译模块、独立可写module cache及分发App框架动态链接后编译/运行退出0。这是验证环境修正，不是产品功能RED或另一次App构建。App源码未变，未重跑597项原生测试、重新推理或替换日用App；仍不等于macOS14、外机、Gatekeeper或可闻体验专项通过。
+
+50项Release和38项LocalVoice最终离线回归再次通过，真实六附件check-only通过。新增Git对象审计没有模型、录音或runtime，最大blob小于1MiB。具体候选发布正文已渲染到忽略目录`publication-body.md`，带完整工具提交及资源清单摘要标记。
+
+一次最终整体代码评审和最终公开指令后的上传/匿名回下载仍待完成。
