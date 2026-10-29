@@ -69,9 +69,9 @@ def checked_reader(path, maximum=MAX_ASSET):
         except OSError as error:
             raise ValueError('file unavailable: '+path.name) from error
 
-def snapshot_asset(path):
+def snapshot_asset(path, *, maximum=MAX_ASSET):
     path = Path(path)
-    with checked_reader(path) as (f, info):
+    with checked_reader(path,maximum) as (f, info):
         if not valid_asset_size(info.st_size): raise ValueError('invalid asset size')
         h = hashlib.sha256(); total = 0
         for chunk in iter(lambda:f.read(CHUNK), b''):
@@ -303,7 +303,7 @@ def build_bundle(engine_dmg, voice_zip, output, *, tools_commit, app_commit, rea
 def read_bundle(folder, *, version, tools_commit):
     folder=Path(folder);_directory(folder)
     if {p.name for p in folder.iterdir()}!=FILES: raise ValueError('expected exactly six resource assets')
-    records=tuple(snapshot_asset(folder/name) for name in sorted(FILES))
+    records=tuple(snapshot_asset(folder/name,maximum=MAX_ASSET if name in (ENGINE,VOICE) else 65536 if name in ('voice-assets.json','安装说明.md') else 1024) for name in sorted(FILES))
     by_name={a.name:a for a in records}
     m=decode_json(_read(folder/'voice-assets.json',65536),65536)
     if set(m)!={'schemaVersion','version','toolsCommit','app','engine','voice','assets','provenance','installation'} or type(m['schemaVersion']) is not int or m['schemaVersion']!=1 or m['version']!=version or version!='1.0.0' or not _hex(tools_commit,40) or m['toolsCommit']!=tools_commit:

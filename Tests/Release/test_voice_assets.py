@@ -185,5 +185,12 @@ class VoiceAssetTests(unittest.TestCase):
         self.assertEqual(proc.returncode,0,proc.stderr.decode())
         self.assertEqual({a.name for a in vd.read_bundle(out,version='1.0.0',tools_commit=COMMIT).assets},FILES)
 
+    def test_installation_instructions_have_a_64k_limit(self):
+        bundle(vd,self.root)
+        path=self.root/'assets/安装说明.md';data=b'x'*65537;path.write_bytes(data)
+        catalog=self.root/'assets/voice-assets.json';m=json.loads(catalog.read_text())
+        m['installation']={'bytes':len(data),'sha256':sha(data)};catalog.write_text(json.dumps(m))
+        with self.assertRaises(ValueError):vd.read_bundle(self.root/'assets',version='1.0.0',tools_commit=COMMIT)
+
 
 if __name__ == '__main__': unittest.main()
