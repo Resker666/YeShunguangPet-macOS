@@ -194,3 +194,5 @@
 - GitHub独立语音分发Tasks1–5完成，真实首候选UDZO2052866765字节、28,828文件/原清单/执行位及现有0.7公开stage/discard/preview通过，仅临时目录。本轮一次新gpt-6-astra/high整体评审375ff36..c8a0e9f为0Critical/2Important/1Minor：独立安装说明改ASCII voice-installation.md避免GitHub改名，ZIP固定最初三文件摘要防验证后被替换；两项同一pass经RED→GREEN，完整52Release/38LocalVoice通过，未派第二评审。泛化远端冲突提示的Minor入TODO；外部执行与七项未测/接口边界逐一记录本计划ledger。待用最终干净源码重生成候选并展示具体文件/正文，本轮未push/tag/上传/公开、未操作日用App/个人引擎/AI/Keychain；Task7仍待明确具体指令。
 
 - 独立语音分发本地Tasks1–6最终就绪：干净工具来源9c89d47，dist/语音分发/voice-assets-v1.0.0-final六文件，DMG2052866765/ZIP160615265字节与首候选相同，独立中文说明以voice-installation.md公开名保留内容；实际最终包再次原生stage/discard/preview、全28,828摘要/执行位、准确自有卷弹出及离线check-only通过，52Release/38LocalVoice。一次评审修复及七项范围判断/代价见docs/voice-distribution-validation.md，本计划ledger只归档不删除、Task7待具体同步公开指令；未操作日用App/私人资料或远端发布，不把本地完成写作匿名下载通过。
+
+- 用户于2026-10-29在具体六附件及正文审核后明确选择“推送代码并公开这份资源预发布”，授权普通快进同步工具分支与main、固定voice-assets-v1.0.0工具来源9c89d47、上传并公开六附件及匿名下载/Latest复核；不含普通App公开Release。当前任务7开始，fetch确认远端main仍375ff36且无额外改动。终端无主动提供的GitHub发布凭据，现有连接器无Release写入接口；Safari自动化被工具URL访问限制终止，不绕过、不读私人凭据。代码同步与云端核验继续，公开结果按真实状态记录，授权不等于已成功发布。
