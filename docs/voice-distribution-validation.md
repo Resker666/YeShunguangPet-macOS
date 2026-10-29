@@ -82,3 +82,15 @@
 当前公开资源Release按tag读取仍404，六附件未上传、未公开、未匿名下载。终端没有GH_TOKEN/GITHUB_TOKEN或gh，现有GitHub连接器无Release写接口；Safari原生CUA选择被工具的URL访问规则终止，没有绕过或再读该页面。已提供现成CLI登录/网页发布接续文档，等待用户完成必要认证。此为能力/认证阻挡，不是再次请求发布许可；Task7保持未完成、ledger保留。
 
 最后读取普通App Latest仍是v0.1.19，ID420471790、来源37a73f0cd163dbb172300d0df269a4b7575180b5。资源标签推送不等于Release公开，也没有另发App0.7.0。本次文档收尾不改变已验证程序/工具；仅Markdown提交使用[skip ci]避免再次构建相同程序，云端通过的实际来源仍为6f802cd，文档提交未另建App产物。最终匿名回下载和公开状态/完整来源/Latest核验将在认证接续后按原授权完成。
+
+## 资源网页公开与最终匿名验证完成
+
+用户选择自己在GitHub网页发布，并于本会话反馈“资源已发布”。公开资源为[本地语音资源1.0.0（M系列预览）](https://github.com/Resker666/YeShunguangPet-macOS/releases/tag/voice-assets-v1.0.0)，Release ID427898247，发布时间2026-10-29 21:30:18 CST（GitHub原始UTC为2026-10-29T13:30:18Z）。状态draft=false、prerelease=true，固定标签voice-assets-v1.0.0仍精确指向9c89d47d4f503a96084b78f92c154ef8762c17d8，六份附件均为uploaded，名字/长度/服务端SHA与冻结候选一致。
+
+通过已评审的匿名下载器，无认证重新下载六附件至新的忽略目录anonymous-downloads-20261029，总计2,213,489,196字节，用时976.859秒，退出0。所有真实大小/SHA256与本地候选逐项一致；read_bundle重新验证小清单、两份摘要、严格ZIP四条目、原三文件模型/参考音频SHA及PCM，来源说明仍在三文件目录外。远端DMG与此前只读挂载并全量核对28,828文件/执行位的候选SHA相同，原引擎清单证据对应；本次未再安装、推理或播放，也不将下载完整性写作外机/Gatekeeper通过。
+
+下载完成后再次读取Release、完整附件列表、真实Git标签及普通App Latest：Release与各附件ID均未变化，全部六附件仍匹配，公开预发布状态确认；App Latest仍v0.1.19，ID420471790，来源37a73f0cd163dbb172300d0df269a4b7575180b5。复核时间2026-10-29 13:51:51 UTC。独立资源公开不会被记作App0.7.0公开发版。
+
+网页生成的target_commitish为main，正文仅换行为CRLF。GitHub官方[创建Release参数说明](https://docs.github.com/en/rest/releases/releases#create-a-release)明确已有Git tag时不使用target_commitish；本轮先独立核实真实tag为工具提交，再对完整正文仅统一CRLF作比较，保留原始响应；将解析后的来源/正文视图交给已评审下载器，未修改远端或产品代码。下载后再解析实际tag及全部附件，不能只依赖该视图。这是针对批准的网页路径的一次验证适配，当前严格prepare/publish CLI仍会拒绝原始网页元数据，作为后续兼容项记录在TODO，未偷偷放宽发布工具。
+
+实际证据：anonymous-download-verification.json、public-final-verification.json、raw-public-after-download.json、raw-public-release.json、raw-public-tag.json、web-release-resolution.json、run-public-download-verification.py。全部只位于忽略的.build/voice-distribution-validation。资源链接与说明完成事实同步；程序/工具保持原样，不重复无变化的本地全测，文档提交沿用[skip ci]，程序云端验证来源仍6f802cd。

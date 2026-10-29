@@ -1,14 +1,15 @@
 # 独立语音资源下载与安装
 
-2026-10-29：资源工具代码已同步main与开发分支，资源标签`voice-assets-v1.0.0`已固定到9c89d47。六附件本地校验就绪，但Release尚未创建、附件尚未上传或公开；当前等待可用的GitHub发布认证。用户已明确批准本份资源公开，无需重复审批；真正发布及匿名下载校验后，在本页补充长期链接。普通App更新与资源版本分别管理。
+2026-10-29：[本地语音资源1.0.0（M系列预览）](https://github.com/Resker666/YeShunguangPet-macOS/releases/tag/voice-assets-v1.0.0)已公开，六附件均已匿名重新下载并核对大小/SHA256。无需登录即可下载资源。标签`voice-assets-v1.0.0`固定到工具来源`9c89d47`，为独立预发布，普通App更新与资源版本分别管理。
 
 需要App **0.7.0/build30或后续兼容版**、M系列Mac，以及两份资源：
 
-| 文件 | 用途 |
+| 下载 | 用途 |
 | --- | --- |
-| `YeShunguangPet-VoiceEngine-1.0.0-macOS-arm64.dmg` | 公共推理引擎，约2.05GB，只需独立安装一次 |
-| `YeShunguangPet-Voice-hutao-pilot-e1.zip` | 胡桃试用音色，先解压后导入 |
-| 两份对应`.sha256`、`voice-assets.json`、`voice-installation.md` | 文件摘要、来源/兼容信息与安装步骤 |
+| [引擎DMG](https://github.com/Resker666/YeShunguangPet-macOS/releases/download/voice-assets-v1.0.0/YeShunguangPet-VoiceEngine-1.0.0-macOS-arm64.dmg) · [SHA256](https://github.com/Resker666/YeShunguangPet-macOS/releases/download/voice-assets-v1.0.0/YeShunguangPet-VoiceEngine-1.0.0-macOS-arm64.dmg.sha256) | 公共推理引擎，约2.05GB，只需独立安装一次 |
+| [胡桃e1 ZIP](https://github.com/Resker666/YeShunguangPet-macOS/releases/download/voice-assets-v1.0.0/YeShunguangPet-Voice-hutao-pilot-e1.zip) · [SHA256](https://github.com/Resker666/YeShunguangPet-macOS/releases/download/voice-assets-v1.0.0/YeShunguangPet-Voice-hutao-pilot-e1.zip.sha256) | 约161MB，先解压后导入三文件目录 |
+| [voice-assets.json](https://github.com/Resker666/YeShunguangPet-macOS/releases/download/voice-assets-v1.0.0/voice-assets.json) | 来源、兼容信息和文件摘要 |
+| [中文安装说明](https://github.com/Resker666/YeShunguangPet-macOS/releases/download/voice-assets-v1.0.0/voice-installation.md) | 引擎安装、音色导入与启用步骤 |
 
 目前App0.7.0仍是[本次Actions构建](https://github.com/Resker666/YeShunguangPet-macOS/actions/runs/40861117830)的需登录下载产物，按CI设置保留14天；资源预发布不等于另行发布App。公开Latest的旧0.1.19不支持这些本地角色语音功能，不能用作兼容App入口。普通App公开Release等待单独发布指令。
 
@@ -48,3 +49,5 @@ python3 scripts/prepare-voice-release.py --assets dist/语音分发/voice-assets
 ```
 
 默认检查与`--check-only`完全离线，不读认证。`--prepare-draft`才准备并补传同一资源草稿，`--publish`才显式公开为非Latest的资源预发布；真实模式需要准备好的`--notes`和用户主动提供给本机工具的GitHub认证环境，不在聊天中发送密钥。`--publish --download-to <新的目录>`可在公开后匿名重新下载核验。已有附件或来源冲突不覆盖，网络中断先检查同一草稿；不会自动删除未完成的同名附件。
+
+网页发布接续说明：当前`--prepare-draft`/`--publish`严格核对API元数据，直接接管本次网页发布会因`target_commitish=main`及CRLF正文而拒绝。不要为通过校验而重建或覆盖已公开资源；本次以GitHub实际标签提交和完整正文（仅统一换行）复核，再调用既有匿名下载器，原始响应与解析记录均保留。后续若需CLI接管兼容，另作有界改进。

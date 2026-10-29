@@ -8,7 +8,7 @@
 
 ## 安装体验版
 
-独立语音资源正在准备GitHub分发，当前尚未公开，见[资源下载与安装说明](docs/local-voice-downloads.md)。本地角色语音需要App0.7.0；下方公开0.1.19的普通桌宠下载不包含该功能。普通App安装包、公共引擎和角色音色包分开获取。
+[独立语音资源1.0.0](https://github.com/Resker666/YeShunguangPet-macOS/releases/tag/voice-assets-v1.0.0)已公开，六附件匿名下载与摘要复核通过，见[资源下载与安装说明](docs/local-voice-downloads.md)。本地角色语音需要App0.7.0；下方公开0.1.19的普通桌宠下载不包含该功能。普通App安装包、公共引擎和角色音色包分开获取。
 
 普通用户从[最新 Release](https://github.com/Resker666/YeShunguangPet-macOS/releases/latest)下载安装包，无需从源码构建或登录后下载Actions产物。当前公开版为0.1.19，选择`arm64.dmg`用于M系列Mac，`x86_64.dmg`用于Intel实验测试。
 
