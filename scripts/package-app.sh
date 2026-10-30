@@ -21,7 +21,7 @@ ln -s /Applications "$stage/Applications"
 {
   printf '本安装包架构：%s\n' "$architecture"
   if [ "$architecture" = x86_64 ]; then
-    printf 'Intel兼容测试版：已交叉构建，真实Intel／黑苹果运行尚未验证。\n\n'
+    printf 'Intel兼容测试版：本版已交叉构建，尚无本版Intel／黑苹果实机结果。\n\n'
   else
     printf '适用于Apple Silicon（M系列）Mac。\n\n'
   fi
