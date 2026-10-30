@@ -19,7 +19,15 @@
 
 修复前实际RED：该回归退出65，xcresult明确记录`Test crashed with signal pipe`。修复只对本次worker输入管道设置`F_SETNOSIGPIPE`，失败时走现有不可用/清理分支，不改变App全局信号处理。Apple的[fcntl说明](https://raw.githubusercontent.com/apple-oss-distributions/xnu/main/bsd/man/man2/fcntl.2)定义此选项可将无读取者的管道写入失败保留为错误返回，避免产生SIGPIPE。
 
-同时在产生界面操作的测试中显式初始化NSApplication，保持生产UI行为不变。相关进程与生产集成12项GREEN；完整原生、独立评审和最终新提交云端结果以实际证据追加，不把旧9d85dcd构建作为修复版。
+同时在产生界面操作的测试中显式初始化NSApplication，保持生产UI行为不变。相关进程与生产集成12项GREEN，完整598项原生（192Core/406Mac）通过。修复来源`e5f8b8f04e5777fffb0478d9cb776b829ea6a94f`的两架构本地构建/打包和八附件离线check-only通过；本轮后续仅文档提交不改变其功能代码，最终云端附件必须以自身build-info记录的准确提交为准。
+
+一次新gpt-6-astra/high独立整体评审完成`9d85dcd..e5f8b8f`：0 Critical / 0 Important / 0 Minor，无第二次独立评审、无评审后功能修改。最终新提交云端结果保存在`.build/app-release-070-validation/push-verification.json`，不把旧9d85dcd构建作为修复版。
+
+## 评审判断与代价
+
+- 本次不重构既有begin拒绝后的任务提交或全部启动/写入/关闭并发机制。评审未发现本改动带来的新问题；代价是这次有界修复不宣称解决全部进程并发风险，有新的实际证据再定位。
+- 首次CI只有SIGPIPE信号，没有原始写调用堆栈。因此只确认新回归证明的真实管道故障机制及其修正，不能把推测的精确首次调用写成事实；保留原报告。
+- 本次继续完成新提交CI与发行包核验；实机模型/可闻声音、个人App安装、macOS14和Intel等不由代码评审或交叉构建推定通过。日用App不因本轮推送而自动更新。
 
 App版本仍0.7.0/build30，主配置schema13、角色档案v2、语音偏好和引擎协议不变；公共引擎与音色无需重制。日用App、个人资料及登录项保持不变。旧本地包和云端包继续保留，最终发布前必须使用含修复提交的八附件与对应来源正文。
 

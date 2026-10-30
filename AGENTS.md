@@ -204,3 +204,5 @@
 - 用户于2026-10-30要求继续准备普通App0.7.0公开发行。原地本地分支codex/macos-app-070-release，补docs/release-notes/0.7.0.md；实际下载主干40861117830两架构产物并核对外层/八附件摘要、6f802cd来源、版本/签名/最低14.0。发现包内安装说明仍错误地泛称无麦克风权限且只在检查更新联网，因此修正文案及本版Intel验证范围，重新从干净本地来源构建打包；旧云端包保留为参考，不作为修正后的最终附件。Swift/模型/运行行为/个人App及资料不改，不恢复已完成计划或重做功能评审。推送、标签与公开发布仍依用户明确指令；当前只准备可审阅本地材料，实际核验记录于.build/app-release-070-validation。
 
 - 用户随后明确“推送”，已原子同步9d85dcd至main/开发分支。main40986303306首轮597原生/52Release/38LocalVoice/17分发及双架构上传通过；开发40986303448首轮原生失败，诊断确认测试进程SIGPIPE、重启后另一UI测试NSApp为空。先保存全部诊断并仅请求一次旧提交失败任务重跑；新闭合stdin真实回归在本机亦RED且xcresult明确signal pipe。连续按本次推送授权做最小修复：仅worker输入fd启用F_SETNOSIGPIPE，测试自身显式初始化NSApplication；相关12项GREEN，完整/独立评审/新提交云端以docs/app-0.7.0-release-validation.md和实际日志为准。旧9d85dcd任何重跑通过不能称崩溃已修复，不作为最终发行来源；版本/配置/协议、公共模型包与个人App/资料保持，无tag/draft/Release授权。
+
+- SIGPIPE最小修复e5f8b8f完整598原生（192Core/406Mac）、两架构本地构建/打包及八附件check-only通过；一次新gpt-6-astra/high独立整体评审9d85dcd..e5f8b8f为0Critical/0Important/0Minor，无二次评审或评审后功能改动。三项评审边界判断/代价写入docs/app-0.7.0-release-validation.md；按本次明确推送授权继续普通快进同步main/开发分支并核对最终CI及云端安装包。后续记录提交只改文档，云端准确来源以build-info为准，不混用本地e5f或旧9d包；私人资料/日用App保持，仍不tag、建草稿或发布。
