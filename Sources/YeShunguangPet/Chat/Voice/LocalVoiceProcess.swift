@@ -110,6 +110,11 @@ private final class LocalVoiceChild: @unchecked Sendable {
                 output.fileHandleForReading.readabilityHandler = { [weak self] handle in self?.read(handle, stderr: false) }
                 error.fileHandleForReading.readabilityHandler = { [weak self] handle in self?.read(handle, stderr: true) }
                 do {
+                    // A worker can close stdin between readiness and our write.
+                    // Convert EPIPE into the existing error path, only for this pipe.
+                    guard fcntl(input.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1) == 0 else {
+                        throw LocalVoiceIssue.unavailable
+                    }
                     try process.run()
                     lock.withLock { launched = true; launchFinished = true }
                     try? input.fileHandleForReading.close(); try? output.fileHandleForWriting.close(); try? error.fileHandleForWriting.close()

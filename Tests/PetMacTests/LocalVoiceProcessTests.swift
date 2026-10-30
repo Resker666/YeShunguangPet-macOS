@@ -1,8 +1,26 @@
 import Foundation
+import Darwin
 import XCTest
 import PetCore
 
 @MainActor final class LocalVoiceProcessTests: XCTestCase {
+    func testClosedWorkerInputReturnsFailureInsteadOfKillingHost() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let configuration = try LocalVoiceServiceFixtures.configuration(root: root), voice = try LocalVoiceServiceFixtures.voice(root: root)
+        let service = LocalVoiceProcess(workerURL: try LocalVoiceServiceFixtures.helper(root: root, mode: "closed-input"))
+        let work = root.appendingPathComponent("work"); try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
+        try await service.start(configuration: configuration, voice: voice, workDirectory: work, session: UUID())
+        // Detect process-fatal SIGPIPE even if this XCTest host inherited SIG_IGN.
+        let previous = Darwin.signal(SIGPIPE, SIG_DFL)
+        defer { _ = Darwin.signal(SIGPIPE, previous) }
+        do {
+            _ = try await service.generate(requestID: UUID(), text: "管道关闭时保持桌宠运行", speedFactor: 1)
+            XCTFail("closed input must fail")
+        } catch { XCTAssertEqual(error as? LocalVoiceIssue, .unavailable) }
+        let stopped = await service.stop()
+        XCTAssertTrue(stopped); XCTAssertFalse(service.hasResources)
+    }
     func testReadyFloodOrTimeoutKeepsMainActorResponsiveAndKillsOnlyOwnedPID() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

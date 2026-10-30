@@ -92,6 +92,7 @@ import PetCore
         await f.close()
     }
     func testGeneratingControlsOfferStopAndDescribeLocalPhase() async throws {
+        _ = NSApplication.shared
         let f = try LocalVoiceProductionFixture(); try await f.open()
         f.process.holdGeneration = true; f.voice.readLatest("生成阶段可停止")
         try await chatEventually { f.process.generates == 1 }
