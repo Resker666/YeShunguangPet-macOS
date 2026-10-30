@@ -206,3 +206,5 @@
 - 用户随后明确“推送”，已原子同步9d85dcd至main/开发分支。main40986303306首轮597原生/52Release/38LocalVoice/17分发及双架构上传通过；开发40986303448首轮原生失败，诊断确认测试进程SIGPIPE、重启后另一UI测试NSApp为空。先保存全部诊断并仅请求一次旧提交失败任务重跑；新闭合stdin真实回归在本机亦RED且xcresult明确signal pipe。连续按本次推送授权做最小修复：仅worker输入fd启用F_SETNOSIGPIPE，测试自身显式初始化NSApplication；相关12项GREEN，完整/独立评审/新提交云端以docs/app-0.7.0-release-validation.md和实际日志为准。旧9d85dcd任何重跑通过不能称崩溃已修复，不作为最终发行来源；版本/配置/协议、公共模型包与个人App/资料保持，无tag/draft/Release授权。
 
 - SIGPIPE最小修复e5f8b8f完整598原生（192Core/406Mac）、两架构本地构建/打包及八附件check-only通过；一次新gpt-6-astra/high独立整体评审9d85dcd..e5f8b8f为0Critical/0Important/0Minor，无二次评审或评审后功能改动。三项评审边界判断/代价写入docs/app-0.7.0-release-validation.md；按本次明确推送授权继续普通快进同步main/开发分支并核对最终CI及云端安装包。后续记录提交只改文档，云端准确来源以build-info为准，不混用本地e5f或旧9d包；私人资料/日用App保持，仍不tag、建草稿或发布。
+
+- 用户已自行运行发版40996662356并于2026-10-30公开v0.7.0/Release428622639，Latest与实际tag均为修复来源3d2d2b9；八附件实际匿名下载30,502,501字节，大小/SHA/版本/ZIP来源及下载后标签/资产/Latest一致。用户随后明确“同步更新”旧下载说明，本次仅Markdown同步README、语音下载页和发布记录，普通快进推送main/当前分支并使用[skip ci]；不重建App、不移动发行tag或改附件/资源。保留历史0.1.19兼容反馈，正确区分同源ARM搬移重开与这次仅匿名字节检查；不扩大Intel/macOS14/外机/Gatekeeper验收。当前个人App/AI/Keychain保持原状，完整事实见docs/app-0.7.0-release-validation.md。

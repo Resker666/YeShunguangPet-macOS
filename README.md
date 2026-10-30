@@ -8,13 +8,13 @@
 
 ## 安装体验版
 
-[独立语音资源1.0.0](https://github.com/Resker666/YeShunguangPet-macOS/releases/tag/voice-assets-v1.0.0)已公开，六附件匿名下载与摘要复核通过，见[资源下载与安装说明](docs/local-voice-downloads.md)。本地角色语音需要App0.7.0；下方公开0.1.19的普通桌宠下载不包含该功能。普通App安装包、公共引擎和角色音色包分开获取。
+[App0.7.0](https://github.com/Resker666/YeShunguangPet-macOS/releases/tag/v0.7.0)与[独立语音资源1.0.0](https://github.com/Resker666/YeShunguangPet-macOS/releases/tag/voice-assets-v1.0.0)均已公开，安装文件已匿名下载并复核摘要。本地角色语音需要App0.7.0或后续兼容版；普通App安装包、公共引擎和角色音色包分开获取，见[资源下载与安装说明](docs/local-voice-downloads.md)。
 
-普通用户从[最新 Release](https://github.com/Resker666/YeShunguangPet-macOS/releases/latest)下载安装包，无需从源码构建或登录后下载Actions产物。当前公开版为0.1.19，选择`arm64.dmg`用于M系列Mac，`x86_64.dmg`用于Intel实验测试。
+普通用户从[最新 Release](https://github.com/Resker666/YeShunguangPet-macOS/releases/latest)下载安装包，无需登录GitHub或从源码构建。当前公开版为**0.7.0 / build30**，选择`arm64.dmg`用于M系列Mac，`x86_64.dmg`用于Intel实验测试。
 
-使用者不需要安装 Xcode、Swift 或其他依赖。日用包请选择 M 系列 Mac（arm64）；另提供x86_64实验包。两种包分开，文件名标明架构。从0.1.19起部署目标为14.0，0.1.18及更早的现有包仍要求15.0。既有版本有 M4 / macOS 27.0 日用证据，本版M4用户整体体验待确认，另有macOS 26.6.2云端自动回归；0.1.19已获用户在一台Sonoma14.8.9 / Intel Core i5黑苹果上的整体体验通过反馈，其他硬件/系统及未逐项确认的场景继续待测，见[兼容记录](docs/sonoma-compatibility-validation.md)。
+安装App不需要Xcode、Swift或外部Python；本地角色音色另需安装上面的独立引擎和音色包。日用包请选择M系列Mac（arm64）；另提供x86_64实验包，文件名标明架构。从0.1.19起部署目标为macOS14.0，0.1.18及更早的现有包仍要求15.0。0.7.0独立引擎安装已有M4本机用户反馈，同源ARM云端包已用隔离配置完成搬移重开验证，公开附件已匿名下载校验，另有macOS26.6.2云端回归；这不代表发布包全部功能均获逐项体验确认。旧0.1.19在一台Sonoma14.8.9 / Intel Core i5黑苹果上的通过反馈，不代替0.7.0的Intel实机验证。其他设备、macOS14实机及Gatekeeper首开等仍待测，见[本次发布记录](docs/app-0.7.0-release-validation.md)与[历史兼容记录](docs/sonoma-compatibility-validation.md)。
 
-1. M 系列打开 `YeShunguangPet-0.1.19-macOS-arm64.dmg`；Intel测试机选择 `YeShunguangPet-0.1.19-macOS-x86_64.dmg`。将 App 拖到旁边的 Applications。
+1. M系列下载并打开[0.7.0 arm64 DMG](https://github.com/Resker666/YeShunguangPet-macOS/releases/download/v0.7.0/YeShunguangPet-0.7.0-macOS-arm64.dmg)；Intel测试机选择[0.7.0 x86_64 DMG](https://github.com/Resker666/YeShunguangPet-macOS/releases/download/v0.7.0/YeShunguangPet-0.7.0-macOS-x86_64.dmg)。将App拖到旁边的Applications。
 2. 弹出 DMG，从“应用程序”打开 App；菜单栏爪印提供操作和退出入口。
 3. 免费体验版使用 ad-hoc 签名，未公证。网上下载后若系统拦截，请先核实来源，在尝试打开后按 [Apple 官方说明](https://support.apple.com/zh-cn/102445) 前往“隐私与安全性 → 仍要打开”。DMG 不会消除系统提示。
 
@@ -148,7 +148,9 @@ python3 scripts/smoke-app.py --app /绝对路径/YeShunguangPet.app --check-rest
 
 构建需要 Xcode；使用 App 不需要。默认ARM App在`dist/YeShunguangPet.app`，Intel App在`dist/x86_64/YeShunguangPet.app`。两者主程序和嵌入框架架构必须一致；打包核对所选架构、Info.plist声明和两个Mach-O的实际macOS 14.0最低版本，拒绝错误标签、混合框架或最低版本不符的包。
 
-打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.4.0-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。0.1.19已公开发布八份附件，标签及云端包来源为`37a73f0cd163dbb172300d0df269a4b7575180b5`，两路CI通过并获本台黑苹果整体体验通过反馈；本地历史交付包来源仍为`5164ba9`。0.1.20从干净来源`e15b739`本地交付，后续已普通同步`a90c5e1`且两路CI通过。0.1.21本地App/八附件来自干净`76f9c615563b42359041f12ea38999ba516dfd6e`，已安装运行；用户已授权普通同步和云端核验，未授权标签或Release。
+打包输出均在dist根目录，带版本号和架构的DMG、ZIP及各自SHA-256文件。例如在 dist/ 内运行 `shasum -a 256 -c YeShunguangPet-0.7.0-macOS-arm64.dmg.sha256`。SHA-256用于文件完整性校验，不等同于开发者认证。包仍未做Developer ID签名或公证，`Contents/Resources/build-info.json`记录构建提交和架构。当前0.7.0发布来源与匿名下载核验见[发布记录](docs/app-0.7.0-release-validation.md)。
+
+历史交付与发布记录：0.1.19已公开发布八份附件，标签及云端包来源为`37a73f0cd163dbb172300d0df269a4b7575180b5`，两路CI通过并获本台黑苹果整体体验通过反馈；本地历史交付包来源仍为`5164ba9`。0.1.20从干净来源`e15b739`本地交付，后续已普通同步`a90c5e1`且两路CI通过。0.1.21本地App/八附件来自干净`76f9c615563b42359041f12ea38999ba516dfd6e`，已安装运行；用户已授权普通同步和云端核验，未授权标签或Release。
 
 App 图标由原仓库 ICO 转换，原图256×256；大尺寸仅作缩放，不新增绘制细节。需要重新生成时运行 `bash tools/make-icon.sh`，使用系统 sips/iconutil，无外部图像工具依赖。
 

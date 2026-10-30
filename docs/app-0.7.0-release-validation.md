@@ -1,6 +1,16 @@
 # 0.7.0 App 发布准备与推送核验
 
-日期：2026-10-30（Asia/Shanghai）。普通App发行与已公开的`voice-assets-v1.0.0`分别管理。本轮用户已明确授权推送，未授权标签、Release草稿或公开发布。
+日期：2026-10-30（Asia/Shanghai）。普通App发行与已公开的`voice-assets-v1.0.0`分别管理。实现阶段按用户指令推送代码，随后由用户自行触发草稿流程并公开发布；下面保留完整验证历史。
+
+## 当前公开状态
+
+[v0.7.0](https://github.com/Resker666/YeShunguangPet-macOS/releases/tag/v0.7.0)已于2026-10-30公开并设为Latest，Release ID为428622639；实际标签、正文来源标记和安装包来源均为`3d2d2b9c09afc200c7cc53497a5dd5f45810220d`。用户手动发版工作流[40996662356](https://github.com/Resker666/YeShunguangPet-macOS/actions/runs/40996662356)的构建与草稿任务均成功，最终由用户网页公开。独立语音资源仍为六附件预发布，App更新通常无需重下引擎和音色。
+
+已不带凭据或Cookie实际匿名重新下载八附件，共30,502,501字节；全部大小/SHA256、摘要文件内容、ZIP中的0.7.0版本及干净源码来源核对通过。下载后再次核对同一Release、Latest、实际标签及八份附件ID/大小/摘要一致。下载与证据保存在`.build/app-release-070-validation/anonymous-v0.7.0-20261030/`和`user-publication-final-verification.json`。这次公开下载检查没有运行App，不扩展为外机或Gatekeeper首开验收。
+
+最终源码两路push CI为主干[40988509350](https://github.com/Resker666/YeShunguangPet-macOS/actions/runs/40988509350)第二次、开发分支[40988509158](https://github.com/Resker666/YeShunguangPet-macOS/actions/runs/40988509158)首次，均598原生/52Release/38LocalVoice/17分发及双架构上传通过。主干首次在Intel临时DMG校验时收到`Resource temporarily unavailable`，保留原始失败；同源重跑通过，没有修改hdiutil代码或降低断言，首次资源错误根因未确认。
+
+发布后的同步仅更新Markdown下载入口和状态，不重建App，不改变`v0.7.0`标签、发行附件或语音资源。
 
 ## 首次推送与真实失败
 

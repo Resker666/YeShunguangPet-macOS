@@ -4,14 +4,14 @@
 
 需要App **0.7.0/build30或后续兼容版**、M系列Mac，以及两份资源：
 
+App0.7.0已[公开发布并设为Latest](https://github.com/Resker666/YeShunguangPet-macOS/releases/tag/v0.7.0)，可直接下载[M系列App DMG](https://github.com/Resker666/YeShunguangPet-macOS/releases/download/v0.7.0/YeShunguangPet-0.7.0-macOS-arm64.dmg)，无需登录GitHub。先安装App，再安装下列引擎和音色；App、引擎与音色分别管理版本，公开Release下载不依赖Actions产物的14天保留期。
+
 | 下载 | 用途 |
 | --- | --- |
 | [引擎DMG](https://github.com/Resker666/YeShunguangPet-macOS/releases/download/voice-assets-v1.0.0/YeShunguangPet-VoiceEngine-1.0.0-macOS-arm64.dmg) · [SHA256](https://github.com/Resker666/YeShunguangPet-macOS/releases/download/voice-assets-v1.0.0/YeShunguangPet-VoiceEngine-1.0.0-macOS-arm64.dmg.sha256) | 公共推理引擎，约2.05GB，只需独立安装一次 |
 | [胡桃e1 ZIP](https://github.com/Resker666/YeShunguangPet-macOS/releases/download/voice-assets-v1.0.0/YeShunguangPet-Voice-hutao-pilot-e1.zip) · [SHA256](https://github.com/Resker666/YeShunguangPet-macOS/releases/download/voice-assets-v1.0.0/YeShunguangPet-Voice-hutao-pilot-e1.zip.sha256) | 约161MB，先解压后导入三文件目录 |
 | [voice-assets.json](https://github.com/Resker666/YeShunguangPet-macOS/releases/download/voice-assets-v1.0.0/voice-assets.json) | 来源、兼容信息和文件摘要 |
 | [中文安装说明](https://github.com/Resker666/YeShunguangPet-macOS/releases/download/voice-assets-v1.0.0/voice-installation.md) | 引擎安装、音色导入与启用步骤 |
-
-目前App0.7.0仍是[本次Actions构建](https://github.com/Resker666/YeShunguangPet-macOS/actions/runs/40861117830)的需登录下载产物，按CI设置保留14天；资源预发布不等于另行发布App。公开Latest的旧0.1.19不支持这些本地角色语音功能，不能用作兼容App入口。普通App公开Release等待单独发布指令。
 
 ## 安装引擎
 
